@@ -1,0 +1,639 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Climate Circuits",
+        "description": "Decides the house mode and runs heating and cooling circuits. Add a circuit for every pump or mixing valve after setup.",
+        "sections": {
+          "mode": {
+            "name": "Mode",
+            "data": {
+              "capabilities": "What the source can do",
+              "mode_entity": "Mode source entity",
+              "heat_values": "Values meaning heating",
+              "cool_values": "Values meaning cooling",
+              "off_values": "Values meaning off"
+            },
+            "data_description": {
+              "capabilities": "A gas boiler only heats; a reversible heat pump heats and cools.",
+              "mode_entity": "Climate (hvac mode), select or sensor (values below), or a switch/binary sensor (on = heating). Optional.",
+              "heat_values": "Only for select, input_select and sensor sources."
+            }
+          },
+          "fallback": {
+            "name": "Fallback when the source is unavailable",
+            "data": {
+              "kind": "Fallback",
+              "sensor": "Temperature sensor",
+              "heat_threshold": "Heating threshold",
+              "cool_threshold": "Cooling threshold"
+            },
+            "data_description": {
+              "kind": "Tank: warm water means heating. Outdoor: cold outside means heating.",
+              "heat_threshold": "Tank: heat at or above. Outdoor: heat at or below.",
+              "cool_threshold": "Tank: cool at or below. Outdoor: cool at or above."
+            }
+          },
+          "weather": {
+            "name": "Weather",
+            "data": {
+              "outdoor_sensor": "Outdoor temperature sensor"
+            }
+          },
+          "zone_control": {
+            "name": "Zone thermostats",
+            "description": "On a mode change the thermostats of the other mode are turned off first; the new ones are switched on once all of those report off. A thermostat of the other mode that comes on later is turned off again. Only while Control equipment is on.",
+            "data": {
+              "switch_zones": "Switch thermostats with the mode"
+            }
+          },
+          "hot_water": {
+            "name": "Hot water circulation",
+            "description": "Circulation pump with hysteresis: starts below threshold − delta, stops at the threshold. Leave empty if the house has no circulation.",
+            "data": {
+              "circulation_sensor": "Circulation return temperature",
+              "circulation_pump": "Circulation pump",
+              "threshold": "Threshold (pump stops)",
+              "delta": "Delta (pump starts below threshold − delta)"
+            },
+            "data_description": {
+              "circulation_sensor": "Temperature at the end of the circulation loop.",
+              "threshold": "Can also be changed on the Hot water device."
+            }
+          },
+          "display": {
+            "name": "Overview sensors",
+            "data": {
+              "info_sensors": "Sensors shown on the mode"
+            },
+            "data_description": {
+              "info_sensors": "Their values appear in the attributes of the mode sensor, e.g. hot water, tank or heat pump supply."
+            }
+          },
+          "protection": {
+            "name": "Protections",
+            "description": "Pause between heating and cooling, periodic exercise of idle pumps and valves, and homing the valves at the start. Only while Control equipment is on.",
+            "data": {
+              "mode_pause": "Pause when switching between heating and cooling",
+              "exercise_days": "Exercise idle pumps and valves after",
+              "home_mixers_on_start": "Home mixing valves when Home Assistant starts"
+            },
+            "data_description": {
+              "mode_pause": "Minutes the new mode waits after the other one stopped. Going back to the previous mode needs no pause.",
+              "exercise_days": "Days without running; 0 turns exercising off.",
+              "home_mixers_on_start": "Close every valve against its end stop about 30 s after Home Assistant starts, as the position may have changed while it was down. Takes one full travel; off keeps the saved position. Not on a reload of the integration."
+            }
+          }
+        }
+      }
+    },
+    "error": {
+      "no_capabilities": "Select at least one mode the source can do.",
+      "fallback_sensor_required": "The fallback needs a temperature sensor.",
+      "circulation_needs_sensor_and_pump": "Circulation needs both the temperature sensor and the pump."
+    },
+    "abort": {
+      "single_instance_allowed": "Climate Circuits is already set up."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Climate Circuits",
+        "description": "Decides the house mode and runs heating and cooling circuits. Add a circuit for every pump or mixing valve after setup.",
+        "sections": {
+          "mode": {
+            "name": "Mode",
+            "data": {
+              "capabilities": "What the source can do",
+              "mode_entity": "Mode source entity",
+              "heat_values": "Values meaning heating",
+              "cool_values": "Values meaning cooling",
+              "off_values": "Values meaning off"
+            },
+            "data_description": {
+              "capabilities": "A gas boiler only heats; a reversible heat pump heats and cools.",
+              "mode_entity": "Climate (hvac mode), select or sensor (values below), or a switch/binary sensor (on = heating). Optional.",
+              "heat_values": "Only for select, input_select and sensor sources."
+            }
+          },
+          "fallback": {
+            "name": "Fallback when the source is unavailable",
+            "data": {
+              "kind": "Fallback",
+              "sensor": "Temperature sensor",
+              "heat_threshold": "Heating threshold",
+              "cool_threshold": "Cooling threshold"
+            },
+            "data_description": {
+              "kind": "Tank: warm water means heating. Outdoor: cold outside means heating.",
+              "heat_threshold": "Tank: heat at or above. Outdoor: heat at or below.",
+              "cool_threshold": "Tank: cool at or below. Outdoor: cool at or above."
+            }
+          },
+          "weather": {
+            "name": "Weather",
+            "data": {
+              "outdoor_sensor": "Outdoor temperature sensor"
+            }
+          },
+          "zone_control": {
+            "name": "Zone thermostats",
+            "description": "On a mode change the thermostats of the other mode are turned off first; the new ones are switched on once all of those report off. A thermostat of the other mode that comes on later is turned off again. Only while Control equipment is on.",
+            "data": {
+              "switch_zones": "Switch thermostats with the mode"
+            }
+          },
+          "hot_water": {
+            "name": "Hot water circulation",
+            "description": "Circulation pump with hysteresis: starts below threshold − delta, stops at the threshold. Leave empty if the house has no circulation.",
+            "data": {
+              "circulation_sensor": "Circulation return temperature",
+              "circulation_pump": "Circulation pump",
+              "threshold": "Threshold (pump stops)",
+              "delta": "Delta (pump starts below threshold − delta)"
+            },
+            "data_description": {
+              "circulation_sensor": "Temperature at the end of the circulation loop.",
+              "threshold": "Can also be changed on the Hot water device."
+            }
+          },
+          "display": {
+            "name": "Overview sensors",
+            "data": {
+              "info_sensors": "Sensors shown on the mode"
+            },
+            "data_description": {
+              "info_sensors": "Their values appear in the attributes of the mode sensor, e.g. hot water, tank or heat pump supply."
+            }
+          },
+          "protection": {
+            "name": "Protections",
+            "description": "Pause between heating and cooling, periodic exercise of idle pumps and valves, and homing the valves at the start. Only while Control equipment is on.",
+            "data": {
+              "mode_pause": "Pause when switching between heating and cooling",
+              "exercise_days": "Exercise idle pumps and valves after",
+              "home_mixers_on_start": "Home mixing valves when Home Assistant starts"
+            },
+            "data_description": {
+              "mode_pause": "Minutes the new mode waits after the other one stopped. Going back to the previous mode needs no pause.",
+              "exercise_days": "Days without running; 0 turns exercising off.",
+              "home_mixers_on_start": "Close every valve against its end stop about 30 s after Home Assistant starts, as the position may have changed while it was down. Takes one full travel; off keeps the saved position. Not on a reload of the integration."
+            }
+          }
+        }
+      }
+    },
+    "error": {
+      "no_capabilities": "Select at least one mode the source can do.",
+      "fallback_sensor_required": "The fallback needs a temperature sensor.",
+      "circulation_needs_sensor_and_pump": "Circulation needs both the temperature sensor and the pump."
+    }
+  },
+  "config_subentries": {
+    "circuit": {
+      "step": {
+        "user": {
+          "title": "Circuit",
+          "description": "One pump and mixing valve with its zones and weather curves.",
+          "data": {
+            "name": "Name"
+          },
+          "sections": {
+            "zones": {
+              "name": "Zones",
+              "data": {
+                "heating_zones": "Heating thermostats",
+                "cooling_zones": "Cooling thermostats",
+                "humidity_sensors": "Humidity sensors"
+              },
+              "data_description": {
+                "heating_zones": "Without thermostats for a mode the circuit runs whenever the house is in that mode.",
+                "humidity_sensors": "Used for the dew point while cooling."
+              }
+            },
+            "heat_curve": {
+              "name": "Heating curve",
+              "data": {
+                "room": "Room temperature",
+                "minimum": "Minimum water temperature",
+                "maximum": "Maximum water temperature",
+                "correction": "Correction",
+                "design_outdoor": "Design outdoor temperature",
+                "design_supply": "Design water temperature",
+                "exponent": "Emitter exponent"
+              },
+              "data_description": {
+                "design_outdoor": "The coldest outdoor temperature the system is designed for, e.g. −15 °C.",
+                "design_supply": "Water temperature needed at the design outdoor temperature.",
+                "exponent": "Radiators 1.3, floor heating 1.1. Higher bends the curve more."
+              }
+            },
+            "cool_curve": {
+              "name": "Cooling curve",
+              "data": {
+                "room": "Room temperature",
+                "slope": "Slope",
+                "minimum": "Minimum water temperature",
+                "maximum": "Maximum water temperature",
+                "correction": "Correction"
+              }
+            },
+            "outputs": {
+              "name": "Outputs",
+              "description": "Controlled only while Control equipment is on; otherwise decisions are shown in Activity as a dry run.",
+              "data": {
+                "pump": "Pump",
+                "mixer_open": "Mixer open relay",
+                "mixer_close": "Mixer close relay",
+                "supply_sensor": "Supply temperature after the mixer",
+                "travel": "Full valve travel time",
+                "hysteresis": "Hysteresis",
+                "mixer_position": "Mixer position",
+                "pump_delay": "Pump start delay",
+                "pump_run_on": "Pump run-on"
+              },
+              "data_description": {
+                "mixer_position": "Cover of the old integration; its position is used only as a first guess until the valve is homed.",
+                "pump_delay": "Seconds of demand before the pump starts, so the zone valves can open.",
+                "pump_run_on": "Seconds the pump keeps running after heating demand ends."
+              }
+            }
+          }
+        },
+        "reconfigure": {
+          "title": "Circuit",
+          "description": "One pump and mixing valve with its zones and weather curves.",
+          "data": {
+            "name": "Name"
+          },
+          "sections": {
+            "zones": {
+              "name": "Zones",
+              "data": {
+                "heating_zones": "Heating thermostats",
+                "cooling_zones": "Cooling thermostats",
+                "humidity_sensors": "Humidity sensors"
+              },
+              "data_description": {
+                "heating_zones": "Without thermostats for a mode the circuit runs whenever the house is in that mode.",
+                "humidity_sensors": "Used for the dew point while cooling."
+              }
+            },
+            "heat_curve": {
+              "name": "Heating curve",
+              "data": {
+                "room": "Room temperature",
+                "minimum": "Minimum water temperature",
+                "maximum": "Maximum water temperature",
+                "correction": "Correction",
+                "design_outdoor": "Design outdoor temperature",
+                "design_supply": "Design water temperature",
+                "exponent": "Emitter exponent"
+              },
+              "data_description": {
+                "design_outdoor": "The coldest outdoor temperature the system is designed for, e.g. −15 °C.",
+                "design_supply": "Water temperature needed at the design outdoor temperature.",
+                "exponent": "Radiators 1.3, floor heating 1.1. Higher bends the curve more."
+              }
+            },
+            "cool_curve": {
+              "name": "Cooling curve",
+              "data": {
+                "room": "Room temperature",
+                "slope": "Slope",
+                "minimum": "Minimum water temperature",
+                "maximum": "Maximum water temperature",
+                "correction": "Correction"
+              }
+            },
+            "outputs": {
+              "name": "Outputs",
+              "description": "Controlled only while Control equipment is on; otherwise decisions are shown in Activity as a dry run.",
+              "data": {
+                "pump": "Pump",
+                "mixer_open": "Mixer open relay",
+                "mixer_close": "Mixer close relay",
+                "supply_sensor": "Supply temperature after the mixer",
+                "travel": "Full valve travel time",
+                "hysteresis": "Hysteresis",
+                "mixer_position": "Mixer position",
+                "pump_delay": "Pump start delay",
+                "pump_run_on": "Pump run-on"
+              },
+              "data_description": {
+                "mixer_position": "Cover of the old integration; its position is used only as a first guess until the valve is homed.",
+                "pump_delay": "Seconds of demand before the pump starts, so the zone valves can open.",
+                "pump_run_on": "Seconds the pump keeps running after heating demand ends."
+              }
+            }
+          }
+        }
+      },
+      "error": {
+        "curve_min_above_max": "The minimum water temperature is above the maximum.",
+        "mixer_needs_both_relays": "A mixing valve needs both the open and the close relay.",
+        "mixer_relays_same": "The open and close relay must differ.",
+        "mixer_needs_supply_sensor": "A mixing valve needs the supply temperature sensor.",
+        "design_outdoor_above_room": "The design outdoor temperature must be below the room temperature."
+      },
+      "initiate_flow": {
+        "user": "Add circuit"
+      },
+      "entry_type": "Circuit",
+      "abort": {
+        "reconfigure_successful": "The circuit was updated."
+      }
+    }
+  },
+  "selector": {
+    "capabilities": {
+      "options": {
+        "heat": "Heat",
+        "cool": "Cool"
+      }
+    },
+    "kind": {
+      "options": {
+        "none": "None",
+        "tank": "Buffer tank or source supply",
+        "outdoor": "Outdoor temperature"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "mode": {
+        "name": "Mode",
+        "state": {
+          "heat": "Heat",
+          "cool": "Cool",
+          "off": "Off"
+        },
+        "state_attributes": {
+          "source": {
+            "name": "Source"
+          },
+          "decided_by": {
+            "name": "Decided by"
+          },
+          "reason": {
+            "name": "Reason"
+          },
+          "override": {
+            "name": "Override"
+          },
+          "last_mode": {
+            "name": "Last mode"
+          },
+          "source_entity": {
+            "name": "Mode source entity"
+          },
+          "source_state": {
+            "name": "Source state"
+          },
+          "source_action": {
+            "name": "Source action"
+          },
+          "fallback_sensor": {
+            "name": "Fallback sensor"
+          },
+          "fallback_temperature": {
+            "name": "Fallback temperature"
+          },
+          "heat_threshold": {
+            "name": "Heating threshold"
+          },
+          "cool_threshold": {
+            "name": "Cooling threshold"
+          },
+          "outdoor_temperature": {
+            "name": "Outdoor temperature"
+          },
+          "zones_must_be_off": {
+            "name": "Must be off"
+          },
+          "zones_still_on": {
+            "name": "Still on"
+          },
+          "zones_waiting_to_turn_on": {
+            "name": "Waiting to turn on"
+          },
+          "zones_failed": {
+            "name": "Failed to turn off"
+          }
+        }
+      },
+      "status": {
+        "name": "Status",
+        "state": {
+          "dry_run": "Dry run",
+          "ok": "OK"
+        }
+      },
+      "target_water_temperature": {
+        "name": "Target water temperature"
+      },
+      "state": {
+        "name": "State",
+        "state": {
+          "heating": "Heating",
+          "cooling": "Cooling",
+          "idle": "Idle",
+          "off": "Off"
+        },
+        "state_attributes": {
+          "reason": {
+            "name": "Reason"
+          }
+        }
+      },
+      "circulation": {
+        "name": "Circulation state",
+        "state": {
+          "running": "Running",
+          "stopped": "Stopped",
+          "disabled": "Disabled",
+          "unavailable": "Unavailable"
+        },
+        "state_attributes": {
+          "reason": {
+            "name": "Reason"
+          },
+          "temperature": {
+            "name": "Temperature"
+          },
+          "starts_below": {
+            "name": "Starts below"
+          },
+          "stops_at": {
+            "name": "Stops at"
+          },
+          "pump": {
+            "name": "Pump"
+          },
+          "pump_on": {
+            "name": "Pump on"
+          },
+          "controlled": {
+            "name": "Pump controlled"
+          }
+        }
+      },
+      "circulation_temperature": {
+        "name": "Circulation temperature"
+      },
+      "calling_zones": {
+        "name": "Calling zones",
+        "state_attributes": {
+          "count": {
+            "name": "Count"
+          },
+          "zones": {
+            "name": "Zones"
+          }
+        }
+      },
+      "mixer_position": {
+        "name": "Mixer position",
+        "state_attributes": {
+          "supply_temperature": {
+            "name": "Supply temperature"
+          },
+          "target_temperature": {
+            "name": "Target temperature"
+          },
+          "source": {
+            "name": "Source"
+          },
+          "position_known": {
+            "name": "Position known"
+          },
+          "movement": {
+            "name": "Movement"
+          },
+          "proposed": {
+            "name": "Next step"
+          }
+        }
+      },
+      "mixer_state": {
+        "name": "Mixer state",
+        "state": {
+          "idle": "Idle",
+          "opening": "Opening",
+          "closing": "Closing",
+          "homing": "Homing (closing to the end stop)",
+          "unknown": "Position unknown"
+        }
+      }
+    },
+    "binary_sensor": {
+      "demand": {
+        "name": "Demand"
+      },
+      "pump": {
+        "name": "Pump",
+        "state_attributes": {
+          "controlled": {
+            "name": "Controlled"
+          },
+          "reason": {
+            "name": "Reason"
+          },
+          "wanted": {
+            "name": "Wanted by the integration"
+          },
+          "entity": {
+            "name": "Relay"
+          }
+        }
+      }
+    },
+    "select": {
+      "mode_override": {
+        "name": "Mode override",
+        "state": {
+          "auto": "Auto",
+          "heat": "Heat",
+          "cool": "Cool",
+          "off": "Off"
+        }
+      }
+    },
+    "switch": {
+      "control_equipment": {
+        "name": "Control equipment"
+      },
+      "circulation_enabled": {
+        "name": "Circulation enabled"
+      },
+      "circuit_control": {
+        "name": "Control pump and mixer"
+      }
+    },
+    "number": {
+      "circulation_threshold": {
+        "name": "Circulation threshold"
+      },
+      "circulation_delta": {
+        "name": "Circulation delta"
+      }
+    }
+  },
+  "exceptions": {
+    "curve_min_above_max": {
+      "message": "The minimum water temperature cannot be above the maximum."
+    },
+    "design_outdoor_above_room": {
+      "message": "The design outdoor temperature must be below the room temperature."
+    },
+    "curve_unknown_parameter": {
+      "message": "Not a parameter of this curve: {parameters}"
+    }
+  },
+  "services": {
+    "set_curve": {
+      "name": "Set weather curve",
+      "description": "Changes parameters of a circuit's heating or cooling curve. Target the circuit's target water temperature sensor.",
+      "fields": {
+        "mode": {
+          "name": "Mode",
+          "description": "Mode"
+        },
+        "room": {
+          "name": "Room temperature",
+          "description": "Room temperature"
+        },
+        "design_outdoor": {
+          "name": "Design outdoor temperature",
+          "description": "Design outdoor temperature"
+        },
+        "design_supply": {
+          "name": "Design water temperature",
+          "description": "Design water temperature"
+        },
+        "exponent": {
+          "name": "Emitter exponent",
+          "description": "Emitter exponent"
+        },
+        "slope": {
+          "name": "Slope (cooling)",
+          "description": "Slope (cooling)"
+        },
+        "minimum": {
+          "name": "Minimum water temperature",
+          "description": "Minimum water temperature"
+        },
+        "maximum": {
+          "name": "Maximum water temperature",
+          "description": "Maximum water temperature"
+        },
+        "correction": {
+          "name": "Correction",
+          "description": "Correction"
+        }
+      }
+    }
+  }
+}

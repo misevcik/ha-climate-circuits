@@ -1,0 +1,37 @@
+set_curve:
+  target:
+    entity:
+      integration: climate_circuits
+      domain: sensor
+  fields:
+    mode:
+      required: true
+      selector:
+        select:
+          options:
+            - heat
+            - cool
+    room:
+      selector:
+        number: {min: 5, max: 35, step: 0.5, unit_of_measurement: "°C", mode: box}
+    design_outdoor:
+      selector:
+        number: {min: -40, max: 10, step: 0.5, unit_of_measurement: "°C", mode: box}
+    design_supply:
+      selector:
+        number: {min: 20, max: 90, step: 0.5, unit_of_measurement: "°C", mode: box}
+    exponent:
+      selector:
+        number: {min: 1, max: 2, step: 0.05, mode: box}
+    slope:
+      selector:
+        number: {min: 0, max: 5, step: 0.05, mode: box}
+    minimum:
+      selector:
+        number: {min: -30, max: 90, step: 0.5, unit_of_measurement: "°C", mode: box}
+    maximum:
+      selector:
+        number: {min: -30, max: 90, step: 0.5, unit_of_measurement: "°C", mode: box}
+    correction:
+      selector:
+        number: {min: -10, max: 10, step: 0.5, unit_of_measurement: "K", mode: box}

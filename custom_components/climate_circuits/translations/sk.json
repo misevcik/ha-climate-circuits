@@ -1,0 +1,639 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Climate Circuits",
+        "description": "Určuje režim domu a riadi okruhy kúrenia a chladenia. Po nastavení pridaj okruh pre každé čerpadlo alebo zmiešavač.",
+        "sections": {
+          "mode": {
+            "name": "Režim",
+            "data": {
+              "capabilities": "Čo zdroj vie",
+              "mode_entity": "Entita zdroja režimu",
+              "heat_values": "Hodnoty pre kúrenie",
+              "cool_values": "Hodnoty pre chladenie",
+              "off_values": "Hodnoty pre vypnuté"
+            },
+            "data_description": {
+              "capabilities": "Plynový kotol iba kúri, reverzibilné tepelné čerpadlo kúri aj chladí.",
+              "mode_entity": "Climate (hvac režim), select alebo senzor (hodnoty nižšie), alebo switch/binárny senzor (zapnuté = kúrenie). Nepovinné.",
+              "heat_values": "Iba pre zdroje typu select, input_select a sensor."
+            }
+          },
+          "fallback": {
+            "name": "Záloha, keď zdroj nie je dostupný",
+            "data": {
+              "kind": "Záloha",
+              "sensor": "Senzor teploty",
+              "heat_threshold": "Prah kúrenia",
+              "cool_threshold": "Prah chladenia"
+            },
+            "data_description": {
+              "kind": "Nádrž: teplá voda znamená kúrenie. Vonkajšia: zima vonku znamená kúrenie.",
+              "heat_threshold": "Nádrž: kúrenie od tejto teploty vyššie. Vonkajšia: kúrenie od tejto teploty nižšie.",
+              "cool_threshold": "Nádrž: chladenie od tejto teploty nižšie. Vonkajšia: chladenie od tejto teploty vyššie."
+            }
+          },
+          "weather": {
+            "name": "Počasie",
+            "data": {
+              "outdoor_sensor": "Senzor vonkajšej teploty"
+            }
+          },
+          "zone_control": {
+            "name": "Termostaty zón",
+            "description": "Pri zmene režimu sa najprv vypnú termostaty opačného režimu; nové sa zapnú, až keď všetky hlásia vypnuté. Termostat opačného režimu, ktorý sa neskôr zapne, sa znova vypne. Iba pri zapnutom Ovládať zariadenia.",
+            "data": {
+              "switch_zones": "Prepínať termostaty s režimom"
+            }
+          },
+          "hot_water": {
+            "name": "Cirkulácia TUV",
+            "description": "Cirkulačné čerpadlo s hysteréziou: zapne pod prah − delta, vypne pri dosiahnutí prahu. Ak dom cirkuláciu nemá, nechaj prázdne.",
+            "data": {
+              "circulation_sensor": "Teplota spiatočky cirkulácie",
+              "circulation_pump": "Cirkulačné čerpadlo",
+              "threshold": "Prah (čerpadlo vypne)",
+              "delta": "Delta (čerpadlo zapne pod prah − delta)"
+            },
+            "data_description": {
+              "circulation_sensor": "Teplota na konci cirkulačného okruhu.",
+              "threshold": "Dá sa meniť aj na zariadení Hot water."
+            }
+          },
+          "display": {
+            "name": "Zobrazované senzory",
+            "data": {
+              "info_sensors": "Senzory zobrazené pri režime"
+            },
+            "data_description": {
+              "info_sensors": "Ich hodnoty sa zobrazia v atribútoch senzora režimu, napr. TUV, akumulačka alebo výstup tepelného čerpadla."
+            }
+          },
+          "protection": {
+            "name": "Ochrany",
+            "description": "Pauza medzi kúrením a chladením, pravidelné prevádzkovanie nepoužívaných čerpadiel a ventilov a homing zmiešavačov pri štarte. Iba pri zapnutom Ovládať zariadenia.",
+            "data": {
+              "mode_pause": "Pauza pri prepnutí medzi kúrením a chladením",
+              "exercise_days": "Prevádzkovať nepoužívané čerpadlá a ventily po",
+              "home_mixers_on_start": "Homovať zmiešavače pri štarte Home Assistanta"
+            },
+            "data_description": {
+              "mode_pause": "Minúty, ktoré nový režim čaká po zastavení druhého. Návrat do predošlého režimu pauzu nepotrebuje.",
+              "exercise_days": "Dní bez behu; 0 vypne prevádzkovanie.",
+              "home_mixers_on_start": "Asi 30 s po štarte Home Assistanta zatvorí každý zmiešavač na doraz, lebo poloha sa mohla zmeniť, kým nebežal. Trvá jeden celý zdvih; vypnuté ponechá uloženú polohu. Nie pri reloade integrácie."
+            }
+          }
+        }
+      }
+    },
+    "error": {
+      "no_capabilities": "Vyber aspoň jeden režim, ktorý zdroj vie.",
+      "fallback_sensor_required": "Záloha potrebuje senzor teploty.",
+      "circulation_needs_sensor_and_pump": "Cirkulácia potrebuje teplotný senzor aj čerpadlo."
+    },
+    "abort": {
+      "single_instance_allowed": "Climate Circuits je už nastavená."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Climate Circuits",
+        "description": "Určuje režim domu a riadi okruhy kúrenia a chladenia. Po nastavení pridaj okruh pre každé čerpadlo alebo zmiešavač.",
+        "sections": {
+          "mode": {
+            "name": "Režim",
+            "data": {
+              "capabilities": "Čo zdroj vie",
+              "mode_entity": "Entita zdroja režimu",
+              "heat_values": "Hodnoty pre kúrenie",
+              "cool_values": "Hodnoty pre chladenie",
+              "off_values": "Hodnoty pre vypnuté"
+            },
+            "data_description": {
+              "capabilities": "Plynový kotol iba kúri, reverzibilné tepelné čerpadlo kúri aj chladí.",
+              "mode_entity": "Climate (hvac režim), select alebo senzor (hodnoty nižšie), alebo switch/binárny senzor (zapnuté = kúrenie). Nepovinné.",
+              "heat_values": "Iba pre zdroje typu select, input_select a sensor."
+            }
+          },
+          "fallback": {
+            "name": "Záloha, keď zdroj nie je dostupný",
+            "data": {
+              "kind": "Záloha",
+              "sensor": "Senzor teploty",
+              "heat_threshold": "Prah kúrenia",
+              "cool_threshold": "Prah chladenia"
+            },
+            "data_description": {
+              "kind": "Nádrž: teplá voda znamená kúrenie. Vonkajšia: zima vonku znamená kúrenie.",
+              "heat_threshold": "Nádrž: kúrenie od tejto teploty vyššie. Vonkajšia: kúrenie od tejto teploty nižšie.",
+              "cool_threshold": "Nádrž: chladenie od tejto teploty nižšie. Vonkajšia: chladenie od tejto teploty vyššie."
+            }
+          },
+          "weather": {
+            "name": "Počasie",
+            "data": {
+              "outdoor_sensor": "Senzor vonkajšej teploty"
+            }
+          },
+          "zone_control": {
+            "name": "Termostaty zón",
+            "description": "Pri zmene režimu sa najprv vypnú termostaty opačného režimu; nové sa zapnú, až keď všetky hlásia vypnuté. Termostat opačného režimu, ktorý sa neskôr zapne, sa znova vypne. Iba pri zapnutom Ovládať zariadenia.",
+            "data": {
+              "switch_zones": "Prepínať termostaty s režimom"
+            }
+          },
+          "hot_water": {
+            "name": "Cirkulácia TUV",
+            "description": "Cirkulačné čerpadlo s hysteréziou: zapne pod prah − delta, vypne pri dosiahnutí prahu. Ak dom cirkuláciu nemá, nechaj prázdne.",
+            "data": {
+              "circulation_sensor": "Teplota spiatočky cirkulácie",
+              "circulation_pump": "Cirkulačné čerpadlo",
+              "threshold": "Prah (čerpadlo vypne)",
+              "delta": "Delta (čerpadlo zapne pod prah − delta)"
+            },
+            "data_description": {
+              "circulation_sensor": "Teplota na konci cirkulačného okruhu.",
+              "threshold": "Dá sa meniť aj na zariadení Hot water."
+            }
+          },
+          "display": {
+            "name": "Zobrazované senzory",
+            "data": {
+              "info_sensors": "Senzory zobrazené pri režime"
+            },
+            "data_description": {
+              "info_sensors": "Ich hodnoty sa zobrazia v atribútoch senzora režimu, napr. TUV, akumulačka alebo výstup tepelného čerpadla."
+            }
+          },
+          "protection": {
+            "name": "Ochrany",
+            "description": "Pauza medzi kúrením a chladením, pravidelné prevádzkovanie nepoužívaných čerpadiel a ventilov a homing zmiešavačov pri štarte. Iba pri zapnutom Ovládať zariadenia.",
+            "data": {
+              "mode_pause": "Pauza pri prepnutí medzi kúrením a chladením",
+              "exercise_days": "Prevádzkovať nepoužívané čerpadlá a ventily po",
+              "home_mixers_on_start": "Homovať zmiešavače pri štarte Home Assistanta"
+            },
+            "data_description": {
+              "mode_pause": "Minúty, ktoré nový režim čaká po zastavení druhého. Návrat do predošlého režimu pauzu nepotrebuje.",
+              "exercise_days": "Dní bez behu; 0 vypne prevádzkovanie.",
+              "home_mixers_on_start": "Asi 30 s po štarte Home Assistanta zatvorí každý zmiešavač na doraz, lebo poloha sa mohla zmeniť, kým nebežal. Trvá jeden celý zdvih; vypnuté ponechá uloženú polohu. Nie pri reloade integrácie."
+            }
+          }
+        }
+      }
+    },
+    "error": {
+      "no_capabilities": "Vyber aspoň jeden režim, ktorý zdroj vie.",
+      "fallback_sensor_required": "Záloha potrebuje senzor teploty.",
+      "circulation_needs_sensor_and_pump": "Cirkulácia potrebuje teplotný senzor aj čerpadlo."
+    }
+  },
+  "config_subentries": {
+    "circuit": {
+      "step": {
+        "user": {
+          "title": "Okruh",
+          "description": "Jedno čerpadlo a zmiešavač so zónami a ekvitermickými krivkami.",
+          "data": {
+            "name": "Názov"
+          },
+          "sections": {
+            "zones": {
+              "name": "Zóny",
+              "data": {
+                "heating_zones": "Termostaty na kúrenie",
+                "cooling_zones": "Termostaty na chladenie",
+                "humidity_sensors": "Senzory vlhkosti"
+              },
+              "data_description": {
+                "heating_zones": "Bez termostatov pre daný režim okruh beží vždy, keď je dom v tom režime.",
+                "humidity_sensors": "Na výpočet rosného bodu pri chladení."
+              }
+            },
+            "heat_curve": {
+              "name": "Krivka kúrenia",
+              "data": {
+                "room": "Teplota v izbe",
+                "minimum": "Minimálna teplota vody",
+                "maximum": "Maximálna teplota vody",
+                "correction": "Korekcia",
+                "design_outdoor": "Návrhová vonkajšia teplota",
+                "design_supply": "Návrhová teplota vody",
+                "exponent": "Exponent vykurovacích telies"
+              },
+              "data_description": {
+                "design_outdoor": "Najnižšia vonkajšia teplota, na ktorú je sústava navrhnutá, napr. −15 °C.",
+                "design_supply": "Teplota vody potrebná pri návrhovej vonkajšej teplote.",
+                "exponent": "Radiátory 1,3, podlahové kúrenie 1,1. Vyšší viac ohne krivku."
+              }
+            },
+            "cool_curve": {
+              "name": "Krivka chladenia",
+              "data": {
+                "room": "Teplota v izbe",
+                "slope": "Strmosť",
+                "minimum": "Minimálna teplota vody",
+                "maximum": "Maximálna teplota vody",
+                "correction": "Korekcia"
+              }
+            },
+            "outputs": {
+              "name": "Výstupy",
+              "description": "Ovládajú sa iba pri zapnutom Ovládať zariadenia; inak sa rozhodnutia ukazujú v Aktivite ako skúšobný režim.",
+              "data": {
+                "pump": "Čerpadlo",
+                "mixer_open": "Relé zmiešavača otvor",
+                "mixer_close": "Relé zmiešavača zatvor",
+                "supply_sensor": "Teplota vody za zmiešavačom",
+                "travel": "Čas celej dráhy ventilu",
+                "hysteresis": "Hysteréza",
+                "mixer_position": "Poloha zmiešavača",
+                "pump_delay": "Oneskorenie štartu čerpadla",
+                "pump_run_on": "Dobeh čerpadla"
+              },
+              "data_description": {
+                "mixer_position": "Cover starej integrácie; jeho poloha slúži iba ako prvý odhad, kým sa ventil nezahomuje.",
+                "pump_delay": "Sekundy požiadavky pred štartom čerpadla, aby sa stihli otvoriť ventily zón.",
+                "pump_run_on": "Sekundy, počas ktorých čerpadlo beží po skončení požiadavky na kúrenie."
+              }
+            }
+          }
+        },
+        "reconfigure": {
+          "title": "Okruh",
+          "description": "Jedno čerpadlo a zmiešavač so zónami a ekvitermickými krivkami.",
+          "data": {
+            "name": "Názov"
+          },
+          "sections": {
+            "zones": {
+              "name": "Zóny",
+              "data": {
+                "heating_zones": "Termostaty na kúrenie",
+                "cooling_zones": "Termostaty na chladenie",
+                "humidity_sensors": "Senzory vlhkosti"
+              },
+              "data_description": {
+                "heating_zones": "Bez termostatov pre daný režim okruh beží vždy, keď je dom v tom režime.",
+                "humidity_sensors": "Na výpočet rosného bodu pri chladení."
+              }
+            },
+            "heat_curve": {
+              "name": "Krivka kúrenia",
+              "data": {
+                "room": "Teplota v izbe",
+                "minimum": "Minimálna teplota vody",
+                "maximum": "Maximálna teplota vody",
+                "correction": "Korekcia",
+                "design_outdoor": "Návrhová vonkajšia teplota",
+                "design_supply": "Návrhová teplota vody",
+                "exponent": "Exponent vykurovacích telies"
+              },
+              "data_description": {
+                "design_outdoor": "Najnižšia vonkajšia teplota, na ktorú je sústava navrhnutá, napr. −15 °C.",
+                "design_supply": "Teplota vody potrebná pri návrhovej vonkajšej teplote.",
+                "exponent": "Radiátory 1,3, podlahové kúrenie 1,1. Vyšší viac ohne krivku."
+              }
+            },
+            "cool_curve": {
+              "name": "Krivka chladenia",
+              "data": {
+                "room": "Teplota v izbe",
+                "slope": "Strmosť",
+                "minimum": "Minimálna teplota vody",
+                "maximum": "Maximálna teplota vody",
+                "correction": "Korekcia"
+              }
+            },
+            "outputs": {
+              "name": "Výstupy",
+              "description": "Ovládajú sa iba pri zapnutom Ovládať zariadenia; inak sa rozhodnutia ukazujú v Aktivite ako skúšobný režim.",
+              "data": {
+                "pump": "Čerpadlo",
+                "mixer_open": "Relé zmiešavača otvor",
+                "mixer_close": "Relé zmiešavača zatvor",
+                "supply_sensor": "Teplota vody za zmiešavačom",
+                "travel": "Čas celej dráhy ventilu",
+                "hysteresis": "Hysteréza",
+                "mixer_position": "Poloha zmiešavača",
+                "pump_delay": "Oneskorenie štartu čerpadla",
+                "pump_run_on": "Dobeh čerpadla"
+              },
+              "data_description": {
+                "mixer_position": "Cover starej integrácie; jeho poloha slúži iba ako prvý odhad, kým sa ventil nezahomuje.",
+                "pump_delay": "Sekundy požiadavky pred štartom čerpadla, aby sa stihli otvoriť ventily zón.",
+                "pump_run_on": "Sekundy, počas ktorých čerpadlo beží po skončení požiadavky na kúrenie."
+              }
+            }
+          }
+        }
+      },
+      "error": {
+        "curve_min_above_max": "Minimálna teplota vody je vyššia ako maximálna.",
+        "mixer_needs_both_relays": "Zmiešavač potrebuje relé otvor aj zatvor.",
+        "mixer_relays_same": "Relé otvor a zatvor musia byť rôzne.",
+        "mixer_needs_supply_sensor": "Zmiešavač potrebuje senzor teploty za zmiešavačom.",
+        "design_outdoor_above_room": "Návrhová vonkajšia teplota musí byť nižšia ako teplota v izbe."
+      },
+      "initiate_flow": {
+        "user": "Pridať okruh"
+      },
+      "entry_type": "Okruh",
+      "abort": {
+        "reconfigure_successful": "Okruh bol upravený."
+      }
+    }
+  },
+  "selector": {
+    "capabilities": {
+      "options": {
+        "heat": "Kúrenie",
+        "cool": "Chladenie"
+      }
+    },
+    "kind": {
+      "options": {
+        "none": "Žiadna",
+        "tank": "Akumulačná nádrž alebo výstup zdroja",
+        "outdoor": "Vonkajšia teplota"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "mode": {
+        "name": "Režim",
+        "state": {
+          "heat": "Kúrenie",
+          "cool": "Chladenie",
+          "off": "Vypnuté"
+        },
+        "state_attributes": {
+          "source": {
+            "name": "Zdroj"
+          },
+          "decided_by": {
+            "name": "Rozhodlo"
+          },
+          "reason": {
+            "name": "Dôvod"
+          },
+          "override": {
+            "name": "Ručný režim"
+          },
+          "last_mode": {
+            "name": "Posledný režim"
+          },
+          "source_entity": {
+            "name": "Entita zdroja režimu"
+          },
+          "source_state": {
+            "name": "Stav zdroja"
+          },
+          "source_action": {
+            "name": "Činnosť zdroja"
+          },
+          "fallback_sensor": {
+            "name": "Záložný senzor"
+          },
+          "fallback_temperature": {
+            "name": "Záložná teplota"
+          },
+          "heat_threshold": {
+            "name": "Prah kúrenia"
+          },
+          "cool_threshold": {
+            "name": "Prah chladenia"
+          },
+          "outdoor_temperature": {
+            "name": "Vonkajšia teplota"
+          },
+          "zones_must_be_off": {
+            "name": "Musia byť vypnuté"
+          },
+          "zones_still_on": {
+            "name": "Ešte zapnuté"
+          },
+          "zones_waiting_to_turn_on": {
+            "name": "Čakajú na zapnutie"
+          },
+          "zones_failed": {
+            "name": "Nepodarilo sa vypnúť"
+          }
+        }
+      },
+      "status": {
+        "name": "Stav",
+        "state": {
+          "dry_run": "Skúšobný režim",
+          "ok": "OK"
+        }
+      },
+      "target_water_temperature": {
+        "name": "Cieľová teplota vody"
+      },
+      "state": {
+        "name": "Stav",
+        "state": {
+          "heating": "Kúri",
+          "cooling": "Chladí",
+          "idle": "Nečinný",
+          "off": "Vypnutý"
+        },
+        "state_attributes": {
+          "reason": {
+            "name": "Dôvod"
+          }
+        }
+      },
+      "circulation": {
+        "name": "Stav cirkulácie",
+        "state": {
+          "running": "Beží",
+          "stopped": "Stojí",
+          "disabled": "Vypnutá",
+          "unavailable": "Nedostupná"
+        },
+        "state_attributes": {
+          "reason": {
+            "name": "Dôvod"
+          },
+          "temperature": {
+            "name": "Teplota"
+          },
+          "starts_below": {
+            "name": "Zapne pod"
+          },
+          "stops_at": {
+            "name": "Vypne pri"
+          },
+          "pump": {
+            "name": "Čerpadlo"
+          },
+          "pump_on": {
+            "name": "Čerpadlo zapnuté"
+          },
+          "controlled": {
+            "name": "Čerpadlo ovládané"
+          }
+        }
+      },
+      "circulation_temperature": {
+        "name": "Teplota cirkulácie"
+      },
+      "calling_zones": {
+        "name": "Volajúce zóny",
+        "state_attributes": {
+          "count": {
+            "name": "Počet"
+          },
+          "zones": {
+            "name": "Zóny"
+          }
+        }
+      },
+      "mixer_position": {
+        "name": "Poloha zmiešavača",
+        "state_attributes": {
+          "supply_temperature": {
+            "name": "Teplota za zmiešavačom"
+          },
+          "target_temperature": {
+            "name": "Cieľová teplota"
+          },
+          "source": {
+            "name": "Zdroj"
+          },
+          "position_known": {
+            "name": "Poloha známa"
+          },
+          "movement": {
+            "name": "Pohyb"
+          },
+          "proposed": {
+            "name": "Ďalší krok"
+          }
+        }
+      },
+      "mixer_state": {
+        "name": "Stav zmiešavača",
+        "state": {
+          "idle": "Stojí",
+          "opening": "Otvára",
+          "closing": "Zatvára",
+          "homing": "Homing (zatvára na doraz)",
+          "unknown": "Poloha neznáma"
+        }
+      }
+    },
+    "binary_sensor": {
+      "demand": {
+        "name": "Požiadavka"
+      },
+      "pump": {
+        "name": "Čerpadlo",
+        "state_attributes": {
+          "controlled": {
+            "name": "Ovládané"
+          },
+          "reason": {
+            "name": "Dôvod"
+          },
+          "wanted": {
+            "name": "Chce integrácia"
+          },
+          "entity": {
+            "name": "Relé"
+          }
+        }
+      }
+    },
+    "select": {
+      "mode_override": {
+        "name": "Ručný režim",
+        "state": {
+          "auto": "Automaticky",
+          "heat": "Kúrenie",
+          "cool": "Chladenie",
+          "off": "Vypnuté"
+        }
+      }
+    },
+    "switch": {
+      "control_equipment": {
+        "name": "Ovládať zariadenia"
+      },
+      "circulation_enabled": {
+        "name": "Cirkulácia povolená"
+      },
+      "circuit_control": {
+        "name": "Ovládať čerpadlo a zmiešavač"
+      }
+    },
+    "number": {
+      "circulation_threshold": {
+        "name": "Prah cirkulácie"
+      },
+      "circulation_delta": {
+        "name": "Delta cirkulácie"
+      }
+    }
+  },
+  "exceptions": {
+    "curve_min_above_max": {
+      "message": "Minimálna teplota vody nemôže byť vyššia ako maximálna."
+    },
+    "design_outdoor_above_room": {
+      "message": "Návrhová vonkajšia teplota musí byť nižšia ako teplota v izbe."
+    },
+    "curve_unknown_parameter": {
+      "message": "Nie je parameter tejto krivky: {parameters}"
+    }
+  },
+  "services": {
+    "set_curve": {
+      "name": "Nastaviť ekvitermickú krivku",
+      "description": "Zmení parametre krivky kúrenia alebo chladenia okruhu. Cieľom je senzor cieľovej teploty vody okruhu.",
+      "fields": {
+        "mode": {
+          "name": "Režim",
+          "description": "Režim"
+        },
+        "room": {
+          "name": "Teplota v izbe",
+          "description": "Teplota v izbe"
+        },
+        "design_outdoor": {
+          "name": "Návrhová vonkajšia teplota",
+          "description": "Návrhová vonkajšia teplota"
+        },
+        "design_supply": {
+          "name": "Návrhová teplota vody",
+          "description": "Návrhová teplota vody"
+        },
+        "exponent": {
+          "name": "Exponent vykurovacích telies",
+          "description": "Exponent vykurovacích telies"
+        },
+        "slope": {
+          "name": "Strmosť (chladenie)",
+          "description": "Strmosť (chladenie)"
+        },
+        "minimum": {
+          "name": "Minimálna teplota vody",
+          "description": "Minimálna teplota vody"
+        },
+        "maximum": {
+          "name": "Maximálna teplota vody",
+          "description": "Maximálna teplota vody"
+        },
+        "correction": {
+          "name": "Korekcia",
+          "description": "Korekcia"
+        }
+      }
+    }
+  }
+}

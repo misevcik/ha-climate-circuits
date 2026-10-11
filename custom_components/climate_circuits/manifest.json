@@ -1,0 +1,14 @@
+{
+  "domain": "climate_circuits",
+  "name": "Climate Circuits",
+  "after_dependencies": ["climate", "frontend", "http", "logbook", "lovelace"],
+  "codeowners": ["@misevcik"],
+  "config_flow": true,
+  "documentation": "https://github.com/misevcik/ha-climate-circuits",
+  "integration_type": "service",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/misevcik/ha-climate-circuits/issues",
+  "requirements": [],
+  "single_config_entry": true,
+  "version": "0.1.0"
+}
