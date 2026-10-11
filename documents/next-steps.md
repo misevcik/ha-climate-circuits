@@ -106,3 +106,9 @@ Kód hotový lokálne (151 testov, ruff OK): čerpadlá okruhov, vlastná poloha
 ## Súvisiace, mimo integrácie
 - [ ] SA8R-011: overiť po novom firmvéri, či sa pri výpadkoch nuluje `Uptime`, počet výpadkov za deň
 - [ ] SA8R-011: osadiť RC členy na servopohony zmiešavačov
+
+## GitHub a HACS (2026-10-11)
+- [x] Verejné repo `misevcik/ha-climate-circuits`, história zlúčená do jedného commitu, citlivé údaje z dokumentov odstránené
+- [ ] Pridať repo do HACS ako Custom repository (typ Integration) a nainštalovať cez HACS namiesto File editora
+- [ ] Vydať release `v0.1.0` (HACS ponúka verzie podľa releasov/tagov)
+- [ ] Popis a topics repa na GitHube (napr. `home-assistant`, `hacs`, `heating`)

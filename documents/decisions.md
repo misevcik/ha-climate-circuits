@@ -11,6 +11,12 @@ Názov: **Climate Circuits**, doména `climate_circuits`, repozitár `ha-climate
 - Ponechané: zónové termostaty `*_cool`, `climate.gf_thermostat` a jeho pomocné entity (používa ich integrácia), `binary_sensor.f1_occupancy` (nejednoznačné vyhľadávanie).
 - **Čaká:** `switch.gf_sw_bedroom_cool` a `light.cfg_wintergarden_stairs` sa nezmazali (zablokované povolením v Claude Code) – zmazať ručne v Settings → Helpers, alebo povoliť nástroj.
 
+## 2026-10-11 – zverejnenie na GitHube
+- Repo `github.com/misevcik/ha-climate-circuits`, **public** – HACS súkromné repá nepodporuje, inštalácia pôjde cez HACS (Custom repository).
+- Pred prvým pushom **zahodená lokálna história** (35 commitov) a nahradená jedným commitom `Climate Circuits 0.1.0`. Z dokumentov odstránené ID tepelného čerpadla v AUX cloude, IP reléovej dosky a ID config entry v HA. Autor commitov ostáva `misevcik@gmail.com` (rozhodnutie používateľa).
+- Stará história je zálohovaná lokálne v `~/work/ha-climate-circuits-history.bundle` (nie na GitHube). **Hashe commitov uvedené v starších záznamoch tohto denníka sú len v tejto zálohe.**
+- Prístup: SSH kľúč `~/.ssh/github_ed25519`, remote `origin` = `git@github.com:misevcik/ha-climate-circuits.git`.
+
 ## 2026-10-11 – voliteľný homing zmiešavačov pri štarte HA
 - Otázka používateľa: „pri reštarte by sa mali vždy zahomovať?“ Doteraz sa pri štarte homovalo len pri neznámej polohe (uložená poloha sa prevezme). Homing trvá jeden zdvih (~125 s) a zatvorí prívod, preto nie vždy.
 - Nové nastavenie domu `protection.home_mixers_on_start` (**Homovať zmiešavače pri štarte HA**), predvolene vypnuté. Zapnuté: pri štarte Home Assistanta sa uložená poloha zahodí a zmiešavač sa ~30 s po štarte zahomuje (len okruh, ktorý integrácia ostro ovláda). Pri reloade integrácie (zmena nastavení) nie – rozlišuje sa podľa `hass.is_running` pri vytvorení `House`.
