@@ -110,5 +110,6 @@ Kód hotový lokálne (151 testov, ruff OK): čerpadlá okruhov, vlastná poloha
 ## GitHub a HACS (2026-10-11)
 - [x] Verejné repo `misevcik/ha-climate-circuits`, história zlúčená do jedného commitu, citlivé údaje z dokumentov odstránené
 - [ ] Pridať repo do HACS ako Custom repository (typ Integration) a nainštalovať cez HACS namiesto File editora
-- [ ] Vydať release `v0.1.0` (HACS ponúka verzie podľa releasov/tagov)
+- [x] Release `v0.1.0` vydaný 2026-10-11 (tag pushnutý, release vytvorený na webe)
+- [ ] Prepísať `README.md` (zastaraný: „Míľnik 1 – iba sleduje“, po slovensky) – HACS ho zobrazuje ako popis
 - [ ] Popis a topics repa na GitHube (napr. `home-assistant`, `hacs`, `heating`)
