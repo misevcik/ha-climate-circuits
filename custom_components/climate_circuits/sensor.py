@@ -9,7 +9,7 @@ from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, Sen
 from homeassistant.const import PERCENTAGE, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
-from homeassistant.helpers import entity_platform
+from homeassistant.helpers import entity_platform, entity_registry as er
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import ClimateCircuitsConfigEntry
@@ -34,6 +34,8 @@ from .core.texts import (
     zone_text,
 )
 from .entity import CircuitEntity, HotWaterEntity, HouseEntity, SourceEntity
+from .house import House
+from .states import number, state_of
 
 _TEMP = vol.All(vol.Coerce(float), vol.Range(min=-40, max=90))
 SET_CURVE_SCHEMA = {
@@ -60,6 +62,7 @@ async def async_setup_entry(
     )
     house = entry.runtime_data
     async_add_entities([ModeSensor(house, "mode"), StatusSensor(house, "status")])
+    async_add_entities([InfoSensor(house, entity_id) for entity_id in house.settings.info_sensors])
     if house.hot_water:
         async_add_entities(
             [
@@ -101,6 +104,52 @@ class ModeSensor(HouseEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         return self.house.mode_details()
+
+
+class InfoSensor(HouseEntity, SensorEntity):
+    """An overview sensor (Display section) shown on the house device with its own name."""
+
+    def __init__(self, house: House, entity_id: str) -> None:
+        super().__init__(house, f"info_{entity_id}")
+        self._attr_translation_key = None
+        self._source_entity = entity_id
+        registered = er.async_get(house.hass).async_get(entity_id)
+        state = house.hass.states.get(entity_id)
+        self._attr_name = (
+            (registered and (registered.name or registered.original_name))
+            or (state and state.name)
+            or entity_id
+        )
+
+    def _number(self) -> float | None:
+        state = state_of(self.hass, self._source_entity)
+        return number(state.state) if state else None
+
+    @property
+    def native_value(self) -> float | str | None:
+        if (state := state_of(self.hass, self._source_entity)) is None:
+            return None
+        value = number(state.state)
+        return value if value is not None else state.state
+
+    @property
+    def native_unit_of_measurement(self) -> str | None:
+        state = self.hass.states.get(self._source_entity)
+        return state.attributes.get("unit_of_measurement") if state else None
+
+    @property
+    def device_class(self) -> SensorDeviceClass | None:
+        state = self.hass.states.get(self._source_entity)
+        if state is None or self._number() is None:
+            return None
+        try:
+            return SensorDeviceClass(state.attributes.get("device_class"))
+        except ValueError:
+            return None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        return {"entity": self._source_entity}
 
 
 class StatusSensor(HouseEntity, SensorEntity):

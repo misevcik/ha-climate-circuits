@@ -15,7 +15,7 @@ At an end stop the relay is pulsed now and then so the valve really sits there.
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum
 
 
@@ -46,6 +46,8 @@ class MixerAction:
     reason: str
     end_pulse: bool = False
     homing: bool = False
+    why: str = ""  # supply, source, no_demand, idle_pulse, end_stop, homing (for Activity)
+    values: dict[str, float] = field(default_factory=dict)
 
 
 def advance(position: float, direction: Direction, seconds: float, travel: float) -> float:
@@ -84,7 +86,12 @@ def source_compensation(
 
 def homing_action(settings: MixerSettings, reason: str) -> MixerAction:
     return MixerAction(
-        Direction.CLOSE, settings.travel + settings.end_pulse, reason, end_pulse=True, homing=True
+        Direction.CLOSE,
+        settings.travel + settings.end_pulse,
+        reason,
+        end_pulse=True,
+        homing=True,
+        why="homing",
     )
 
 
@@ -94,10 +101,14 @@ def _end_pulse(
     interval: float,
     settings: MixerSettings,
     reason: str,
+    why: str,
+    values: dict[str, float] | None = None,
 ) -> MixerAction | None:
     if since_pulse is not None and since_pulse < interval:
         return None
-    return MixerAction(direction, settings.end_pulse, reason, end_pulse=True)
+    return MixerAction(
+        direction, settings.end_pulse, reason, end_pulse=True, why=why, values=values or {}
+    )
 
 
 def regulate(
@@ -124,13 +135,21 @@ def regulate(
     if not demand:
         if position > 0:
             seconds = position / 100.0 * settings.travel + settings.end_pulse
-            return MixerAction(Direction.CLOSE, seconds, "no demand, closing", end_pulse=True)
+            return MixerAction(
+                Direction.CLOSE,
+                seconds,
+                "no demand, closing",
+                end_pulse=True,
+                why="no_demand",
+                values={"position": position},
+            )
         return _end_pulse(
             Direction.CLOSE,
             since_end_pulse,
             settings.idle_pulse_interval,
             settings,
             "no demand, closed",
+            "idle_pulse",
         )
     if heating and None not in (supply, source, source_ref):
         change = source_compensation(position, supply, source, source_ref, settings)  # type: ignore[arg-type]
@@ -140,7 +159,13 @@ def regulate(
             step = min(abs(change), float(settings.max_step), room)
             if step >= settings.min_step:
                 reason = f"{direction} {step:.0f} % (source {source_ref:.1f} -> {source:.1f})"
-                return MixerAction(direction, step / 100.0 * settings.travel, reason)
+                return MixerAction(
+                    direction,
+                    step / 100.0 * settings.travel,
+                    reason,
+                    why="source",
+                    values={"step": step, "ref": source_ref, "source": source, "supply": supply},
+                )
     if target is None or supply is None or abs(target - supply) <= settings.hysteresis:
         return None
     if since_move is not None and since_move < settings.settle:
@@ -160,10 +185,52 @@ def regulate(
             settings.end_pulse_interval,
             settings,
             f"at end stop, {direction}",
+            "end_stop",
+            {"supply": supply, "target": target, "position": position},
         )
     step = min(float(step_size(target - supply, settings)), room)
     seconds = step / 100.0 * settings.travel
     reason = f"{direction} {step:.0f} % (target {target:.1f}, supply {supply:.1f})"
+    values = {"step": step, "supply": supply, "target": target}
     if step == room:
-        return MixerAction(direction, seconds + settings.end_pulse, reason, end_pulse=True)
-    return MixerAction(direction, seconds, reason)
+        return MixerAction(
+            direction,
+            seconds + settings.end_pulse,
+            reason,
+            end_pulse=True,
+            why="supply",
+            values=values,
+        )
+    return MixerAction(direction, seconds, reason, why="supply", values=values)
+
+
+def hold_reason(
+    *,
+    demand: bool,
+    target: float | None,
+    supply: float | None,
+    position: float | None,
+    settings: MixerSettings,
+    since_move: float | None = None,
+    trend: float | None = None,
+) -> tuple[str, dict[str, float]] | None:
+    """Why regulate() stays, for Activity; None when there is nothing worth saying.
+
+    Waiting for the last move to show is left out: it follows every move.
+    """
+    if not demand or position is None:
+        return None
+    if target is None:
+        return "no_target", {}
+    if supply is None:
+        return "no_supply", {}
+    values = {"supply": supply, "target": target, "position": position}
+    if abs(target - supply) <= settings.hysteresis:
+        return "band", values | {"hysteresis": settings.hysteresis}
+    if since_move is not None and since_move < settings.settle:
+        return None
+    if trend is not None:
+        expected = supply + trend * settings.settle / 60.0
+        if (target - supply) * (target - expected) <= 0:
+            return "heading", values | {"trend": trend}
+    return None

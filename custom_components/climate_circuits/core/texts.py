@@ -83,7 +83,6 @@ _SK = {
     "block_dew_point": "Chladenie zastavené – voda {supply} je pod rosným bodom {dew} + 2 K",
     "block_no_humidity": "Chladenie zablokované – chýbajú údaje o vlhkosti",
     "mixer": "Zmiešavač {name}: {reason}",
-    "mixer_proposal": "Zmiešavač {name} by: {reason}",
     "mixer_homing": "Zmiešavač {name}: homing, zatváram celú dráhu",
     "mixer_homed": "Zmiešavač {name}: homing hotový, poloha 0 %",
     "mixer_homing_cut": "Zmiešavač {name}: homing prerušený (relé vypol niekto iný), zopakujem",
@@ -91,6 +90,25 @@ _SK = {
     "mixer_both": "Zmiešavač {name}: obe relé zapnuté, vypínam",
     "mixer_stray": "Zmiešavač {name}: relé zapnuté bez príkazu, vypínam",
     "relay_failed": "{label}: príkaz nepotvrdený po {n} pokusoch",
+    "mx_open": "otváram o {step} %",
+    "mx_close": "zatváram o {step} %",
+    "mx_below": "pod",
+    "mx_above": "nad",
+    "mx_fell": "klesol",
+    "mx_rose": "stúpol",
+    "mx_supply": "Zmiešavač {name}: {move} – prívod {supply} je o {diff} {rel} cieľom {target}",
+    "mx_source": "Zmiešavač {name}: {move} – zdroj {change} z {ref} na {source}, "
+    "aby prívod ostal na {supply}",
+    "mx_no_demand": "Zmiešavač {name}: zatváram z {position} – okruh nemá požiadavku",
+    "mx_idle_pulse": "Zmiešavač {name}: dotlak zatvoreného zmiešavača (bez požiadavky, raz za 6 h)",
+    "mx_end_stop": "Zmiešavač {name}: dotlak na doraze {position} – prívod {supply} je stále "
+    "{rel} cieľom {target}",
+    "mx_hold_band": "Zmiešavač {name}: držím {position} – prívod {supply} je v pásme "
+    "±{hysteresis} okolo cieľa {target}",
+    "mx_hold_heading": "Zmiešavač {name}: držím {position} – prívod {supply} sa už sám blíži "
+    "k cieľu {target} ({trend}/min)",
+    "mx_hold_no_supply": "Zmiešavač {name}: držím – chýba teplota prívodu",
+    "mx_hold_no_target": "Zmiešavač {name}: držím – chýba cieľová teplota vody",
 }
 _EN = {
     "heating": "Heating",
@@ -164,7 +182,6 @@ _EN = {
     "block_dew_point": "Cooling stopped – water {supply} is below the dew point {dew} + 2 K",
     "block_no_humidity": "Cooling blocked – no humidity data",
     "mixer": "Mixer {name}: {reason}",
-    "mixer_proposal": "Mixer {name} would: {reason}",
     "mixer_homing": "Mixer {name}: homing, closing the full travel",
     "mixer_homed": "Mixer {name}: homing finished, position 0 %",
     "mixer_homing_cut": "Mixer {name}: homing cut short by another switch-off, will retry",
@@ -172,6 +189,25 @@ _EN = {
     "mixer_both": "Mixer {name}: both relays on, turning them off",
     "mixer_stray": "Mixer {name}: relay on without a command, turning it off",
     "relay_failed": "{label}: command not confirmed after {n} attempts",
+    "mx_open": "opening {step} %",
+    "mx_close": "closing {step} %",
+    "mx_below": "below",
+    "mx_above": "above",
+    "mx_fell": "fell",
+    "mx_rose": "rose",
+    "mx_supply": "Mixer {name}: {move} – supply {supply} is {diff} {rel} the target {target}",
+    "mx_source": "Mixer {name}: {move} – the source {change} from {ref} to {source}, "
+    "keeping the supply at {supply}",
+    "mx_no_demand": "Mixer {name}: closing from {position} – the circuit has no demand",
+    "mx_idle_pulse": "Mixer {name}: end-stop pulse of the closed valve (no demand, every 6 h)",
+    "mx_end_stop": "Mixer {name}: end-stop pulse at {position} – supply {supply} is still "
+    "{rel} the target {target}",
+    "mx_hold_band": "Mixer {name}: holding {position} – supply {supply} is within "
+    "±{hysteresis} of the target {target}",
+    "mx_hold_heading": "Mixer {name}: holding {position} – supply {supply} is already heading "
+    "for the target {target} ({trend}/min)",
+    "mx_hold_no_supply": "Mixer {name}: holding – no supply temperature",
+    "mx_hold_no_target": "Mixer {name}: holding – no target water temperature",
 }
 _COUNTED = (ZoneStatus.SATISFIED, ZoneStatus.WAITING, ZoneStatus.OFF, ZoneStatus.UNAVAILABLE)
 
@@ -276,3 +312,43 @@ def pump_text(
     if decision.reason is PumpReason.IDLE and blocked:
         return block_text(blocked, language) + (_t(language)["out_dry_run"] if dry_run else "")
     return out_message(f"pump_{decision.reason}", language, dry_run, left=round(decision.remaining))
+
+
+def _values(t: dict[str, str], values: dict[str, float]) -> dict[str, str]:
+    """Temperatures, differences and positions as they read in a sentence."""
+    out: dict[str, str] = {}
+    supply, target = values.get("supply"), values.get("target")
+    for key in ("supply", "target", "source", "ref"):
+        if key in values:
+            out[key] = _temp(values[key])
+    if "position" in values:
+        out["position"] = f"{values['position']:.0f} %"
+    if "step" in values:
+        out["step"] = f"{values['step']:.0f}"
+    if "hysteresis" in values:
+        out["hysteresis"] = f"{values['hysteresis']:.1f} °C"
+    if "trend" in values:
+        out["trend"] = f"{values['trend']:+.1f} °C"
+    if supply is not None and target is not None:
+        out["diff"] = f"{abs(target - supply):.1f} °C"
+        out["rel"] = t["mx_below"] if supply < target else t["mx_above"]
+    if "source" in values and "ref" in values:
+        out["change"] = t["mx_fell"] if values["source"] < values["ref"] else t["mx_rose"]
+    return out
+
+
+def mixer_text(action: Any, name: str, language: str, dry_run: bool = False) -> str:
+    """Why the mixing valve moves: the move and what made it."""
+    t = _t(language)
+    if not action.why:
+        return t["mixer"].format(name=name, reason=action.reason)
+    values = _values(t, action.values)
+    move = t[f"mx_{action.direction}"].format(step=values.get("step", ""))
+    text = t[f"mx_{action.why}"].format(name=name, move=move, **values)
+    return text + (t["out_dry_run"] if dry_run else "")
+
+
+def mixer_hold_text(key: str, values: dict[str, float], name: str, language: str) -> str:
+    """Why the mixing valve stays where it is."""
+    t = _t(language)
+    return t[f"mx_hold_{key}"].format(name=name, **_values(t, values))

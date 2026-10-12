@@ -231,3 +231,24 @@ async def test_circuit_state_explains_why(hass: HomeAssistant, make_entry) -> No
     state = hass.states.get("sensor.f1_state")
     assert state.state == "heating"
     assert state.attributes["reason"] == "Heating – 1 of 2 zones: Office"
+
+
+async def test_overview_sensors_have_their_own_entities(hass, make_entry) -> None:
+    hass.states.async_set(
+        "sensor.hot_water",
+        "52.5",
+        {
+            "unit_of_measurement": "°C",
+            "device_class": "temperature",
+            "friendly_name": "Hot water tank",
+        },
+    )
+    entry = make_entry()
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    state = hass.states.get("sensor.climate_circuits_hot_water_tank")
+    assert state.state == "52.5"
+    assert state.attributes["unit_of_measurement"] == "°C"
+    hass.states.async_set("sensor.hot_water", "50.0", {"unit_of_measurement": "°C"})
+    await hass.async_block_till_done()
+    assert hass.states.get("sensor.climate_circuits_hot_water_tank").state == "50.0"

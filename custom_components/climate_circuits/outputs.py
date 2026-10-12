@@ -32,11 +32,18 @@ from .const import (
     RELAY_RETRY_RESET,
     START_GRACE,
 )
-from .core.mixer import Direction, MixerAction, MixerSettings, regulate, supply_trend
+from .core.mixer import (
+    Direction,
+    MixerAction,
+    MixerSettings,
+    hold_reason,
+    regulate,
+    supply_trend,
+)
 from .core.mode import Mode
 from .core.protect import exercise_due
 from .core.pump import PumpDecision, PumpTimer
-from .core.texts import out_message, pump_text
+from .core.texts import mixer_hold_text, mixer_text, out_message, pump_text
 from .core.travel import TravelTracker
 from .states import call_service, number, state_of
 
@@ -207,6 +214,7 @@ class MixerController:
         self._supply: list[tuple[float, float]] = []  # (time, supply) for the trend
         self._source_ref: float | None = None  # source temperature at the last move
         self._proposal_logged: tuple[Any, ...] | None = None
+        self._hold_logged: str | None = None  # why it last stayed, not repeated in Activity
         self._unsubs: list[CALLBACK_TYPE] = []
         self._seed()
 
@@ -285,6 +293,14 @@ class MixerController:
         stored = house.persisted["mixers"].setdefault(self.circuit.id, {})
         stored["position"], stored["moving"] = pos, self.tracker.moving
         house.save()
+
+    @property
+    def _language(self) -> str:
+        return self.circuit.house.hass.config.language
+
+    def _log_text(self, message: str) -> None:
+        circuit = self.circuit
+        circuit.house.activity(circuit.name, message, f"{circuit.id}_mixer_position")
 
     def _log(self, key: str, *, proposal: bool = False, **values: Any) -> None:
         circuit, house = self.circuit, self.circuit.house
@@ -401,6 +417,8 @@ class MixerController:
         source = circuit.source_temperature()
         if source is None or self._source_ref is None:
             self._source_ref = source  # (re)start from here: no jump when the sensor returns
+        since_move = None if self._move_ended is None else now - self._move_ended
+        trend = supply_trend(self._supply, now, self.params.trend_window)
         action = regulate(
             heating=house.mode is Mode.HEAT,
             demand=circuit.output_demand,
@@ -409,11 +427,31 @@ class MixerController:
             position=position,
             since_end_pulse=None if self._last_end_pulse is None else now - self._last_end_pulse,
             settings=self.params,
-            since_move=None if self._move_ended is None else now - self._move_ended,
-            trend=supply_trend(self._supply, now, self.params.trend_window),
+            since_move=since_move,
+            trend=trend,
             source=source,
             source_ref=self._source_ref,
         )
+        if action is None:
+            hold = hold_reason(
+                demand=circuit.output_demand,
+                target=target,
+                supply=supply,
+                position=position,
+                settings=self.params,
+                since_move=since_move,
+                trend=trend,
+            )
+            if hold and hold[0] != self._hold_logged and house.logging:
+                house.activity(
+                    circuit.name,
+                    mixer_hold_text(hold[0], hold[1], circuit.name, house.hass.config.language),
+                    f"{circuit.id}_mixer_position",
+                )
+            if hold:
+                self._hold_logged = hold[0]
+        else:
+            self._hold_logged = None
         self.proposal = action
         if controlling and action:
             if self._execute(action, now):
@@ -434,7 +472,7 @@ class MixerController:
         if key != self._proposal_logged:
             self._proposal_logged = key
             if action is not None and self.circuit.house.logging:
-                self._log("mixer_proposal", proposal=True, reason=action.reason)
+                self._log_text(mixer_text(action, self.circuit.name, self._language, dry_run=True))
 
     def _execute(self, action: MixerAction, now: float) -> bool:
         """True when the move started."""
@@ -445,7 +483,7 @@ class MixerController:
             return False
         if action.end_pulse:
             self._last_end_pulse = now
-        self._log("mixer", reason=action.reason)
+        self._log_text(mixer_text(action, self.circuit.name, self._language))
         return True
 
     def _run(self, direction: Direction, seconds: float, *, homing: bool) -> bool:
@@ -506,5 +544,9 @@ class MixerController:
         return {
             "movement": self.status(),
             "position_known": self.position() is not None,
-            "proposed": self.proposal.reason if self.proposal else None,
+            "proposed": (
+                mixer_text(self.proposal, self.circuit.name, self._language)
+                if self.proposal
+                else None
+            ),
         }

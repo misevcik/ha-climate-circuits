@@ -11,6 +11,13 @@ Názov: **Climate Circuits**, doména `climate_circuits`, repozitár `ha-climate
 - Ponechané: zónové termostaty `*_cool`, `climate.gf_thermostat` a jeho pomocné entity (používa ich integrácia), `binary_sensor.f1_occupancy` (nejednoznačné vyhľadávanie).
 - **Čaká:** `switch.gf_sw_bedroom_cool` a `light.cfg_wintergarden_stairs` sa nezmazali (zablokované povolením v Claude Code) – zmazať ručne v Settings → Helpers, alebo povoliť nástroj.
 
+## 2026-10-12 – Aktivita vysvetľuje rozhodnutia zmiešavača; prehľadové senzory ako entity
+- Používateľ chce v Aktivite vidieť, **prečo** sa deje, čo sa deje. Doteraz pri zmiešavači len „open 4 % (target 36.8, supply 35.9)“.
+- Každý pohyb má dôvod (`MixerAction.why` + hodnoty) a preložený text (`core/texts.mixer_text`): prívod pod/nad cieľom o koľko, zdroj klesol/stúpol z → na a prívod sa drží, okruh nemá požiadavku, dotlak na doraze (prívod stále pod/nad cieľom), dotlak zatvoreného zmiešavača.
+- Aj **prečo stojí** (`hold_reason`): prívod v pásme hysterézy, prívod sa už sám blíži k cieľu (trend), chýba teplota prívodu / cieľ. Zapíše sa len pri zmene dôvodu; čakanie po pohybe sa nezapisuje (je po každom pohybe).
+- Prehľadové senzory (Zobrazované senzory) majú na zariadení Climate Circuits vlastné entity `sensor.climate_circuits_<názov>` s hodnotou a jednotkou zdrojovej entity; v atribútoch režimu ostávajú.
+- Testy: 184.
+
 ## 2026-10-12 – zdroj tepla ako samostatná časť integrácie
 - Používateľ: akumulačka je spoločný zdroj pre oba okruhy, nemá sa nastavovať pri každom okruhu. Pre univerzálnosť zvolené: **zdroj ako vlastný config subentry** (`source`) s vlastným zariadením; okruh si zdroj vyberie, pri jedinom zdroji ho dostane automaticky.
 - Zvažované a zamietnuté: zdroj v nastaveniach domu + výnimka v okruhu (jednoduchšie, ale dva zdroje by boli výnimkou, nastavenia domu by sa miešali s nastaveniami zariadení a požiadavka na zdroj by nemala kam prísť).

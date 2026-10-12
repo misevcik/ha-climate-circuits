@@ -9,7 +9,10 @@ from typing import Any
 import pytest
 from homeassistant.core import CoreState, HomeAssistant, ServiceCall
 from homeassistant.util import dt as dt_util
-from pytest_homeassistant_custom_component.common import async_fire_time_changed
+from pytest_homeassistant_custom_component.common import (
+    async_capture_events,
+    async_fire_time_changed,
+)
 
 from custom_components.climate_circuits.const import EVENT_ACTIVITY
 
@@ -489,3 +492,16 @@ async def test_mixer_follows_the_source_at_once(hass, house, clock, calls) -> No
     await hass.async_block_till_done()
     assert ("turn_on", CLOSE) in calls
     assert hass.states.get(POSITION).attributes["source_temperature"] == 50.0
+
+
+async def test_activity_says_why_the_mixer_moves(hass, house, clock, calls) -> None:
+    mixer = next(iter(house.circuits.values())).mixer
+    mixer.tracker.set(50.0)
+    await _control(hass, True)
+    set_thermostat(hass, ZONE, "heating")
+    await _tick(hass, house, clock, 100)
+    events = async_capture_events(hass, EVENT_ACTIVITY)
+    mixer._tick(None)
+    await hass.async_block_till_done()
+    moves = [e.data["message"] for e in events if "Mixer F1" in e.data["message"]]
+    assert moves and "below the target" in moves[0]

@@ -141,4 +141,7 @@ Kód hotový lokálne (151 testov, ruff OK): čerpadlá okruhov, vlastná poloha
 - [x] Subentry `source` (názov, senzor teploty), zariadenie + `sensor.<zdroj>_temperature`, výber zdroja v okruhu (jediný zdroj sa použije automaticky), `source_sensor` okruhu len ako dočasná náhrada; 178 testov
 - [x] `v0.1.4` vydaná, nainštalovaná cez HACS, reštart
 - [x] V dome: zdroj „Akumulačná nádrž“ = `sensor.gf_watertank_up_temperature` (`sensor.akumulacna_nadrz_temperature`), `source_sensor` z F1 aj GF odstránený; oba okruhy berú zdroj automaticky (41,3 °C)
-- [ ] Neskôr: zobraziť prehľadové senzory ako entity; požiadavka na zdroj; záložný senzor režimu presunúť k zdroju
+- [x] Prehľadové senzory ako entity na zariadení Climate Circuits (0.1.5)
+- [x] Aktivita: dôvod každého pohybu zmiešavača aj prečo stojí (0.1.5)
+- [ ] Vydať `v0.1.5`, update cez HACS, reštart
+- [ ] Neskôr: požiadavka na zdroj; záložný senzor režimu presunúť k zdroju
