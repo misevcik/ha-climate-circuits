@@ -121,6 +121,7 @@ Kód hotový lokálne (151 testov, ruff OK): čerpadlá okruhov, vlastná poloha
 - [x] Nahraté na HA (ručne) a reštart 2026-10-12 12:49; push + tag `v0.1.1`
 - [x] Ochranná doba 90 s po štarte (čerpadlo vypnuté pri reštarte HA)
 - [ ] Release `v0.1.1` na GitHube (odkaz od Clauda) a odteraz update cez HACS
-- [ ] Ochranná doba po štarte: vydať ako `v0.1.2` cez HACS
+- [x] Ochranná doba po štarte: push + tag `v0.1.2`
+- [ ] Release `v0.1.2` na GitHube a update v HACS, potom overiť po reštarte
 - [ ] Overiť jednu noc: počet zopnutí za hodinu, rozkmit prívodu GF, prípadne doladiť *Mixer settle time*
 - [ ] Samoučenie oneskorenia a citlivosti okruhu (nápad používateľa)
