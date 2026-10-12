@@ -109,7 +109,7 @@ Kód hotový lokálne (151 testov, ruff OK): čerpadlá okruhov, vlastná poloha
 
 ## GitHub a HACS (2026-10-11)
 - [x] Verejné repo `misevcik/ha-climate-circuits`, história zlúčená do jedného commitu, citlivé údaje z dokumentov odstránené
-- [ ] Pridať repo do HACS ako Custom repository (typ Integration) a nainštalovať cez HACS namiesto File editora
+- [x] Repo pridané do HACS ako Custom repository (typ Integration), inštalácia cez HACS – 2026-10-12
 - [x] Release `v0.1.0` vydaný 2026-10-11 (tag pushnutý, release vytvorený na webe)
 - [x] `README.md` prepísaný do angličtiny podľa aktuálneho stavu (funkcie, inštalácia cez HACS, nastavenie, entity, karta, zmiešavač, vývoj) – 2026-10-11
 - [ ] Popis a topics repa na GitHube (napr. `home-assistant`, `hacs`, `heating`)
@@ -122,6 +122,9 @@ Kód hotový lokálne (151 testov, ruff OK): čerpadlá okruhov, vlastná poloha
 - [x] Ochranná doba 90 s po štarte (čerpadlo vypnuté pri reštarte HA)
 - [ ] Release `v0.1.1` na GitHube (odkaz od Clauda) a odteraz update cez HACS
 - [x] Ochranná doba po štarte: push + tag `v0.1.2`
-- [ ] Release `v0.1.2` na GitHube a update v HACS, potom overiť po reštarte
+- [x] Release `v0.1.2` vydaný; repo pridané do HACS ako custom repository a v0.1.2 nainštalovaná cez HACS (vrátane `brand/` ikon) – 2026-10-12
+- [x] Reštart HA 12:57 s v0.1.2 z HACS: GF čerpadlo ostalo bežať (požiadavka chýbala 12:57:31–12:57:59, ochranná doba ju preklenula), log čistý, HACS eviduje v0.1.2
+- [ ] Overiť ikonu integrácie v Nastaveniach a správanie zmiešavačov cez noc
+- [ ] Opraviť popis repa na GitHube (`Control of heating unde home assistant`), HACS ho zobrazuje
 - [ ] Overiť jednu noc: počet zopnutí za hodinu, rozkmit prívodu GF, prípadne doladiť *Mixer settle time*
 - [ ] Samoučenie oneskorenia a citlivosti okruhu (nápad používateľa)
