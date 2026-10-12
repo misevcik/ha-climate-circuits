@@ -118,6 +118,9 @@ Kód hotový lokálne (151 testov, ruff OK): čerpadlá okruhov, vlastná poloha
 - [x] Zistené kmitanie GF aj F1 (~75–95 zopnutí/h, ±2,5 K), príčina: krok každých 30 s pri oneskorení 1,5–2,5 min
 - [x] Nová regulácia (čas ustálenia, trend, krok úmerný odchýlke, zriedkavý dotlak) + simulácia + testy
 - [x] Oprava: čerpadlo znova naskočilo po dobehu; `binary_sensor.<okruh>_pump` `unknown` pri výpadku dosky
-- [ ] Nahrať na HA a reštartovať
+- [x] Nahraté na HA (ručne) a reštart 2026-10-12 12:49; push + tag `v0.1.1`
+- [x] Ochranná doba 90 s po štarte (čerpadlo vypnuté pri reštarte HA)
+- [ ] Release `v0.1.1` na GitHube (odkaz od Clauda) a odteraz update cez HACS
+- [ ] Ochranná doba po štarte: vydať ako `v0.1.2` cez HACS
 - [ ] Overiť jednu noc: počet zopnutí za hodinu, rozkmit prívodu GF, prípadne doladiť *Mixer settle time*
 - [ ] Samoučenie oneskorenia a citlivosti okruhu (nápad používateľa)

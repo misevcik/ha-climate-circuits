@@ -11,6 +11,11 @@ Názov: **Climate Circuits**, doména `climate_circuits`, repozitár `ha-climate
 - Ponechané: zónové termostaty `*_cool`, `climate.gf_thermostat` a jeho pomocné entity (používa ich integrácia), `binary_sensor.f1_occupancy` (nejednoznačné vyhľadávanie).
 - **Čaká:** `switch.gf_sw_bedroom_cool` a `light.cfg_wintergarden_stairs` sa nezmazali (zablokované povolením v Claude Code) – zmazať ručne v Settings → Helpers, alebo povoliť nástroj.
 
+## 2026-10-12 – ochranná doba po štarte, nasadzovanie cez HACS
+- Pri reštarte HA 12:49 integrácia vypla bežiace GF čerpadlo: vyhodnotila skôr, ako sa načítal termostat GF („no demand“), relé sa po pripojení dosky hneď vyplo a po objavení požiadavky čerpadlo čakalo znova 180 s. Rovnako by mohla zbytočne zavrieť zmiešavač.
+- Oprava: `START_GRACE` = 90 s po štarte integrácie chýbajúca požiadavka nevypína bežiace čerpadlo a nezatvára zmiešavač. Keď sa požiadavka objaví, bežiace čerpadlo pokračuje bez čakania. Testy: 170.
+- **Nasadzovanie odteraz cez HACS** (návrh používateľa): commit → push → zvýšená verzia v `manifest.json` + tag → release na GitHube → update v HACS. Nie ručne cez File editor. Verzia 0.1.1 (regulácia zmiešavačov) bola ešte nahratá ručne a tag `v0.1.1` je pushnutý.
+
 ## 2026-10-12 – zmiešavače kmitajú (zistenie z prvej noci kúrenia)
 - GF (kúri celú noc, cieľ 32–39 °C): prívod kmitá ±1,5–2,5 K okolo cieľa s periódou ~10–12 min, poloha medzi ~15 a 75 % (ráno 42–100 %). Relé zopína **~75× za hodinu** (oba smery), teda ~1 800 štartov motora za deň.
 - F1 počas požiadavky (5:38–8:53) rovnako, ~95 zopnutí za hodinu.

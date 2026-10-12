@@ -30,6 +30,7 @@ from .const import (
     RELAY_GRACE,
     RELAY_RETRY,
     RELAY_RETRY_RESET,
+    START_GRACE,
 )
 from .core.mixer import Direction, MixerAction, MixerSettings, regulate, supply_trend
 from .core.mode import Mode
@@ -136,6 +137,8 @@ class PumpController:
             house.save()
         self._was_running = bool(running)
         demand = circuit.output_demand
+        if not demand and running and now - house.started < START_GRACE:
+            return  # the zones may not be loaded yet: keep a running pump as it is
         if (
             circuit.controlling
             and not demand
@@ -388,6 +391,8 @@ class MixerController:
             if controlling and now - house.started >= MIXER_HOMING_DELAY:
                 self._home()
             return
+        if not circuit.output_demand and now - house.started < START_GRACE:
+            return  # the zones may not be loaded yet: no closing for lack of demand
         target = circuit.target.value if circuit.target else None
         supply = circuit.supply_temperature()
         if supply is not None:

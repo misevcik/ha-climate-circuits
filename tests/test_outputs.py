@@ -445,3 +445,26 @@ async def test_live_mixer_waits_for_a_move_to_show(hass, house, clock, calls) ->
     mixer._tick(None)
     await hass.async_block_till_done()
     assert calls.count(("turn_on", OPEN)) == 2
+
+
+async def test_running_pump_is_kept_until_the_zones_load(hass, house, clock, calls) -> None:
+    hass.states.async_set(PUMP, "on")
+    await _control(hass, True)
+    await _tick(hass, house, clock, 10)
+    assert ("turn_off", PUMP) not in calls  # no demand yet: the zones may still be loading
+    await _tick(hass, house, clock, 90)
+    assert ("turn_off", PUMP) in calls
+
+
+async def test_mixer_is_not_closed_until_the_zones_load(hass, house, clock, calls) -> None:
+    mixer = next(iter(house.circuits.values())).mixer
+    mixer.tracker.set(40.0)
+    await _control(hass, True)
+    clock.now += 31
+    mixer._tick(None)
+    await hass.async_block_till_done()
+    assert ("turn_on", CLOSE) not in calls
+    clock.now += 60
+    mixer._tick(None)
+    await hass.async_block_till_done()
+    assert ("turn_on", CLOSE) in calls
