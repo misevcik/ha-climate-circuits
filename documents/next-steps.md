@@ -132,6 +132,6 @@ Kód hotový lokálne (151 testov, ruff OK): čerpadlá okruhov, vlastná poloha
 ## Regulácia podľa zdroja (2026-10-12)
 - [x] Analýza večera: vlnenie spôsobuje cyklovanie akumulačky 41–48 °C; okruhy sú radiátory
 - [x] `source_sensor` + kompenzácia zmeny zdroja, simulácia, 173 testov
-- [ ] Vydať `v0.1.3` (release), update cez HACS, reštart
-- [ ] V oboch okruhoch nastaviť *Source temperature* = `sensor.gf_watertank_up_temperature`
+- [x] `v0.1.3` vydaná, nainštalovaná cez HACS, reštart 21:00 (GF čerpadlo ostalo bežať)
+- [x] F1 aj GF: *Source temperature* = `sensor.gf_watertank_up_temperature` (21:02), integrácia `ok`, atribút `source_temperature` 44,0 °C
 - [ ] Overiť noc: % času v ±0,5 K, zopnutia za hodinu
