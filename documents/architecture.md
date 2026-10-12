@@ -296,7 +296,18 @@ flowchart TD
   E -->|"nie"| RUN["Zopnúť relé na čas kroku<br/>pri dosiahnutí dorazu + 2 s"]
 ```
 
-## Zdroj tepla – Plánované
+## Zdroj tepla – samostatná časť integrácie (2026-10-12)
+
+Zdroj (akumulačná nádrž, kotol, tepelné čerpadlo, hydraulický separátor) je vlastná časť integrácie (config subentry typu `source`), rovnako ako okruh. Má vlastné zariadenie v HA.
+
+- **Zdroj:** názov, senzor teploty vody, ktorú zdroj dáva okruhom (pri akumulačke jej horná časť).
+- **Entita:** `sensor.<zdroj>_temperature`.
+- **Okruh si vyberie zdroj** v sekcii Výstupy. Keď je v dome jediný zdroj a okruh žiadny nemá vybraný, použije ten. Bez zdroja okruh reguluje len podľa prívodu.
+- **Regulácia zmiešavača** berie teplotu zdroja odtiaľto (kompenzácia zmeny zdroja). Dočasne sa ešte číta staré pole okruhu `source_sensor` z verzie 0.1.3, keď okruh zdroj nemá.
+- **Pokryté prípady:** jedna nádrž pre všetky okruhy, dve nádrže za sebou (jeden zdroj, senzor na výstupe), dva zdroje pre rôzne okruhy, neskôr samostatná nádrž na chladenie (zdroj pri chladení).
+- **Neskôr sem patrí** požiadavka na zdroj (tabuľka nižšie) a záložný senzor režimu (dnes v nastaveniach domu).
+
+### Požiadavka na zdroj – Plánované
 
 | Zdroj | Režimy | Výstup požiadavky | Poznámka |
 |---|---|---|---|

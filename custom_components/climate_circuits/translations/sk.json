@@ -253,14 +253,14 @@
                 "pump_delay": "Oneskorenie štartu čerpadla",
                 "pump_run_on": "Dobeh čerpadla",
                 "settle": "Čas ustálenia zmiešavača",
-                "source_sensor": "Teplota zdroja (akumulačná nádrž)"
+                "source": "Zdroj tepla"
               },
               "data_description": {
                 "mixer_position": "Cover starej integrácie; jeho poloha slúži iba ako prvý odhad, kým sa ventil nezahomuje.",
                 "pump_delay": "Sekundy požiadavky pred štartom čerpadla, aby sa stihli otvoriť ventily zón.",
                 "pump_run_on": "Sekundy, počas ktorých čerpadlo beží po skončení požiadavky na kúrenie.",
                 "settle": "Sekundy čakania po pohybe ventilu pred ďalším, kým zmenená voda dotečie k senzoru prívodu. Dlhší, ak zmiešavač kmitá, kratší, ak cieľ dobieha pomaly.",
-                "source_sensor": "Nepovinné. Voda, ktorá prichádza do zmiešavača, napr. horná časť akumulačnej nádrže alebo výstup tepelného čerpadla. Keď zdroj stúpne alebo klesne (cyklujúce tepelné čerpadlo), zmiešavač sa pohne hneď a nečaká, kým zmenu uvidí senzor prívodu."
+                "source": "Odkiaľ okruh berie vodu. Keď je v dome jediný zdroj tepla, použije sa, aj keď nie je vybraný."
               }
             }
           }
@@ -325,14 +325,14 @@
                 "pump_delay": "Oneskorenie štartu čerpadla",
                 "pump_run_on": "Dobeh čerpadla",
                 "settle": "Čas ustálenia zmiešavača",
-                "source_sensor": "Teplota zdroja (akumulačná nádrž)"
+                "source": "Zdroj tepla"
               },
               "data_description": {
                 "mixer_position": "Cover starej integrácie; jeho poloha slúži iba ako prvý odhad, kým sa ventil nezahomuje.",
                 "pump_delay": "Sekundy požiadavky pred štartom čerpadla, aby sa stihli otvoriť ventily zón.",
                 "pump_run_on": "Sekundy, počas ktorých čerpadlo beží po skončení požiadavky na kúrenie.",
                 "settle": "Sekundy čakania po pohybe ventilu pred ďalším, kým zmenená voda dotečie k senzoru prívodu. Dlhší, ak zmiešavač kmitá, kratší, ak cieľ dobieha pomaly.",
-                "source_sensor": "Nepovinné. Voda, ktorá prichádza do zmiešavača, napr. horná časť akumulačnej nádrže alebo výstup tepelného čerpadla. Keď zdroj stúpne alebo klesne (cyklujúce tepelné čerpadlo), zmiešavač sa pohne hneď a nečaká, kým zmenu uvidí senzor prívodu."
+                "source": "Odkiaľ okruh berie vodu. Keď je v dome jediný zdroj tepla, použije sa, aj keď nie je vybraný."
               }
             }
           }
@@ -351,6 +351,39 @@
       "entry_type": "Okruh",
       "abort": {
         "reconfigure_successful": "Okruh bol upravený."
+      }
+    },
+    "source": {
+      "step": {
+        "user": {
+          "title": "Zdroj tepla",
+          "description": "Akumulačná nádrž, kotol alebo tepelné čerpadlo, z ktorého okruhy berú vodu. Podľa jeho teploty zmiešavače reagujú hneď, keď sa zdroj ohreje alebo ochladí.",
+          "data": {
+            "name": "Názov",
+            "temperature_sensor": "Teplota vody, ktorú dáva"
+          },
+          "data_description": {
+            "temperature_sensor": "Pri akumulačnej nádrži jej horná časť, odkiaľ okruhy berú vodu; pri kotle alebo tepelnom čerpadle jeho výstup."
+          }
+        },
+        "reconfigure": {
+          "title": "Zdroj tepla",
+          "description": "Akumulačná nádrž, kotol alebo tepelné čerpadlo, z ktorého okruhy berú vodu. Podľa jeho teploty zmiešavače reagujú hneď, keď sa zdroj ohreje alebo ochladí.",
+          "data": {
+            "name": "Názov",
+            "temperature_sensor": "Teplota vody, ktorú dáva"
+          },
+          "data_description": {
+            "temperature_sensor": "Pri akumulačnej nádrži jej horná časť, odkiaľ okruhy berú vodu; pri kotle alebo tepelnom čerpadle jeho výstup."
+          }
+        }
+      },
+      "initiate_flow": {
+        "user": "Pridať zdroj tepla"
+      },
+      "entry_type": "Zdroj tepla",
+      "abort": {
+        "reconfigure_successful": "Zdroj tepla bol upravený."
       }
     }
   },
@@ -537,6 +570,9 @@
           "homing": "Homing (zatvára na doraz)",
           "unknown": "Poloha neznáma"
         }
+      },
+      "source_temperature": {
+        "name": "Teplota"
       }
     },
     "binary_sensor": {

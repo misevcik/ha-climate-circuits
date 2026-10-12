@@ -1,4 +1,4 @@
-"""Base entities: one device for the house, one per circuit, one for hot water."""
+"""Base entities: one device for the house, one per circuit and source, one for hot water."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity import Entity
 
 from .const import DOMAIN
-from .house import Circuit, HotWater, House, Listeners
+from .house import Circuit, HotWater, House, Listeners, Source
 
 
 def device_info(identifier: str, name: str, via: str | None = None) -> DeviceInfo:
@@ -51,3 +51,10 @@ class HotWaterEntity(_Entity):
         self.hot_water = hot_water
         device = device_info(hot_water.id, "Hot water", hot_water.house.device_id)
         super().__init__(hot_water, hot_water.id, key, device)
+
+
+class SourceEntity(_Entity):
+    def __init__(self, source: Source, key: str) -> None:
+        self.source = source
+        device = device_info(source.id, source.name, source.house.device_id)
+        super().__init__(source, source.id, key, device)

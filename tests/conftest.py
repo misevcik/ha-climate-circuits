@@ -10,7 +10,11 @@ from homeassistant.config_entries import ConfigSubentryData
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.climate_circuits.const import DOMAIN, SUBENTRY_TYPE_CIRCUIT
+from custom_components.climate_circuits.const import (
+    DOMAIN,
+    SUBENTRY_TYPE_CIRCUIT,
+    SUBENTRY_TYPE_SOURCE,
+)
 
 HEAT_PUMP = "climate.heat_pump"
 TANK = "sensor.tank"
@@ -50,6 +54,14 @@ def circuit_data(name: str, **sections: dict[str, Any]) -> ConfigSubentryData:
     data.update(sections)
     return ConfigSubentryData(
         subentry_type=SUBENTRY_TYPE_CIRCUIT, title=name, unique_id=None, data=data
+    )
+
+
+def source_data(name: str, sensor: str | None = None) -> ConfigSubentryData:
+    """Build subentry data for a heat source."""
+    data = {"name": name, **({"temperature_sensor": sensor} if sensor else {})}
+    return ConfigSubentryData(
+        subentry_type=SUBENTRY_TYPE_SOURCE, title=name, unique_id=None, data=data
     )
 
 

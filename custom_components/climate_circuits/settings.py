@@ -1,4 +1,4 @@
-"""Typed views of the house options and circuit subentries."""
+"""Typed views of the house options and the circuit and source subentries."""
 
 from __future__ import annotations
 
@@ -110,7 +110,8 @@ class CircuitSettings:
     travel: float
     hysteresis: float
     settle: float = DEFAULT_SETTLE
-    source_sensor: str | None = None
+    source: str | None = None  # subentry id of the heat source it takes water from
+    source_sensor: str | None = None  # 0.1.3, before heat sources existed
 
     @classmethod
     def from_data(cls, data: Mapping[str, Any]) -> CircuitSettings:
@@ -132,9 +133,22 @@ class CircuitSettings:
             travel=float(outputs.get("travel", DEFAULT_TRAVEL)),
             hysteresis=float(outputs.get("hysteresis", DEFAULT_HYSTERESIS)),
             settle=float(outputs.get("settle", DEFAULT_SETTLE)),
+            source=outputs.get("source"),
             source_sensor=outputs.get("source_sensor"),
         )
 
     @property
     def zones(self) -> tuple[str, ...]:
         return self.heating_zones + self.cooling_zones
+
+
+@dataclass(frozen=True, slots=True)
+class SourceSettings:
+    """A buffer tank, boiler or heat pump the circuits take their water from."""
+
+    name: str
+    temperature_sensor: str | None
+
+    @classmethod
+    def from_data(cls, data: Mapping[str, Any]) -> SourceSettings:
+        return cls(name=data["name"], temperature_sensor=data.get("temperature_sensor"))

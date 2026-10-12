@@ -43,7 +43,7 @@ from .core.texts import (
 )
 from .core.zones import OFF, ZonePlan, plan_zones
 from .outputs import MixerController, PumpController, Relay
-from .settings import CircuitSettings, HotWaterSettings, HouseSettings
+from .settings import CircuitSettings, HotWaterSettings, HouseSettings, SourceSettings
 from .states import call_service, float_of, name_of, number, state_of
 
 
@@ -85,6 +85,30 @@ class Listeners:
     def _notify(self) -> None:
         for listener in list(self._listeners):
             listener()
+
+
+class Source(Listeners):
+    """A heat source: the water it gives the circuits."""
+
+    def __init__(self, house: House, subentry: ConfigSubentry) -> None:
+        super().__init__()
+        self.house = house
+        self.id = subentry.subentry_id
+        self.settings = SourceSettings.from_data(subentry.data)
+
+    @property
+    def name(self) -> str:
+        return self.settings.name
+
+    def inputs(self) -> set[str]:
+        return set(filter(None, [self.settings.temperature_sensor]))
+
+    def temperature(self) -> float | None:
+        return float_of(self.house.hass, self.settings.temperature_sensor)
+
+    @callback
+    def refresh(self) -> None:
+        self._notify()
 
 
 class Circuit(Listeners):
@@ -165,8 +189,17 @@ class Circuit(Listeners):
     def supply_temperature(self) -> float | None:
         return float_of(self.house.hass, self.settings.supply_sensor)
 
+    def source(self) -> Source | None:
+        """The chosen heat source; the only one in the house when none is chosen."""
+        sources = self.house.sources
+        if self.settings.source:
+            return sources.get(self.settings.source)
+        return next(iter(sources.values())) if len(sources) == 1 else None
+
     def source_temperature(self) -> float | None:
-        """Water coming to the mixer (buffer tank, heat pump), when a sensor is set."""
+        """Water coming to the mixer (buffer tank, heat pump), when known."""
+        if (source := self.source()) is not None:
+            return source.temperature()
         return float_of(self.house.hass, self.settings.source_sensor)
 
     @callback
@@ -399,6 +432,7 @@ class House(Listeners):
         self.entry = entry
         self.settings = HouseSettings.from_options(entry.options)
         self.circuits: dict[str, Circuit] = {}
+        self.sources: dict[str, Source] = {}
         self.zones = ZoneSwitcher(self)
         self.hot_water = (
             HotWater(self, self.settings.hot_water) if self.settings.hot_water else None
@@ -514,7 +548,11 @@ class House(Listeners):
         s = self.settings
         entities = {*filter(None, [s.mode_entity, s.fallback_sensor, s.outdoor_sensor])}
         entities |= set(s.info_sensors)
-        for item in [*self.circuits.values(), *filter(None, [self.hot_water])]:
+        for item in [
+            *self.sources.values(),
+            *self.circuits.values(),
+            *filter(None, [self.hot_water]),
+        ]:
             entities |= item.inputs()
         return entities
 
@@ -564,6 +602,8 @@ class House(Listeners):
         self.pause_remaining = self.pause.check(self.mode, self.wall()) if reliable else 0.0
         if (self.pause.active, self.pause.stopped_at) != before:
             self.save()
+        for source in self.sources.values():
+            source.refresh()
         for circuit in self.circuits.values():
             circuit.evaluate(self.mode, self.outdoor)
         if self.hot_water:

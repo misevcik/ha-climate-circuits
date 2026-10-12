@@ -1,4 +1,4 @@
-"""Config flow: the house entry, its options and circuit subentries."""
+"""Config flow: the house entry, its options, and circuit and heat source subentries."""
 
 from __future__ import annotations
 
@@ -31,6 +31,7 @@ from .const import (
     DEFAULT_TRAVEL,
     DOMAIN,
     SUBENTRY_TYPE_CIRCUIT,
+    SUBENTRY_TYPE_SOURCE,
 )
 from .core.mode import FallbackKind
 
@@ -143,6 +144,52 @@ HOUSE_SCHEMA = vol.Schema(
     }
 )
 
+
+def circuit_schema(sources: dict[str, str]) -> vol.Schema:
+    """The circuit form; sources maps the house's heat source subentries to their names."""
+    source = (
+        {
+            vol.Optional("source"): sel.SelectSelector(
+                sel.SelectSelectorConfig(
+                    options=[{"value": k, "label": v} for k, v in sources.items()]
+                )
+            )
+        }
+        if sources
+        else {}
+    )
+    return vol.Schema(
+        {
+            **CIRCUIT_SCHEMA.schema,
+            vol.Required("outputs"): _section({**source, **OUTPUTS_SCHEMA.schema}),
+        }
+    )
+
+
+OUTPUTS_SCHEMA = vol.Schema(
+    {
+        vol.Optional("pump"): RELAY,
+        vol.Optional("mixer_open"): RELAY,
+        vol.Optional("mixer_close"): RELAY,
+        vol.Optional("supply_sensor"): TEMPERATURE_SENSOR,
+        vol.Optional("mixer_position"): sel.EntitySelector(
+            sel.EntitySelectorConfig(domain="cover")
+        ),
+        vol.Required("pump_delay", default=DEFAULT_PUMP_DELAY): _number(0, 900, 10, "s"),
+        vol.Required("pump_run_on", default=DEFAULT_PUMP_RUN_ON): _number(0, 900, 10, "s"),
+        vol.Required("travel", default=DEFAULT_TRAVEL): _number(10, 600, 1, "s"),
+        vol.Required("hysteresis", default=DEFAULT_HYSTERESIS): _number(0.1, 5, 0.1, "°C"),
+        vol.Required("settle", default=DEFAULT_SETTLE): _number(30, 600, 10, "s"),
+    }
+)
+
+SOURCE_SCHEMA = vol.Schema(
+    {
+        vol.Required("name"): sel.TextSelector(),
+        vol.Optional("temperature_sensor"): TEMPERATURE_SENSOR,
+    }
+)
+
 CIRCUIT_SCHEMA = vol.Schema(
     {
         vol.Required("name"): sel.TextSelector(),
@@ -167,23 +214,6 @@ CIRCUIT_SCHEMA = vol.Schema(
                 ("cool_curve", DEFAULT_COOL_CURVE),
             )
         },
-        vol.Required("outputs"): _section(
-            {
-                vol.Optional("pump"): RELAY,
-                vol.Optional("mixer_open"): RELAY,
-                vol.Optional("mixer_close"): RELAY,
-                vol.Optional("supply_sensor"): TEMPERATURE_SENSOR,
-                vol.Optional("source_sensor"): TEMPERATURE_SENSOR,
-                vol.Optional("mixer_position"): sel.EntitySelector(
-                    sel.EntitySelectorConfig(domain="cover")
-                ),
-                vol.Required("pump_delay", default=DEFAULT_PUMP_DELAY): _number(0, 900, 10, "s"),
-                vol.Required("pump_run_on", default=DEFAULT_PUMP_RUN_ON): _number(0, 900, 10, "s"),
-                vol.Required("travel", default=DEFAULT_TRAVEL): _number(10, 600, 1, "s"),
-                vol.Required("hysteresis", default=DEFAULT_HYSTERESIS): _number(0.1, 5, 0.1, "°C"),
-                vol.Required("settle", default=DEFAULT_SETTLE): _number(30, 600, 10, "s"),
-            }
-        ),
     }
 )
 
@@ -228,7 +258,10 @@ class ClimateCircuitsConfigFlow(ConfigFlow, domain=DOMAIN):
     def async_get_supported_subentry_types(
         cls, config_entry: ConfigEntry
     ) -> dict[str, type[ConfigSubentryFlow]]:
-        return {SUBENTRY_TYPE_CIRCUIT: CircuitSubentryFlow}
+        return {
+            SUBENTRY_TYPE_CIRCUIT: CircuitSubentryFlow,
+            SUBENTRY_TYPE_SOURCE: SourceSubentryFlow,
+        }
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         errors = _validate_house(user_input) if user_input is not None else {}
@@ -256,13 +289,21 @@ class ClimateCircuitsOptionsFlow(OptionsFlow):
 
 
 class CircuitSubentryFlow(ConfigSubentryFlow):
+    @property
+    def _schema(self) -> vol.Schema:
+        entry = self._get_entry()
+        sources = {
+            s.subentry_id: s.title for s in entry.get_subentries_of_type(SUBENTRY_TYPE_SOURCE)
+        }
+        return circuit_schema(sources)
+
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> SubentryFlowResult:
         errors = _validate_circuit(user_input) if user_input is not None else {}
         if user_input is not None and not errors:
             return self.async_create_entry(title=user_input["name"], data=user_input)
         return self.async_show_form(
             step_id="user",
-            data_schema=self.add_suggested_values_to_schema(CIRCUIT_SCHEMA, user_input or {}),
+            data_schema=self.add_suggested_values_to_schema(self._schema, user_input or {}),
             errors=errors,
         )
 
@@ -278,7 +319,29 @@ class CircuitSubentryFlow(ConfigSubentryFlow):
         return self.async_show_form(
             step_id="reconfigure",
             data_schema=self.add_suggested_values_to_schema(
-                CIRCUIT_SCHEMA, user_input or dict(subentry.data)
+                self._schema, user_input or dict(subentry.data)
             ),
             errors=errors,
+        )
+
+
+class SourceSubentryFlow(ConfigSubentryFlow):
+    """A buffer tank, boiler or heat pump the circuits take their water from."""
+
+    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> SubentryFlowResult:
+        if user_input is not None:
+            return self.async_create_entry(title=user_input["name"], data=user_input)
+        return self.async_show_form(step_id="user", data_schema=SOURCE_SCHEMA)
+
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
+        subentry = self._get_reconfigure_subentry()
+        if user_input is not None:
+            return self.async_update_and_abort(
+                self._get_entry(), subentry, title=user_input["name"], data=user_input
+            )
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=self.add_suggested_values_to_schema(SOURCE_SCHEMA, dict(subentry.data)),
         )

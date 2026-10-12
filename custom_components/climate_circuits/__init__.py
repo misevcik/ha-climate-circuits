@@ -9,9 +9,9 @@ from homeassistant.helpers import config_validation as cv, device_registry as dr
 from homeassistant.helpers.typing import ConfigType
 
 from .card import async_register_card
-from .const import DOMAIN, SUBENTRY_TYPE_CIRCUIT
+from .const import DOMAIN, SUBENTRY_TYPE_CIRCUIT, SUBENTRY_TYPE_SOURCE
 from .entity import device_info
-from .house import Circuit, House
+from .house import Circuit, House, Source
 
 PLATFORMS = [
     Platform.BINARY_SENSOR,
@@ -41,6 +41,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ClimateCircuitsConfigEnt
         )
         .id
     )
+    for subentry in entry.get_subentries_of_type(SUBENTRY_TYPE_SOURCE):
+        house.sources[subentry.subentry_id] = Source(house, subentry)
     for subentry in entry.get_subentries_of_type(SUBENTRY_TYPE_CIRCUIT):
         house.circuits[subentry.subentry_id] = Circuit(house, subentry)
     house.evaluate()  # before the entities exist, so none starts with a wrong state

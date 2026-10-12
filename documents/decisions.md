@@ -11,6 +11,12 @@ Názov: **Climate Circuits**, doména `climate_circuits`, repozitár `ha-climate
 - Ponechané: zónové termostaty `*_cool`, `climate.gf_thermostat` a jeho pomocné entity (používa ich integrácia), `binary_sensor.f1_occupancy` (nejednoznačné vyhľadávanie).
 - **Čaká:** `switch.gf_sw_bedroom_cool` a `light.cfg_wintergarden_stairs` sa nezmazali (zablokované povolením v Claude Code) – zmazať ručne v Settings → Helpers, alebo povoliť nástroj.
 
+## 2026-10-12 – zdroj tepla ako samostatná časť integrácie
+- Používateľ: akumulačka je spoločný zdroj pre oba okruhy, nemá sa nastavovať pri každom okruhu. Pre univerzálnosť zvolené: **zdroj ako vlastný config subentry** (`source`) s vlastným zariadením; okruh si zdroj vyberie, pri jedinom zdroji ho dostane automaticky.
+- Zvažované a zamietnuté: zdroj v nastaveniach domu + výnimka v okruhu (jednoduchšie, ale dva zdroje by boli výnimkou, nastavenia domu by sa miešali s nastaveniami zariadení a požiadavka na zdroj by nemala kam prísť).
+- Viac nádrží v praxi: dve za sebou (= jeden zdroj), nádrž na chladenie, dva zdroje pre rôzne okruhy; TUV bojler zdrojom okruhov nie je.
+- Pole okruhu `source_sensor` (0.1.3) zostáva len ako dočasná náhrada, z formulára zmizne. Pre dom: zdroj „Akumulačná nádrž“ = `sensor.gf_watertank_up_temperature`, okruhy bez vlastného výberu.
+
 ## 2026-10-12 – regulácia zmiešavačov podľa teploty zdroja (akumulačná nádrž)
 - **Večer po nasadení 0.1.2:** zopnutí ~10–14/h (predtým ~75/h), prívod v ±1 K 77–88 % času, priemer presne na cieli. Zostávajúce vlnenie ±1 K s periódou ~25 min (prepady až −2,6/−3,0 K) **spôsobuje zdroj**: horná časť akumulačky kolíše 41–48 °C v rytme cyklov tepelného čerpadla a prívod ho s oneskorením kopíruje. Oba okruhy (F1 aj GF) sú **radiátory** (nie podlahovka – opravený predpoklad), takže prepady sú citeľnejšie.
 - **Rozhodnutie používateľa:** vidieť teplotu v akumulačke a riadiť podľa nej zmiešavače.

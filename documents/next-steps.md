@@ -135,3 +135,10 @@ Kód hotový lokálne (151 testov, ruff OK): čerpadlá okruhov, vlastná poloha
 - [x] `v0.1.3` vydaná, nainštalovaná cez HACS, reštart 21:00 (GF čerpadlo ostalo bežať)
 - [x] F1 aj GF: *Source temperature* = `sensor.gf_watertank_up_temperature` (21:02), integrácia `ok`, atribút `source_temperature` 44,0 °C
 - [ ] Overiť noc: % času v ±0,5 K, zopnutia za hodinu
+
+## Zdroj tepla ako časť integrácie (2026-10-12)
+- [x] Návrh v architektúre a denníku
+- [x] Subentry `source` (názov, senzor teploty), zariadenie + `sensor.<zdroj>_temperature`, výber zdroja v okruhu (jediný zdroj sa použije automaticky), `source_sensor` okruhu len ako dočasná náhrada; 178 testov
+- [ ] Vydať `v0.1.4`, update cez HACS, reštart
+- [ ] V dome: pridať zdroj „Akumulačná nádrž“ = `sensor.gf_watertank_up_temperature`, z okruhov F1 a GF vymazať `source_sensor`
+- [ ] Neskôr: zobraziť prehľadové senzory ako entity; požiadavka na zdroj; záložný senzor režimu presunúť k zdroju

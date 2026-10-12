@@ -253,14 +253,14 @@
                 "pump_delay": "Pump start delay",
                 "pump_run_on": "Pump run-on",
                 "settle": "Mixer settle time",
-                "source_sensor": "Source temperature (buffer tank)"
+                "source": "Heat source"
               },
               "data_description": {
                 "mixer_position": "Cover of the old integration; its position is used only as a first guess until the valve is homed.",
                 "pump_delay": "Seconds of demand before the pump starts, so the zone valves can open.",
                 "pump_run_on": "Seconds the pump keeps running after heating demand ends.",
                 "settle": "Seconds to wait after a valve move before the next one, until the changed water reaches the supply sensor. Longer if the valve swings, shorter if it is slow to reach the target.",
-                "source_sensor": "Optional. Water coming to the mixer, e.g. the top of a buffer tank or the heat pump supply. When the source rises or falls (a heat pump that cycles), the valve is moved at once instead of waiting for the supply sensor."
+                "source": "Where the circuit takes its water from. With a single heat source in the house it is used even when none is chosen."
               }
             }
           }
@@ -325,14 +325,14 @@
                 "pump_delay": "Pump start delay",
                 "pump_run_on": "Pump run-on",
                 "settle": "Mixer settle time",
-                "source_sensor": "Source temperature (buffer tank)"
+                "source": "Heat source"
               },
               "data_description": {
                 "mixer_position": "Cover of the old integration; its position is used only as a first guess until the valve is homed.",
                 "pump_delay": "Seconds of demand before the pump starts, so the zone valves can open.",
                 "pump_run_on": "Seconds the pump keeps running after heating demand ends.",
                 "settle": "Seconds to wait after a valve move before the next one, until the changed water reaches the supply sensor. Longer if the valve swings, shorter if it is slow to reach the target.",
-                "source_sensor": "Optional. Water coming to the mixer, e.g. the top of a buffer tank or the heat pump supply. When the source rises or falls (a heat pump that cycles), the valve is moved at once instead of waiting for the supply sensor."
+                "source": "Where the circuit takes its water from. With a single heat source in the house it is used even when none is chosen."
               }
             }
           }
@@ -351,6 +351,39 @@
       "entry_type": "Circuit",
       "abort": {
         "reconfigure_successful": "The circuit was updated."
+      }
+    },
+    "source": {
+      "step": {
+        "user": {
+          "title": "Heat source",
+          "description": "A buffer tank, boiler or heat pump the circuits take their water from. Its temperature lets the mixing valves react at once when the source warms up or cools down.",
+          "data": {
+            "name": "Name",
+            "temperature_sensor": "Temperature of the water it gives"
+          },
+          "data_description": {
+            "temperature_sensor": "For a buffer tank its top, where the circuits take the water; for a boiler or heat pump its supply."
+          }
+        },
+        "reconfigure": {
+          "title": "Heat source",
+          "description": "A buffer tank, boiler or heat pump the circuits take their water from. Its temperature lets the mixing valves react at once when the source warms up or cools down.",
+          "data": {
+            "name": "Name",
+            "temperature_sensor": "Temperature of the water it gives"
+          },
+          "data_description": {
+            "temperature_sensor": "For a buffer tank its top, where the circuits take the water; for a boiler or heat pump its supply."
+          }
+        }
+      },
+      "initiate_flow": {
+        "user": "Add heat source"
+      },
+      "entry_type": "Heat source",
+      "abort": {
+        "reconfigure_successful": "The heat source was updated."
       }
     }
   },
@@ -537,6 +570,9 @@
           "homing": "Homing (closing to the end stop)",
           "unknown": "Position unknown"
         }
+      },
+      "source_temperature": {
+        "name": "Temperature"
       }
     },
     "binary_sensor": {

@@ -4,6 +4,7 @@ from typing import Final
 
 DOMAIN: Final = "climate_circuits"
 SUBENTRY_TYPE_CIRCUIT: Final = "circuit"
+SUBENTRY_TYPE_SOURCE: Final = "source"
 STORAGE_KEY: Final = f"{DOMAIN}.state"
 STORAGE_VERSION: Final = 1
 EVENT_ACTIVITY: Final = f"{DOMAIN}_activity"

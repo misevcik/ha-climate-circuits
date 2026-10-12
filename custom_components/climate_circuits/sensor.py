@@ -33,7 +33,7 @@ from .core.texts import (
     curve_parameter_label,
     zone_text,
 )
-from .entity import CircuitEntity, HotWaterEntity, HouseEntity
+from .entity import CircuitEntity, HotWaterEntity, HouseEntity, SourceEntity
 
 _TEMP = vol.All(vol.Coerce(float), vol.Range(min=-40, max=90))
 SET_CURVE_SCHEMA = {
@@ -66,6 +66,10 @@ async def async_setup_entry(
                 CirculationSensor(house.hot_water, "circulation"),
                 CirculationTemperatureSensor(house.hot_water, "circulation_temperature"),
             ]
+        )
+    for source in house.sources.values():
+        async_add_entities(
+            [SourceTemperatureSensor(source, "source_temperature")], config_subentry_id=source.id
         )
     for circuit in house.circuits.values():
         entities: list[SensorEntity] = [
@@ -216,6 +220,19 @@ class CirculationTemperatureSensor(HotWaterEntity, SensorEntity):
     @property
     def native_value(self) -> float | None:
         return d.temperature if (d := self.hot_water.decision) else None
+
+
+class SourceTemperatureSensor(SourceEntity, SensorEntity):
+    """The water the heat source gives the circuits."""
+
+    _attr_device_class = SensorDeviceClass.TEMPERATURE
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
+    _attr_suggested_display_precision = 1
+
+    @property
+    def native_value(self) -> float | None:
+        return self.source.temperature()
 
 
 class CallingZonesSensor(CircuitEntity, SensorEntity):
