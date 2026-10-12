@@ -143,5 +143,6 @@ Kód hotový lokálne (151 testov, ruff OK): čerpadlá okruhov, vlastná poloha
 - [x] V dome: zdroj „Akumulačná nádrž“ = `sensor.gf_watertank_up_temperature` (`sensor.akumulacna_nadrz_temperature`), `source_sensor` z F1 aj GF odstránený; oba okruhy berú zdroj automaticky (41,3 °C)
 - [x] Prehľadové senzory ako entity na zariadení Climate Circuits (0.1.5)
 - [x] Aktivita: dôvod každého pohybu zmiešavača aj prečo stojí (0.1.5)
-- [ ] Vydať `v0.1.5`, update cez HACS, reštart
+- [x] `v0.1.5` vydaná, cez HACS, reštart 21:34; Aktivita píše dôvody, 7 prehľadových entít `sensor.climate_circuits_*`
+- [ ] Overiť noc: kompenzácia zdroja o 21:30–21:35 nestačila (zdroj 41,3→45,3 °C, zatvorené ~11 %, prívod aj tak 38,3 °C pri cieli 36,8) – zistiť, či je krok podľa zdroja malý (charakteristika ventilu) alebo senzor nádrže predbieha/mešká
 - [ ] Neskôr: požiadavka na zdroj; záložný senzor režimu presunúť k zdroju
