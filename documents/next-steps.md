@@ -139,6 +139,6 @@ Kód hotový lokálne (151 testov, ruff OK): čerpadlá okruhov, vlastná poloha
 ## Zdroj tepla ako časť integrácie (2026-10-12)
 - [x] Návrh v architektúre a denníku
 - [x] Subentry `source` (názov, senzor teploty), zariadenie + `sensor.<zdroj>_temperature`, výber zdroja v okruhu (jediný zdroj sa použije automaticky), `source_sensor` okruhu len ako dočasná náhrada; 178 testov
-- [ ] Vydať `v0.1.4`, update cez HACS, reštart
-- [ ] V dome: pridať zdroj „Akumulačná nádrž“ = `sensor.gf_watertank_up_temperature`, z okruhov F1 a GF vymazať `source_sensor`
+- [x] `v0.1.4` vydaná, nainštalovaná cez HACS, reštart
+- [x] V dome: zdroj „Akumulačná nádrž“ = `sensor.gf_watertank_up_temperature` (`sensor.akumulacna_nadrz_temperature`), `source_sensor` z F1 aj GF odstránený; oba okruhy berú zdroj automaticky (41,3 °C)
 - [ ] Neskôr: zobraziť prehľadové senzory ako entity; požiadavka na zdroj; záložný senzor režimu presunúť k zdroju
