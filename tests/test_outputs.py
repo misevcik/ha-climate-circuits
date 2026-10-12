@@ -411,3 +411,37 @@ async def test_booting_only_while_home_assistant_starts(hass, make_entry) -> Non
     assert await hass.config_entries.async_reload(entry.entry_id)
     await hass.async_block_till_done()
     assert not entry.runtime_data.booting
+
+
+async def test_pump_sensor_keeps_its_state_through_a_blip(hass, house, clock) -> None:
+    await _tick(hass, house, clock)
+    assert hass.states.get(PUMP_SENSOR).state == "off"
+    hass.states.async_set(PUMP, "unavailable")
+    await _tick(hass, house, clock, 0.3)
+    assert hass.states.get(PUMP_SENSOR).state == "off"
+    await _tick(hass, house, clock, 6)
+    assert hass.states.get(PUMP_SENSOR).state == "unknown"
+
+
+async def test_live_mixer_waits_for_a_move_to_show(hass, house, clock, calls) -> None:
+    circuit = next(iter(house.circuits.values()))
+    mixer = circuit.mixer
+    mixer.tracker.set(50.0)
+    await _control(hass, True)
+    set_thermostat(hass, ZONE, "heating")
+    await _tick(hass, house, clock)
+    mixer._tick(None)
+    await hass.async_block_till_done()
+    assert calls.count(("turn_on", OPEN)) == 1
+    clock.now += 20
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=30))
+    await hass.async_block_till_done()
+    assert ("turn_off", OPEN) in calls
+    clock.now += 30
+    mixer._tick(None)
+    await hass.async_block_till_done()
+    assert calls.count(("turn_on", OPEN)) == 1  # the water has not reached the sensor yet
+    clock.now += 150
+    mixer._tick(None)
+    await hass.async_block_till_done()
+    assert calls.count(("turn_on", OPEN)) == 2

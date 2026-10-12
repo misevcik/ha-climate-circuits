@@ -251,12 +251,14 @@
                 "hysteresis": "Hysteréza",
                 "mixer_position": "Poloha zmiešavača",
                 "pump_delay": "Oneskorenie štartu čerpadla",
-                "pump_run_on": "Dobeh čerpadla"
+                "pump_run_on": "Dobeh čerpadla",
+                "settle": "Čas ustálenia zmiešavača"
               },
               "data_description": {
                 "mixer_position": "Cover starej integrácie; jeho poloha slúži iba ako prvý odhad, kým sa ventil nezahomuje.",
                 "pump_delay": "Sekundy požiadavky pred štartom čerpadla, aby sa stihli otvoriť ventily zón.",
-                "pump_run_on": "Sekundy, počas ktorých čerpadlo beží po skončení požiadavky na kúrenie."
+                "pump_run_on": "Sekundy, počas ktorých čerpadlo beží po skončení požiadavky na kúrenie.",
+                "settle": "Sekundy čakania po pohybe ventilu pred ďalším, kým zmenená voda dotečie k senzoru prívodu. Dlhší, ak zmiešavač kmitá, kratší, ak cieľ dobieha pomaly."
               }
             }
           }
@@ -319,12 +321,14 @@
                 "hysteresis": "Hysteréza",
                 "mixer_position": "Poloha zmiešavača",
                 "pump_delay": "Oneskorenie štartu čerpadla",
-                "pump_run_on": "Dobeh čerpadla"
+                "pump_run_on": "Dobeh čerpadla",
+                "settle": "Čas ustálenia zmiešavača"
               },
               "data_description": {
                 "mixer_position": "Cover starej integrácie; jeho poloha slúži iba ako prvý odhad, kým sa ventil nezahomuje.",
                 "pump_delay": "Sekundy požiadavky pred štartom čerpadla, aby sa stihli otvoriť ventily zón.",
-                "pump_run_on": "Sekundy, počas ktorých čerpadlo beží po skončení požiadavky na kúrenie."
+                "pump_run_on": "Sekundy, počas ktorých čerpadlo beží po skončení požiadavky na kúrenie.",
+                "settle": "Sekundy čakania po pohybe ventilu pred ďalším, kým zmenená voda dotečie k senzoru prívodu. Dlhší, ak zmiešavač kmitá, kratší, ak cieľ dobieha pomaly."
               }
             }
           }

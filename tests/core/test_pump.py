@@ -47,3 +47,19 @@ def test_exercise_runs_an_idle_pump() -> None:
     timer = PumpTimer(delay=180, run_on=180)
     decision = timer.update(0, False, True, running=False, exercise_left=45)
     assert (decision.on, decision.reason, decision.remaining) == (True, R.EXERCISE, 45)
+
+
+def test_run_on_is_not_restarted_while_the_relay_still_reports_on() -> None:
+    timer = PumpTimer(delay=0, run_on=180)
+    decide(timer, 0, True)
+    assert decide(timer, 10, False).on
+    assert not decide(timer, 190, False, running=True).on  # run-on over, stop sent
+    stopped = decide(timer, 190.01, False, running=True)  # relay not off yet
+    assert (stopped.on, stopped.reason) == (False, R.IDLE)
+
+
+def test_no_run_on_after_an_exercise() -> None:
+    timer = PumpTimer(delay=180, run_on=180)
+    timer.update(0, False, True, running=False, exercise_left=60)
+    after = timer.update(60, False, True, running=True)
+    assert (after.on, after.reason) == (False, R.IDLE)

@@ -15,6 +15,7 @@ from .const import (
     DEFAULT_MODE_PAUSE,
     DEFAULT_PUMP_DELAY,
     DEFAULT_PUMP_RUN_ON,
+    DEFAULT_SETTLE,
     DEFAULT_THRESHOLD,
     DEFAULT_TRAVEL,
 )
@@ -108,6 +109,7 @@ class CircuitSettings:
     pump_run_on: float
     travel: float
     hysteresis: float
+    settle: float = DEFAULT_SETTLE
 
     @classmethod
     def from_data(cls, data: Mapping[str, Any]) -> CircuitSettings:
@@ -128,6 +130,7 @@ class CircuitSettings:
             pump_run_on=float(outputs.get("pump_run_on", DEFAULT_PUMP_RUN_ON)),
             travel=float(outputs.get("travel", DEFAULT_TRAVEL)),
             hysteresis=float(outputs.get("hysteresis", DEFAULT_HYSTERESIS)),
+            settle=float(outputs.get("settle", DEFAULT_SETTLE)),
         )
 
     @property

@@ -49,7 +49,9 @@ class PumpTimer:
                 self._on, PumpReason.RUNNING if self._on else PumpReason.WAITING, max(left, 0.0)
             )
         self._demand_since = None
-        if (self._on or running) and run_on_allowed and self.run_on > 0:
+        # Only a pump that ran for demand runs on. A relay still reporting on (the stop is
+        # not confirmed yet, or an exercise just ended) must not start another run-on.
+        if self._on and run_on_allowed and self.run_on > 0:
             if self._demand_ended is None:
                 self._demand_ended = now
             left = self._demand_ended + self.run_on - now

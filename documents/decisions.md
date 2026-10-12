@@ -11,6 +11,23 @@ Názov: **Climate Circuits**, doména `climate_circuits`, repozitár `ha-climate
 - Ponechané: zónové termostaty `*_cool`, `climate.gf_thermostat` a jeho pomocné entity (používa ich integrácia), `binary_sensor.f1_occupancy` (nejednoznačné vyhľadávanie).
 - **Čaká:** `switch.gf_sw_bedroom_cool` a `light.cfg_wintergarden_stairs` sa nezmazali (zablokované povolením v Claude Code) – zmazať ručne v Settings → Helpers, alebo povoliť nástroj.
 
+## 2026-10-12 – zmiešavače kmitajú (zistenie z prvej noci kúrenia)
+- GF (kúri celú noc, cieľ 32–39 °C): prívod kmitá ±1,5–2,5 K okolo cieľa s periódou ~10–12 min, poloha medzi ~15 a 75 % (ráno 42–100 %). Relé zopína **~75× za hodinu** (oba smery), teda ~1 800 štartov motora za deň.
+- F1 počas požiadavky (5:38–8:53) rovnako, ~95 zopnutí za hodinu.
+- Príčina: regulácia robí krok (5–10 %, 7,5 s pri zdvihu 125 s) **každých 30 s**, ale teplota za zmiešavačom reaguje až po ~1,5–2,5 min (dopravné oneskorenie vody + senzor). Kým sa prejaví prvý krok, urobí ďalšie 4–5 → prestrelí → to isté opačným smerom (limitný cyklus).
+- Popri tom: zatvorený zmiešavač bez požiadavky dostáva dotlak 2 s **každých 10 min** (F1 celú noc 6×/h) – zbytočné opotrebenie.
+- **Nová regulácia (schválená, `core/mixer.py`):**
+  - po pohybe čaká **čas ustálenia** (nové pole okruhu *Mixer settle time*, predvolene 150 s), kým zmenená voda dotečie k senzoru;
+  - **nerobí krok, ak teplota prívodu už sama smeruje k cieľu** a podľa trendu (posledné 2 min) ho dosiahne do času ustálenia;
+  - krok úmerný odchýlke: 4 % zdvihu na 1 K, najmenej 2 %, najviac 20 %;
+  - zatvorený zmiešavač bez požiadavky dostane dotlak najviac raz za 6 h (na doraze počas regulácie ostáva 10 min).
+- Overené simuláciou okruhu (dopravné oneskorenie 60–150 s, zotrvačnosť senzora 40–90 s, kolísanie zdroja). Stará regulácia v simulácii reprodukuje stav z domu (84–99 zopnutí/h, kmit ±2,5 K); nová **3–5 zopnutí/h, ±0,7 K**. Skok cieľa o 5 K dobehne za ~12 min bez prestrelenia. Pri 3× citlivejšom okruhu (zdroj 60 °C) nová ±0,8 K, stará ±7–14 K. Zvažované nastavenia: zisk 2–5 %/K, krok 10–25 %, čakanie 120–180 s; zvolené 4 / 20 / 150.
+- Popri tom opravené:
+  - **čerpadlo po dobehu znova naskočilo** (F1 8:56 a 8:59): po skončení dobehu sa vyslalo vypnutie, ale kým relé hlásilo `on`, ďalšie vyhodnotenie (o 6 ms) začalo nový dobeh. Dobeh teraz začne len po požiadavke, počas ktorej čerpadlo bežalo (nie po protáčaní ani pri nepotvrdenom vypnutí);
+  - `binary_sensor.<okruh>_pump` bol pri každom výpadku dosky na ~0,3 s `unknown`: počas výpadku kratšieho ako 5 s ukazuje posledný známy stav relé (`Relay.shown`). Konštanta `MIXER_RELAY_GRACE` premenovaná na `RELAY_GRACE`.
+- Testy: 168. Nasadenie a overenie na reálnej noci čaká.
+- **Nápad používateľa – samoučenie:** integrácia by si z vlastných pohybov zmerala oneskorenie (za koľko s sa teplota pohne po kroku) a citlivosť (K na % zdvihu) a podľa toho nastavila čas ustálenia a veľkosť kroku. Zatiaľ nerobené; najprv overiť túto verziu v dome.
+
 ## 2026-10-11 – zverejnenie na GitHube
 - Repo `github.com/misevcik/ha-climate-circuits`, **public** – HACS súkromné repá nepodporuje, inštalácia pôjde cez HACS (Custom repository).
 - Pred prvým pushom **zahodená lokálna história** (35 commitov) a nahradená jedným commitom `Climate Circuits 0.1.0`. Z dokumentov odstránené ID tepelného čerpadla v AUX cloude, IP reléovej dosky a ID config entry v HA. Autor commitov ostáva `misevcik@gmail.com` (rozhodnutie používateľa).

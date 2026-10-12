@@ -25,13 +25,13 @@ from .const import (
     EVALUATE_INTERVAL,
     EXERCISE_PUMP_SECONDS,
     MIXER_HOMING_DELAY,
-    MIXER_RELAY_GRACE,
     MIXER_RUN_MARGIN,
     RELAY_ATTEMPTS,
+    RELAY_GRACE,
     RELAY_RETRY,
     RELAY_RETRY_RESET,
 )
-from .core.mixer import Direction, MixerAction, MixerSettings, regulate
+from .core.mixer import Direction, MixerAction, MixerSettings, regulate, supply_trend
 from .core.mode import Mode
 from .core.protect import exercise_due
 from .core.pump import PumpDecision, PumpTimer
@@ -54,9 +54,21 @@ class Relay:
         self.house, self.entity_id, self.label = house, entity_id, label
         self._sent: tuple[bool, float, int] | None = None  # wanted, time, attempts
         self._reported = False
+        self._known: bool | None = None
+        self._lost_at: float | None = None
 
     def is_on(self) -> bool | None:
         return state.state == "on" if (state := state_of(self.house.hass, self.entity_id)) else None
+
+    def shown(self) -> bool | None:
+        """For display: the last known state through a short blip of the relay board."""
+        if (current := self.is_on()) is not None:
+            self._known, self._lost_at = current, None
+            return current
+        now = self.house.now()
+        if self._lost_at is None:
+            self._lost_at = now
+        return self._known if now - self._lost_at < RELAY_GRACE else None
 
     @callback
     def ensure(self, on: bool) -> bool:
@@ -181,13 +193,15 @@ class MixerController:
         self.open = Relay(house, s.mixer_open, f"{circuit.name} mixer open")
         self.close = Relay(house, s.mixer_close, f"{circuit.name} mixer close")
         self.tracker = TravelTracker(s.travel, s.travel)
-        self.params = MixerSettings(travel=s.travel, hysteresis=s.hysteresis)
+        self.params = MixerSettings(travel=s.travel, hysteresis=s.hysteresis, settle=s.settle)
         self.state = "idle"  # idle, opening, closing, homing
         self.proposal: MixerAction | None = None
         self._finish: CALLBACK_TYPE | None = None
         self._watchdog: CALLBACK_TYPE | None = None
         self._lost: CALLBACK_TYPE | None = None  # the moving relay is unavailable
         self._last_end_pulse: float | None = None
+        self._move_ended: float | None = None  # the regulation waits for it to show
+        self._supply: list[tuple[float, float]] = []  # (time, supply) for the trend
         self._proposal_logged: tuple[Any, ...] | None = None
         self._unsubs: list[CALLBACK_TYPE] = []
         self._seed()
@@ -286,7 +300,7 @@ class MixerController:
         if new is None or new.state not in ("on", "off"):
             if self.tracker.direction is direction and self._lost is None:
                 # Boards drop off the network for a moment: lose the move only if it lasts.
-                self._lost = async_call_later(house.hass, MIXER_RELAY_GRACE, self._relay_lost)
+                self._lost = async_call_later(house.hass, RELAY_GRACE, self._relay_lost)
             return
         if old is not None and old.state not in ("on", "off"):
             if self.tracker.direction is direction and self._lost is not None:
@@ -308,6 +322,8 @@ class MixerController:
                 and self.tracker.moving
                 and now - self.tracker.started < self.params.travel * 0.95
             )
+            if self.tracker.moving:
+                self._move_ended = now
             self.tracker.stop(now)
             if cut_short:  # somebody else switched the relay off: the end stop is not reached
                 self.tracker.clear()
@@ -373,14 +389,19 @@ class MixerController:
                 self._home()
             return
         target = circuit.target.value if circuit.target else None
+        supply = circuit.supply_temperature()
+        if supply is not None:
+            self._supply = [(t, v) for t, v in self._supply if now - t <= 600] + [(now, supply)]
         action = regulate(
             heating=house.mode is Mode.HEAT,
             demand=circuit.output_demand,
             target=target,
-            supply=circuit.supply_temperature(),
+            supply=supply,
             position=position,
             since_end_pulse=None if self._last_end_pulse is None else now - self._last_end_pulse,
             settings=self.params,
+            since_move=None if self._move_ended is None else now - self._move_ended,
+            trend=supply_trend(self._supply, now, self.params.trend_window),
         )
         self.proposal = action
         if controlling and action:

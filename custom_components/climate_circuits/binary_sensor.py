@@ -42,7 +42,7 @@ class PumpSensor(CircuitEntity, BinarySensorEntity):
 
     @property
     def is_on(self) -> bool | None:
-        return self.circuit.pump.relay.is_on() if self.circuit.pump else None
+        return self.circuit.pump.relay.shown() if self.circuit.pump else None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

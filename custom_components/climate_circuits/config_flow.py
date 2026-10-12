@@ -26,6 +26,7 @@ from .const import (
     DEFAULT_MODE_PAUSE,
     DEFAULT_PUMP_DELAY,
     DEFAULT_PUMP_RUN_ON,
+    DEFAULT_SETTLE,
     DEFAULT_THRESHOLD,
     DEFAULT_TRAVEL,
     DOMAIN,
@@ -179,6 +180,7 @@ CIRCUIT_SCHEMA = vol.Schema(
                 vol.Required("pump_run_on", default=DEFAULT_PUMP_RUN_ON): _number(0, 900, 10, "s"),
                 vol.Required("travel", default=DEFAULT_TRAVEL): _number(10, 600, 1, "s"),
                 vol.Required("hysteresis", default=DEFAULT_HYSTERESIS): _number(0.1, 5, 0.1, "°C"),
+                vol.Required("settle", default=DEFAULT_SETTLE): _number(30, 600, 10, "s"),
             }
         ),
     }

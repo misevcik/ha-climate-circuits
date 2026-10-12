@@ -19,7 +19,7 @@ RELAY_ATTEMPTS: Final = 3  # commands without a confirming state before it is re
 RELAY_RETRY_RESET: Final = 300  # s, then a relay that never confirmed is tried again
 MIXER_HOMING_DELAY: Final = 30  # s after the start before the mixers are homed
 MIXER_RUN_MARGIN: Final = 15  # s a relay may run beyond a full travel plus the end pulse
-MIXER_RELAY_GRACE: Final = 5  # s a moving relay may be unavailable before its position is lost
+RELAY_GRACE: Final = 5  # s a relay may be unavailable before it counts as lost (board blips)
 HOT_WATER_GRACE: Final = (
     60  # s after the start in which a missing circulation sensor is not reported
 )
@@ -48,6 +48,7 @@ DEFAULT_COOL_CURVE: Final = {
 }
 DEFAULT_TRAVEL: Final = 125
 DEFAULT_HYSTERESIS: Final = 0.5
+DEFAULT_SETTLE: Final = 150  # s after a mixer move before the next one
 DEFAULT_PUMP_DELAY: Final = 180  # s, the zone valves open
 DEFAULT_PUMP_RUN_ON: Final = 180  # s
 DEFAULT_MODE_PAUSE: Final = 60  # min between heating and cooling

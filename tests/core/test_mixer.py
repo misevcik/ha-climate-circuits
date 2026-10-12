@@ -10,6 +10,7 @@ from custom_components.climate_circuits.core.mixer import (
     advance,
     regulate,
     step_size,
+    supply_trend,
 )
 
 S = MixerSettings(travel=100.0, hysteresis=0.5)
@@ -35,8 +36,8 @@ def test_advance_clamps() -> None:
     assert advance(98.0, Direction.OPEN, 10.0, 100.0) == 100.0
 
 
-@pytest.mark.parametrize(("diff", "step"), [(0.6, 6), (1.4, 6), (2.5, 8), (-3.0, 8), (12.0, 10)])
-def test_step_size_like_mixerautomation(diff: float, step: int) -> None:
+@pytest.mark.parametrize(("diff", "step"), [(0.6, 2), (1.4, 6), (2.5, 10), (-3.0, 12), (12.0, 20)])
+def test_step_grows_with_the_difference(diff: float, step: int) -> None:
     assert step_size(diff, S) == step
 
 
@@ -47,7 +48,7 @@ def test_within_hysteresis_does_nothing() -> None:
 def test_heating_too_cold_opens() -> None:
     action = _regulate(supply=33.0)
     assert action.direction is Direction.OPEN
-    assert action.seconds == pytest.approx(7.0)
+    assert action.seconds == pytest.approx(8.0)  # 2 K x 4 %/K of a 100 s travel
     assert not action.end_pulse
 
 
@@ -82,8 +83,30 @@ def test_no_demand_closes_fully() -> None:
 
 
 def test_no_demand_closed_valve_only_pulses_rarely() -> None:
-    assert _regulate(demand=False, position=0.0, since_end_pulse=30.0) is None
-    assert _regulate(demand=False, position=0.0, since_end_pulse=700.0).end_pulse
+    assert _regulate(demand=False, position=0.0, since_end_pulse=700.0) is None
+    assert _regulate(demand=False, position=0.0, since_end_pulse=S.idle_pulse_interval).end_pulse
+
+
+def test_waits_after_a_move_until_it_reaches_the_sensor() -> None:
+    assert _regulate(supply=33.0, since_move=S.settle - 1) is None
+    assert _regulate(supply=33.0, since_move=S.settle).direction is Direction.OPEN
+
+
+def test_no_move_while_the_supply_already_heads_for_the_target() -> None:
+    # 2 K below, rising 1 K/min: there within the settle time
+    assert _regulate(supply=33.0, trend=1.0) is None
+    # rising too slowly, or falling: help it
+    assert _regulate(supply=33.0, trend=0.2).direction is Direction.OPEN
+    assert _regulate(supply=33.0, trend=-0.5).direction is Direction.OPEN
+    # too warm and already cooling fast
+    assert _regulate(supply=37.0, trend=-1.0) is None
+
+
+def test_trend_from_readings() -> None:
+    samples = [(0.0, 30.0), (60.0, 30.5), (120.0, 31.0)]
+    assert supply_trend(samples, 120.0, 120.0) == pytest.approx(0.5)
+    assert supply_trend(samples[:1], 0.0, 120.0) is None  # not enough history
+    assert supply_trend([(100.0, 30.0), (120.0, 30.2)], 120.0, 120.0) is None
 
 
 def test_missing_sensor_holds_position() -> None:
