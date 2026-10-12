@@ -252,13 +252,15 @@
                 "mixer_position": "Poloha zmiešavača",
                 "pump_delay": "Oneskorenie štartu čerpadla",
                 "pump_run_on": "Dobeh čerpadla",
-                "settle": "Čas ustálenia zmiešavača"
+                "settle": "Čas ustálenia zmiešavača",
+                "source_sensor": "Teplota zdroja (akumulačná nádrž)"
               },
               "data_description": {
                 "mixer_position": "Cover starej integrácie; jeho poloha slúži iba ako prvý odhad, kým sa ventil nezahomuje.",
                 "pump_delay": "Sekundy požiadavky pred štartom čerpadla, aby sa stihli otvoriť ventily zón.",
                 "pump_run_on": "Sekundy, počas ktorých čerpadlo beží po skončení požiadavky na kúrenie.",
-                "settle": "Sekundy čakania po pohybe ventilu pred ďalším, kým zmenená voda dotečie k senzoru prívodu. Dlhší, ak zmiešavač kmitá, kratší, ak cieľ dobieha pomaly."
+                "settle": "Sekundy čakania po pohybe ventilu pred ďalším, kým zmenená voda dotečie k senzoru prívodu. Dlhší, ak zmiešavač kmitá, kratší, ak cieľ dobieha pomaly.",
+                "source_sensor": "Nepovinné. Voda, ktorá prichádza do zmiešavača, napr. horná časť akumulačnej nádrže alebo výstup tepelného čerpadla. Keď zdroj stúpne alebo klesne (cyklujúce tepelné čerpadlo), zmiešavač sa pohne hneď a nečaká, kým zmenu uvidí senzor prívodu."
               }
             }
           }
@@ -322,13 +324,15 @@
                 "mixer_position": "Poloha zmiešavača",
                 "pump_delay": "Oneskorenie štartu čerpadla",
                 "pump_run_on": "Dobeh čerpadla",
-                "settle": "Čas ustálenia zmiešavača"
+                "settle": "Čas ustálenia zmiešavača",
+                "source_sensor": "Teplota zdroja (akumulačná nádrž)"
               },
               "data_description": {
                 "mixer_position": "Cover starej integrácie; jeho poloha slúži iba ako prvý odhad, kým sa ventil nezahomuje.",
                 "pump_delay": "Sekundy požiadavky pred štartom čerpadla, aby sa stihli otvoriť ventily zón.",
                 "pump_run_on": "Sekundy, počas ktorých čerpadlo beží po skončení požiadavky na kúrenie.",
-                "settle": "Sekundy čakania po pohybe ventilu pred ďalším, kým zmenená voda dotečie k senzoru prívodu. Dlhší, ak zmiešavač kmitá, kratší, ak cieľ dobieha pomaly."
+                "settle": "Sekundy čakania po pohybe ventilu pred ďalším, kým zmenená voda dotečie k senzoru prívodu. Dlhší, ak zmiešavač kmitá, kratší, ak cieľ dobieha pomaly.",
+                "source_sensor": "Nepovinné. Voda, ktorá prichádza do zmiešavača, napr. horná časť akumulačnej nádrže alebo výstup tepelného čerpadla. Keď zdroj stúpne alebo klesne (cyklujúce tepelné čerpadlo), zmiešavač sa pohne hneď a nečaká, kým zmenu uvidí senzor prívodu."
               }
             }
           }
@@ -518,6 +522,9 @@
           },
           "proposed": {
             "name": "Ďalší krok"
+          },
+          "source_temperature": {
+            "name": "Teplota zdroja"
           }
         }
       },

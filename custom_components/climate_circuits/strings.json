@@ -252,13 +252,15 @@
                 "mixer_position": "Mixer position",
                 "pump_delay": "Pump start delay",
                 "pump_run_on": "Pump run-on",
-                "settle": "Mixer settle time"
+                "settle": "Mixer settle time",
+                "source_sensor": "Source temperature (buffer tank)"
               },
               "data_description": {
                 "mixer_position": "Cover of the old integration; its position is used only as a first guess until the valve is homed.",
                 "pump_delay": "Seconds of demand before the pump starts, so the zone valves can open.",
                 "pump_run_on": "Seconds the pump keeps running after heating demand ends.",
-                "settle": "Seconds to wait after a valve move before the next one, until the changed water reaches the supply sensor. Longer if the valve swings, shorter if it is slow to reach the target."
+                "settle": "Seconds to wait after a valve move before the next one, until the changed water reaches the supply sensor. Longer if the valve swings, shorter if it is slow to reach the target.",
+                "source_sensor": "Optional. Water coming to the mixer, e.g. the top of a buffer tank or the heat pump supply. When the source rises or falls (a heat pump that cycles), the valve is moved at once instead of waiting for the supply sensor."
               }
             }
           }
@@ -322,13 +324,15 @@
                 "mixer_position": "Mixer position",
                 "pump_delay": "Pump start delay",
                 "pump_run_on": "Pump run-on",
-                "settle": "Mixer settle time"
+                "settle": "Mixer settle time",
+                "source_sensor": "Source temperature (buffer tank)"
               },
               "data_description": {
                 "mixer_position": "Cover of the old integration; its position is used only as a first guess until the valve is homed.",
                 "pump_delay": "Seconds of demand before the pump starts, so the zone valves can open.",
                 "pump_run_on": "Seconds the pump keeps running after heating demand ends.",
-                "settle": "Seconds to wait after a valve move before the next one, until the changed water reaches the supply sensor. Longer if the valve swings, shorter if it is slow to reach the target."
+                "settle": "Seconds to wait after a valve move before the next one, until the changed water reaches the supply sensor. Longer if the valve swings, shorter if it is slow to reach the target.",
+                "source_sensor": "Optional. Water coming to the mixer, e.g. the top of a buffer tank or the heat pump supply. When the source rises or falls (a heat pump that cycles), the valve is moved at once instead of waiting for the supply sensor."
               }
             }
           }
@@ -518,6 +522,9 @@
           },
           "proposed": {
             "name": "Next step"
+          },
+          "source_temperature": {
+            "name": "Source temperature"
           }
         }
       },

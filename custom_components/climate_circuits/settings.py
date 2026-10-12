@@ -110,6 +110,7 @@ class CircuitSettings:
     travel: float
     hysteresis: float
     settle: float = DEFAULT_SETTLE
+    source_sensor: str | None = None
 
     @classmethod
     def from_data(cls, data: Mapping[str, Any]) -> CircuitSettings:
@@ -131,6 +132,7 @@ class CircuitSettings:
             travel=float(outputs.get("travel", DEFAULT_TRAVEL)),
             hysteresis=float(outputs.get("hysteresis", DEFAULT_HYSTERESIS)),
             settle=float(outputs.get("settle", DEFAULT_SETTLE)),
+            source_sensor=outputs.get("source_sensor"),
         )
 
     @property

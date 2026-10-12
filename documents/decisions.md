@@ -11,6 +11,14 @@ Názov: **Climate Circuits**, doména `climate_circuits`, repozitár `ha-climate
 - Ponechané: zónové termostaty `*_cool`, `climate.gf_thermostat` a jeho pomocné entity (používa ich integrácia), `binary_sensor.f1_occupancy` (nejednoznačné vyhľadávanie).
 - **Čaká:** `switch.gf_sw_bedroom_cool` a `light.cfg_wintergarden_stairs` sa nezmazali (zablokované povolením v Claude Code) – zmazať ručne v Settings → Helpers, alebo povoliť nástroj.
 
+## 2026-10-12 – regulácia zmiešavačov podľa teploty zdroja (akumulačná nádrž)
+- **Večer po nasadení 0.1.2:** zopnutí ~10–14/h (predtým ~75/h), prívod v ±1 K 77–88 % času, priemer presne na cieli. Zostávajúce vlnenie ±1 K s periódou ~25 min (prepady až −2,6/−3,0 K) **spôsobuje zdroj**: horná časť akumulačky kolíše 41–48 °C v rytme cyklov tepelného čerpadla a prívod ho s oneskorením kopíruje. Oba okruhy (F1 aj GF) sú **radiátory** (nie podlahovka – opravený predpoklad), takže prepady sú citeľnejšie.
+- **Rozhodnutie používateľa:** vidieť teplotu v akumulačke a riadiť podľa nej zmiešavače.
+- Riešenie: nepovinný vstup okruhu `source_sensor` (*Source temperature*). Pri zmene zdroja o dT zmiešavač **hneď** (aj počas čakania na ustálenie) pohne o `dp = −p·(1−p)·dT / (zdroj − prívod)` – z modelu miešania `prívod = spiatočka + (zdroj − spiatočka)·p`, bez senzora spiatočky. Menej ako 2 % sa nechá spätnej väzbe; zdroj menej ako 2 K nad prívodom sa nekompenzuje; len pri kúrení. Referencia = teplota zdroja pri poslednom pohybe; pri výpadku senzora sa zahodí a po návrate začne odznova (bez skoku). Bez senzora sa správa ako doteraz.
+- Teplota zdroja je atribút `source_temperature` na `sensor.<okruh>_mixer_position`.
+- Simulácia s cyklovaním zdroja 41→48→41 °C / 25 min, oneskorením 60–120 s a zotrvačnosťou 120–240 s: bez zdroja 12–15 pohybov/h, |odch.| 0,5–0,7 K, v ±0,5 K 34–50 % (zhoduje sa s domom); **so zdrojom 15–21 pohybov/h, |odch.| ~0,25 K, v ±0,5 K 97–100 %**, aj keď senzor nádrže mešká 2 min za vstupom zmiešavača.
+- Testy: 173. Pre dom: oba okruhy nastaviť na `sensor.gf_watertank_up_temperature`.
+
 ## 2026-10-12 – ochranná doba po štarte, nasadzovanie cez HACS
 - Pri reštarte HA 12:49 integrácia vypla bežiace GF čerpadlo: vyhodnotila skôr, ako sa načítal termostat GF („no demand“), relé sa po pripojení dosky hneď vyplo a po objavení požiadavky čerpadlo čakalo znova 180 s. Rovnako by mohla zbytočne zavrieť zmiešavač.
 - Oprava: `START_GRACE` = 90 s po štarte integrácie chýbajúca požiadavka nevypína bežiace čerpadlo a nezatvára zmiešavač. Keď sa požiadavka objaví, bežiace čerpadlo pokračuje bez čakania. Testy: 170.

@@ -4,6 +4,11 @@ The supply temperature answers a move only after the water reaches the sensor (o
 minutes), so after a move the regulation waits, and it does not move while the temperature
 is already heading for the target. Without that it overshoots and swings.
 
+With a source sensor (a buffer tank, a heat pump that cycles) a change of the source is met
+at once: the supply is a mix of source and return water, so a source change of dT moves it
+by about position x dT, and the valve is moved by the share that keeps the supply where it
+is, without waiting for the supply sensor to see it.
+
 At an end stop the relay is pulsed now and then so the valve really sits there.
 """
 
@@ -31,6 +36,7 @@ class MixerSettings:
     min_step: int = 2  # %
     max_step: int = 20  # %
     trend_window: float = 120.0  # s of supply readings the trend is taken from
+    min_source_gap: float = 2.0  # K the source must be above the supply to compensate
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,6 +65,21 @@ def supply_trend(samples: Sequence[tuple[float, float]], now: float, window: flo
         return None
     (t0, v0), (t1, v1) = recent[0], recent[-1]
     return (v1 - v0) / (t1 - t0) * 60.0
+
+
+def source_compensation(
+    position: float, supply: float, source: float, source_ref: float, settings: MixerSettings
+) -> float | None:
+    """% to move (negative closes) so that the source change since source_ref leaves the supply.
+
+    supply = return + (source - return) x p, so source - return = (source - supply) / (1 - p)
+    and keeping the supply needs dp = -p x (1 - p) x dSource / (source - supply).
+    """
+    p = position / 100.0
+    gap = source - supply
+    if gap < settings.min_source_gap or not 0.0 < p < 1.0:
+        return None
+    return -100.0 * p * (1.0 - p) * (source - source_ref) / gap
 
 
 def homing_action(settings: MixerSettings, reason: str) -> MixerAction:
@@ -90,10 +111,13 @@ def regulate(
     settings: MixerSettings,
     since_move: float | None = None,
     trend: float | None = None,
+    source: float | None = None,
+    source_ref: float | None = None,
 ) -> MixerAction | None:
     """One step, or None to stay. Opening means "more" in both modes.
 
-    since_move: s since the last move ended; trend: supply change in K per minute.
+    since_move: s since the last move ended; trend: supply change in K per minute;
+    source: source temperature now, source_ref: what it was at the last move.
     """
     if position is None:
         return homing_action(settings, "position unknown")
@@ -108,6 +132,15 @@ def regulate(
             settings,
             "no demand, closed",
         )
+    if heating and None not in (supply, source, source_ref):
+        change = source_compensation(position, supply, source, source_ref, settings)  # type: ignore[arg-type]
+        if change is not None and abs(change) >= settings.min_step:
+            direction = Direction.OPEN if change > 0 else Direction.CLOSE
+            room = 100.0 - position if change > 0 else position
+            step = min(abs(change), float(settings.max_step), room)
+            if step >= settings.min_step:
+                reason = f"{direction} {step:.0f} % (source {source_ref:.1f} -> {source:.1f})"
+                return MixerAction(direction, step / 100.0 * settings.travel, reason)
     if target is None or supply is None or abs(target - supply) <= settings.hysteresis:
         return None
     if since_move is not None and since_move < settings.settle:

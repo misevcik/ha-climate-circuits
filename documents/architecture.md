@@ -275,6 +275,7 @@ Výsledok je v `sensor.<okruh>_target_water_temperature` s atribútmi `reason`, 
 - Typ: 3-bodový pohon cez dve relé (otvor / zatvor) alebo analógový výstup 0–10 V (`number`).
 - Polohu počíta integrácia sama z potvrdených časov zopnutia relé (bez `cover_time_based`).
 - Regulácia: krok 4 % zdvihu na 1 K odchýlky (2–20 %), hysteréza; po pohybe čaká čas ustálenia (pole okruhu, predvolene 150 s), kým voda dotečie k senzoru; nerobí krok, keď teplota prívodu podľa trendu posledných 2 min dosiahne cieľ do času ustálenia. „Otvoriť“ znamená viac tepla pri kúrení aj viac chladu pri chladení. Bez požiadavky sa zmiešavač zatvorí (dotlak potom najviac raz za 6 h).
+- Nepovinný senzor zdroja (akumulačka, výstup tepelného čerpadla): pri zmene zdroja o dT sa zmiešavač hneď pohne o `−p·(1−p)·dT/(zdroj − prívod)`, aby prívod ostal; zvyšok dorovná spätná väzba. Teplota zdroja je atribút polohy zmiešavača.
 - Dotlak na doraze počas regulácie (2 s impulz pri 0 % / 100 %) najviac raz za 10 min; pri dosiahnutí dorazu dobeh 2 s.
 - Ochrana motora: nikdy nezopne opačný smer, kým nemá potvrdené vypnutie prvého, pauza medzi smermi, maximálna doba zopnutia (dráha + rezerva), po obnovení spojenia najprv vypne obe relé.
 - Homing (celá dráha + dotlak), keď poloha nie je známa: prvý štart, relé zopnuté pri štarte, pohyb prerušený vypnutím HA, relé nedostupné počas pohybu dlhšie ako 5 s, homing skrátený niekým iným, 7 dní bez pohybu. Inak sa po štarte pokračuje z uloženej polohy.

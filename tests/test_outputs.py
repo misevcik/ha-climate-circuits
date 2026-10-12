@@ -20,6 +20,7 @@ PUMP = "switch.f1_pump_relay"
 OPEN = "switch.f1_open"
 CLOSE = "switch.f1_close"
 SUPPLY = "sensor.f1_supply"
+SOURCE = "sensor.f1_source"
 PUMP_SENSOR = "binary_sensor.f1_pump"
 POSITION = "sensor.f1_mixer_position"
 
@@ -61,6 +62,7 @@ async def house(hass: HomeAssistant, make_entry, clock: Clock):
     for relay in (PUMP, OPEN, CLOSE):
         hass.states.async_set(relay, "off")
     hass.states.async_set(SUPPLY, "30.0")
+    hass.states.async_set(SOURCE, "45.0")
     set_thermostat(hass, ZONE, "idle")
     entry = make_entry(
         circuit_data(
@@ -71,6 +73,7 @@ async def house(hass: HomeAssistant, make_entry, clock: Clock):
                 "mixer_open": OPEN,
                 "mixer_close": CLOSE,
                 "supply_sensor": SUPPLY,
+                "source_sensor": SOURCE,
                 "pump_delay": 180,
                 "pump_run_on": 180,
                 "travel": 100,
@@ -468,3 +471,21 @@ async def test_mixer_is_not_closed_until_the_zones_load(hass, house, clock, call
     mixer._tick(None)
     await hass.async_block_till_done()
     assert ("turn_on", CLOSE) in calls
+
+
+async def test_mixer_follows_the_source_at_once(hass, house, clock, calls) -> None:
+    mixer = next(iter(house.circuits.values())).mixer
+    mixer.tracker.set(40.0)
+    await _control(hass, True)
+    set_thermostat(hass, ZONE, "heating")
+    hass.states.async_set(SUPPLY, "35.0")
+    await _tick(hass, house, clock, 100)
+    mixer._tick(None)  # sets the source reference
+    await hass.async_block_till_done()
+    calls.clear()
+    hass.states.async_set(SOURCE, "50.0")  # the heat pump starts heating the tank
+    await _tick(hass, house, clock, 30)
+    mixer._tick(None)
+    await hass.async_block_till_done()
+    assert ("turn_on", CLOSE) in calls
+    assert hass.states.get(POSITION).attributes["source_temperature"] == 50.0

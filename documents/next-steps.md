@@ -128,3 +128,10 @@ Kód hotový lokálne (151 testov, ruff OK): čerpadlá okruhov, vlastná poloha
 - [ ] Opraviť popis repa na GitHube (`Control of heating unde home assistant`), HACS ho zobrazuje
 - [ ] Overiť jednu noc: počet zopnutí za hodinu, rozkmit prívodu GF, prípadne doladiť *Mixer settle time*
 - [ ] Samoučenie oneskorenia a citlivosti okruhu (nápad používateľa)
+
+## Regulácia podľa zdroja (2026-10-12)
+- [x] Analýza večera: vlnenie spôsobuje cyklovanie akumulačky 41–48 °C; okruhy sú radiátory
+- [x] `source_sensor` + kompenzácia zmeny zdroja, simulácia, 173 testov
+- [ ] Vydať `v0.1.3` (release), update cez HACS, reštart
+- [ ] V oboch okruhoch nastaviť *Source temperature* = `sensor.gf_watertank_up_temperature`
+- [ ] Overiť noc: % času v ±0,5 K, zopnutia za hodinu

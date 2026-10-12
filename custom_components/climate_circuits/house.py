@@ -136,7 +136,7 @@ class Circuit(Listeners):
         return {
             *s.zones,
             *s.humidity_sensors,
-            *filter(None, [s.supply_sensor, s.mixer_position]),
+            *filter(None, [s.supply_sensor, s.source_sensor, s.mixer_position]),
             *(self.pump.inputs() if self.pump else ()),
             *(self.mixer.inputs() if self.mixer else ()),
         }
@@ -164,6 +164,10 @@ class Circuit(Listeners):
 
     def supply_temperature(self) -> float | None:
         return float_of(self.house.hass, self.settings.supply_sensor)
+
+    def source_temperature(self) -> float | None:
+        """Water coming to the mixer (buffer tank, heat pump), when a sensor is set."""
+        return float_of(self.house.hass, self.settings.source_sensor)
 
     @callback
     def evaluate(self, mode: Mode, outdoor: float | None) -> None:

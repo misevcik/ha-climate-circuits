@@ -250,8 +250,10 @@ class MixerPositionSensor(CircuitEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         supply, target = self.circuit.supply_temperature(), self.circuit.target
+        source = self.circuit.source_temperature()
         return {
             "supply_temperature": round(supply, 1) if supply is not None else None,
+            "source_temperature": round(source, 1) if source is not None else None,
             "target_temperature": target.value if target else None,
             "source": "integration" if self.circuit.mixer else self.circuit.settings.mixer_position,
         } | (self.circuit.mixer.details() if self.circuit.mixer else {})

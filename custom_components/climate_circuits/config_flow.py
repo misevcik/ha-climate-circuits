@@ -173,6 +173,7 @@ CIRCUIT_SCHEMA = vol.Schema(
                 vol.Optional("mixer_open"): RELAY,
                 vol.Optional("mixer_close"): RELAY,
                 vol.Optional("supply_sensor"): TEMPERATURE_SENSOR,
+                vol.Optional("source_sensor"): TEMPERATURE_SENSOR,
                 vol.Optional("mixer_position"): sel.EntitySelector(
                     sel.EntitySelectorConfig(domain="cover")
                 ),

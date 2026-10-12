@@ -9,6 +9,7 @@ from custom_components.climate_circuits.core.mixer import (
     MixerSettings,
     advance,
     regulate,
+    source_compensation,
     step_size,
     supply_trend,
 )
@@ -119,3 +120,26 @@ def test_unknown_position_homes() -> None:
     assert action.homing
     assert action.direction is Direction.CLOSE
     assert action.seconds == S.travel + S.end_pulse
+
+
+def test_source_compensation_keeps_the_supply() -> None:
+    # 40 % open, source 45, supply 31: return = (31 - 0.4 x 45) / 0.6 = 21.67
+    change = source_compensation(40.0, 31.0, 48.0, 45.0, S)
+    # check against the mixing model: the new position gives the old supply at the new source
+    p = 0.4 + change / 100.0
+    ret = (31.0 - 0.4 * 45.0) / 0.6
+    assert ret + (48.0 - ret) * p == pytest.approx(31.0, abs=0.3)
+    assert change < 0
+    assert source_compensation(40.0, 31.0, 42.0, 45.0, S) > 0
+    assert source_compensation(0.0, 31.0, 48.0, 45.0, S) is None  # closed: nothing to scale
+    assert source_compensation(40.0, 31.0, 32.0, 30.0, S) is None  # source barely above supply
+
+
+def test_source_change_moves_at_once_even_while_settling() -> None:
+    action = _regulate(supply=35.0, source=50.0, source_ref=45.0, since_move=10.0)
+    assert action.direction is Direction.CLOSE
+    assert "source 45.0 -> 50.0" in action.reason
+    # a small source change is left to the supply regulation
+    assert _regulate(supply=35.0, source=45.2, source_ref=45.0) is None
+    # without a reference (sensor just appeared) nothing is compensated
+    assert _regulate(supply=35.0, source=50.0, source_ref=None) is None

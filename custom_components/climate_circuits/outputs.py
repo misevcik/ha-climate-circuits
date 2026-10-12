@@ -205,6 +205,7 @@ class MixerController:
         self._last_end_pulse: float | None = None
         self._move_ended: float | None = None  # the regulation waits for it to show
         self._supply: list[tuple[float, float]] = []  # (time, supply) for the trend
+        self._source_ref: float | None = None  # source temperature at the last move
         self._proposal_logged: tuple[Any, ...] | None = None
         self._unsubs: list[CALLBACK_TYPE] = []
         self._seed()
@@ -397,6 +398,9 @@ class MixerController:
         supply = circuit.supply_temperature()
         if supply is not None:
             self._supply = [(t, v) for t, v in self._supply if now - t <= 600] + [(now, supply)]
+        source = circuit.source_temperature()
+        if source is None or self._source_ref is None:
+            self._source_ref = source  # (re)start from here: no jump when the sensor returns
         action = regulate(
             heating=house.mode is Mode.HEAT,
             demand=circuit.output_demand,
@@ -407,12 +411,17 @@ class MixerController:
             settings=self.params,
             since_move=None if self._move_ended is None else now - self._move_ended,
             trend=supply_trend(self._supply, now, self.params.trend_window),
+            source=source,
+            source_ref=self._source_ref,
         )
         self.proposal = action
         if controlling and action:
-            self._execute(action, now)
+            if self._execute(action, now):
+                self._source_ref = source
         elif not controlling:
             self._log_proposal(action)
+            if action:
+                self._source_ref = source
         circuit.refresh()
 
     @property
@@ -427,14 +436,17 @@ class MixerController:
             if action is not None and self.circuit.house.logging:
                 self._log("mixer_proposal", proposal=True, reason=action.reason)
 
-    def _execute(self, action: MixerAction, now: float) -> None:
+    def _execute(self, action: MixerAction, now: float) -> bool:
+        """True when the move started."""
         if action.homing:
             self._home()
-            return
-        if self._run(action.direction, action.seconds, homing=False):
-            if action.end_pulse:
-                self._last_end_pulse = now
-            self._log("mixer", reason=action.reason)
+            return False
+        if not self._run(action.direction, action.seconds, homing=False):
+            return False
+        if action.end_pulse:
+            self._last_end_pulse = now
+        self._log("mixer", reason=action.reason)
+        return True
 
     def _run(self, direction: Direction, seconds: float, *, homing: bool) -> bool:
         """Start a move; the other relay must be off first."""
