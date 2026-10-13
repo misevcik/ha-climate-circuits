@@ -60,3 +60,22 @@ def test_why_it_holds() -> None:
         is None
     )
     assert hold_reason(demand=False, target=36.8, supply=35.0, position=74.0, settings=S) is None
+
+
+def test_why_it_holds_for_a_cold_source() -> None:
+    hold = hold_reason(
+        demand=True, target=36.8, supply=34.0, position=100.0, settings=S, source=36.0
+    )
+    assert hold[0] == "source_weak"
+    assert "the source 36.0 °C is too cold for the target 36.8 °C" in mixer_hold_text(
+        *hold, "GF", "en"
+    )
+
+
+def test_source_set_too_low_for_the_target() -> None:
+    from custom_components.climate_circuits.core.texts import source_text
+
+    assert source_text("short", "GF", "Buffer tank", 45.0, 44.0, "en") == (
+        "GF: wants 44.0 °C water, but Buffer tank is set to 45.0 °C – only 1.0 °C to spare, "
+        "the supply may fall short"
+    )

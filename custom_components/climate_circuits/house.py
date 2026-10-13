@@ -23,6 +23,7 @@ from .const import (
     EVALUATE_INTERVAL,
     HOT_WATER_GRACE,
     HOT_WATER_TUNING,
+    SOURCE_HEADROOM,
     STORAGE_KEY,
     STORAGE_VERSION,
     ZONE_COMMAND_ATTEMPTS,
@@ -39,6 +40,7 @@ from .core.texts import (
     circulation_message,
     mode_message,
     other_zones_kind,
+    source_text,
     zones_message,
 )
 from .core.zones import OFF, ZonePlan, plan_zones
@@ -101,10 +103,18 @@ class Source(Listeners):
         return self.settings.name
 
     def inputs(self) -> set[str]:
-        return set(filter(None, [self.settings.temperature_sensor]))
+        return set(filter(None, [self.settings.temperature_sensor, self.settings.setpoint_entity]))
 
     def temperature(self) -> float | None:
         return float_of(self.house.hass, self.settings.temperature_sensor)
+
+    def setpoint(self) -> float | None:
+        """What the source is set to give: a climate's target, else the entity's value."""
+        if (state := state_of(self.house.hass, self.settings.setpoint_entity)) is None:
+            return None
+        if state.domain == "climate":
+            return number(state.attributes.get("temperature"))
+        return number(state.state)
 
     @callback
     def refresh(self) -> None:
@@ -130,6 +140,7 @@ class Circuit(Listeners):
             else None
         )
         self._logged: tuple[Any, ...] | None = None
+        self._short: bool | None = None  # the source set too low for the target
 
     @property
     def enabled(self) -> bool:
@@ -218,6 +229,7 @@ class Circuit(Listeners):
         self.target = water_target(mode, curve, outdoor, self.dew_point, DEW_POINT_MARGIN)
         self.blocked = self._check_protections(mode, self.house.pause_remaining, temperatures)
         self._log_change()
+        self._check_source_headroom(mode)
         if self.pump:
             self.pump.evaluate()
         self._notify()
@@ -234,6 +246,44 @@ class Circuit(Listeners):
         if mode is Mode.COOL:
             return self.guard.check(self.house.now(), self.supply_temperature(), self.dew_point)
         return None
+
+    def source_headroom(self) -> float | None:
+        """K the heat source is set above this circuit's target water, when both are known."""
+        source = self.source()
+        setpoint = source.setpoint() if source else None
+        if setpoint is None or self.target is None:
+            return None
+        return setpoint - self.target.value
+
+    @callback
+    def _check_source_headroom(self, mode: Mode) -> None:
+        """Activity entry when the heat source is set too low for the target, and when not."""
+        headroom = self.source_headroom()
+        if not self.house.logging or mode is not Mode.HEAT or not self.demand.active:
+            return
+        if headroom is None:
+            return
+        short = headroom < SOURCE_HEADROOM
+        if short == self._short:
+            return
+        first = self._short is None
+        self._short = short
+        if first and not short:
+            return  # nothing to say while it is enough
+        source = self.source()
+        house = self.house
+        house.activity(
+            self.name,
+            source_text(
+                "short" if short else "enough",
+                self.name,
+                source.name if source else "",
+                source.setpoint() if source else None,
+                self.target.value if self.target else None,
+                house.hass.config.language,
+            ),
+            f"{self.id}_target_water_temperature",
+        )
 
     @callback
     def _log_change(self) -> None:

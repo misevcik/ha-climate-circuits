@@ -22,6 +22,7 @@ MIXER_HOMING_DELAY: Final = 30  # s after the start before the mixers are homed
 MIXER_RUN_MARGIN: Final = 15  # s a relay may run beyond a full travel plus the end pulse
 RELAY_GRACE: Final = 5  # s a relay may be unavailable before it counts as lost (board blips)
 START_GRACE: Final = 90  # s after the start in which missing demand does not stop outputs
+SOURCE_HEADROOM: Final = 2.0  # K a heat source should be set above a circuit's target water
 HOT_WATER_GRACE: Final = (
     60  # s after the start in which a missing circulation sensor is not reported
 )

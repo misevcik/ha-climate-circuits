@@ -11,6 +11,14 @@ Názov: **Climate Circuits**, doména `climate_circuits`, repozitár `ha-climate
 - Ponechané: zónové termostaty `*_cool`, `climate.gf_thermostat` a jeho pomocné entity (používa ich integrácia), `binary_sensor.f1_occupancy` (nejednoznačné vyhľadávanie).
 - **Čaká:** `switch.gf_sw_bedroom_cool` a `light.cfg_wintergarden_stairs` sa nezmazali (zablokované povolením v Claude Code) – zmazať ručne v Settings → Helpers, alebo povoliť nástroj.
 
+## 2026-10-13 – zdroj pozná svoju nastavenú teplotu (krok 1)
+- Používateľ: treba zahrnúť cieľ ohrevu tepelného čerpadla – `climate.aux_cloud_…_heat_pump_central_heating` má cieľ 45 °C (eco), max 64, krok 1, dá sa nastavovať.
+- Zdroj má nepovinné pole **Nastavená teplota** (`setpoint_entity`: climate → jeho cieľová teplota, inak number/input_number/sensor). Entita `sensor.<zdroj>_set_temperature`; atribút `source_headroom` na cieľovej teplote vody okruhu.
+- **Upozornenie v Aktivite** (pri cieľovej teplote vody okruhu): keď okruh pri kúrení s požiadavkou chce vodu menej ako `SOURCE_HEADROOM` = 2 K pod nastavenou teplotou zdroja, a keď to opäť stačí.
+- **Zmiešavač neotvára pri studenom zdroji:** keď je zdroj teraz chladnejší ako cieľ + 1 K (ohrev TÚV, odmrazovanie), neotvára ani podľa prívodu, ani podľa kompenzácie zdroja; zatvárať smie. Aktivita: „holding – the source … is too cold for the target …“. Proti prestreleniu po návrate tepla (F1 +5 K v noci 12./13. 10.).
+- Krok 2 (integrácia nastavuje cieľ TČ = najvyšší cieľ okruhov + rezerva, samostatný prepínač, predvolene vypnutý) – čaká na súhlas.
+- Testy: 188.
+
 ## 2026-10-13 – vyhodnotenie noci s kompenzáciou zdroja (0.1.5, 12. 10. 21:40 – 13. 10. 5:28)
 - **Celkovo (s požiadavkou):** GF |odch.| 0,99 K, v ±0,5 K 45 %, ±1 K 72 %, min −5,3 K; F1 |odch.| 1,00 K, ±0,5 K 52 %, ±1 K 72 %, −9,6/+5,1 K. Zopnutia GF 8,3/h, F1 15,6/h.
 - **Veľké odchýlky spôsobil zdroj, nie regulácia:**

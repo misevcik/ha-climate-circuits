@@ -5,10 +5,15 @@ from __future__ import annotations
 from homeassistant.config_entries import SOURCE_USER
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
+from pytest_homeassistant_custom_component.common import async_capture_events
 
-from custom_components.climate_circuits.const import SUBENTRY_TYPE_CIRCUIT, SUBENTRY_TYPE_SOURCE
+from custom_components.climate_circuits.const import (
+    EVENT_ACTIVITY,
+    SUBENTRY_TYPE_CIRCUIT,
+    SUBENTRY_TYPE_SOURCE,
+)
 
-from .conftest import circuit_data, source_data
+from .conftest import HEAT_PUMP, OUTDOOR, circuit_data, set_thermostat, source_data
 
 TANK_TOP = "sensor.tank_top"
 BOILER = "sensor.boiler_supply"
@@ -79,3 +84,24 @@ async def test_with_two_sources_the_circuit_uses_the_chosen_one(
         }
     )
     assert circuit.source_temperature() == 60.0
+
+
+HEAT_PUMP_TARGET = "climate.heat_pump_target"
+
+
+async def test_set_temperature_and_a_warning_when_too_low(hass: HomeAssistant, make_entry) -> None:
+    hass.states.async_set(HEAT_PUMP, "heat")
+    hass.states.async_set(OUTDOOR, "0.0")
+    hass.states.async_set(HEAT_PUMP_TARGET, "heat", {"temperature": 30.0})
+    set_thermostat(hass, "climate.room", "heating")
+    events = async_capture_events(hass, EVENT_ACTIVITY)
+    source = source_data("Buffer tank", TANK_TOP)
+    source["data"]["setpoint_entity"] = HEAT_PUMP_TARGET
+    await _setup(
+        hass, make_entry, source, circuit_data("F1", zones={"heating_zones": ["climate.room"]})
+    )
+    assert hass.states.get("sensor.buffer_tank_set_temperature").state == "30.0"
+    assert any("is set to 30.0 °C" in e.data["message"] for e in events)
+    hass.states.async_set(HEAT_PUMP_TARGET, "heat", {"temperature": 60.0})
+    await hass.async_block_till_done()
+    assert any("covers the" in e.data["message"] for e in events)

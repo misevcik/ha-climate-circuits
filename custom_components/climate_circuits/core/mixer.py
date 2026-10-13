@@ -37,6 +37,7 @@ class MixerSettings:
     max_step: int = 20  # %
     trend_window: float = 120.0  # s of supply readings the trend is taken from
     min_source_gap: float = 2.0  # K the source must be above the supply to compensate
+    weak_source_margin: float = 1.0  # K a source must be above the target to open further for it
 
 
 @dataclass(frozen=True, slots=True)
@@ -151,13 +152,19 @@ def regulate(
             "no demand, closed",
             "idle_pulse",
         )
+    weak = (
+        heating
+        and source is not None
+        and target is not None
+        and source < target + settings.weak_source_margin
+    )
     if heating and None not in (supply, source, source_ref):
         change = source_compensation(position, supply, source, source_ref, settings)  # type: ignore[arg-type]
         if change is not None and abs(change) >= settings.min_step:
             direction = Direction.OPEN if change > 0 else Direction.CLOSE
             room = 100.0 - position if change > 0 else position
             step = min(abs(change), float(settings.max_step), room)
-            if step >= settings.min_step:
+            if step >= settings.min_step and not (weak and change > 0):
                 reason = f"{direction} {step:.0f} % (source {source_ref:.1f} -> {source:.1f})"
                 return MixerAction(
                     direction,
@@ -176,6 +183,8 @@ def regulate(
             return None  # already on its way: it gets there before the next move could help
 
     more = supply < target if heating else supply > target
+    if more and weak:
+        return None  # the source cannot give it now (hot water, defrost): no overshoot later
     direction = Direction.OPEN if more else Direction.CLOSE
     room = 100.0 - position if more else position
     if room <= 0:
@@ -213,6 +222,7 @@ def hold_reason(
     settings: MixerSettings,
     since_move: float | None = None,
     trend: float | None = None,
+    source: float | None = None,
 ) -> tuple[str, dict[str, float]] | None:
     """Why regulate() stays, for Activity; None when there is nothing worth saying.
 
@@ -227,6 +237,8 @@ def hold_reason(
     values = {"supply": supply, "target": target, "position": position}
     if abs(target - supply) <= settings.hysteresis:
         return "band", values | {"hysteresis": settings.hysteresis}
+    if supply < target and source is not None and source < target + settings.weak_source_margin:
+        return "source_weak", values | {"source": source}
     if since_move is not None and since_move < settings.settle:
         return None
     if trend is not None:

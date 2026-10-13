@@ -143,3 +143,13 @@ def test_source_change_moves_at_once_even_while_settling() -> None:
     assert _regulate(supply=35.0, source=45.2, source_ref=45.0) is None
     # without a reference (sensor just appeared) nothing is compensated
     assert _regulate(supply=35.0, source=50.0, source_ref=None) is None
+
+
+def test_a_source_too_cold_for_the_target_does_not_open_the_valve() -> None:
+    # hot water heating took the tank down to 35.5 for a target of 35
+    assert _regulate(target=35.0, supply=33.0, source=35.5, source_ref=45.0) is None
+    # closing is still allowed
+    action = _regulate(target=35.0, supply=37.0, source=35.5, source_ref=35.5)
+    assert action.direction is Direction.CLOSE
+    # a warm enough source opens as before
+    assert _regulate(target=35.0, supply=33.0, source=45.0).direction is Direction.OPEN

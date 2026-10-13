@@ -360,10 +360,12 @@
           "description": "A buffer tank, boiler or heat pump the circuits take their water from. Its temperature lets the mixing valves react at once when the source warms up or cools down.",
           "data": {
             "name": "Name",
-            "temperature_sensor": "Temperature of the water it gives"
+            "temperature_sensor": "Temperature of the water it gives",
+            "setpoint_entity": "Set temperature"
           },
           "data_description": {
-            "temperature_sensor": "For a buffer tank its top, where the circuits take the water; for a boiler or heat pump its supply."
+            "temperature_sensor": "For a buffer tank its top, where the circuits take the water; for a boiler or heat pump its supply.",
+            "setpoint_entity": "What the source is set to give, e.g. the heat pump's target for the tank (a climate's target temperature, or a number or sensor). Used to warn when a circuit wants more than the source can give."
           }
         },
         "reconfigure": {
@@ -371,10 +373,12 @@
           "description": "A buffer tank, boiler or heat pump the circuits take their water from. Its temperature lets the mixing valves react at once when the source warms up or cools down.",
           "data": {
             "name": "Name",
-            "temperature_sensor": "Temperature of the water it gives"
+            "temperature_sensor": "Temperature of the water it gives",
+            "setpoint_entity": "Set temperature"
           },
           "data_description": {
-            "temperature_sensor": "For a buffer tank its top, where the circuits take the water; for a boiler or heat pump its supply."
+            "temperature_sensor": "For a buffer tank its top, where the circuits take the water; for a boiler or heat pump its supply.",
+            "setpoint_entity": "What the source is set to give, e.g. the heat pump's target for the tank (a climate's target temperature, or a number or sensor). Used to warn when a circuit wants more than the source can give."
           }
         }
       },
@@ -473,7 +477,12 @@
         }
       },
       "target_water_temperature": {
-        "name": "Target water temperature"
+        "name": "Target water temperature",
+        "state_attributes": {
+          "source_headroom": {
+            "name": "Headroom to the heat source"
+          }
+        }
       },
       "state": {
         "name": "State",
@@ -573,6 +582,9 @@
       },
       "source_temperature": {
         "name": "Temperature"
+      },
+      "source_setpoint": {
+        "name": "Set temperature"
       }
     },
     "binary_sensor": {

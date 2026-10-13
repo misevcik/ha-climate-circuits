@@ -146,3 +146,9 @@ Kód hotový lokálne (151 testov, ruff OK): čerpadlá okruhov, vlastná poloha
 - [x] `v0.1.5` vydaná, cez HACS, reštart 21:34; Aktivita píše dôvody, 7 prehľadových entít `sensor.climate_circuits_*`
 - [ ] Overiť noc: kompenzácia zdroja o 21:30–21:35 nestačila (zdroj 41,3→45,3 °C, zatvorené ~11 %, prívod aj tak 38,3 °C pri cieli 36,8) – zistiť, či je krok podľa zdroja malý (charakteristika ventilu) alebo senzor nádrže predbieha/mešká
 - [ ] Neskôr: požiadavka na zdroj; záložný senzor režimu presunúť k zdroju
+
+## Zdroj a tepelné čerpadlo (2026-10-13)
+- [x] Krok 1: nastavená teplota zdroja, upozornenie pri nedostatočnej rezerve, zmiešavač neotvára pri studenom zdroji (0.1.6)
+- [ ] Vydať `v0.1.6`, update cez HACS, reštart; v zdroji „Akumulačná nádrž“ nastaviť *Nastavená teplota* = `climate.aux_cloud_e87072401387_heat_pump_central_heating`
+- [ ] Krok 2: riadenie cieľa TČ podľa okruhov (len so súhlasom)
+- [ ] Rozobrať časovanie senzora nádrže voči prívodu (prečo kompenzácia nestačí)

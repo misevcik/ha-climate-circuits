@@ -148,7 +148,12 @@ class SourceSettings:
 
     name: str
     temperature_sensor: str | None
+    setpoint_entity: str | None = None  # what the source is set to: a climate, number or sensor
 
     @classmethod
     def from_data(cls, data: Mapping[str, Any]) -> SourceSettings:
-        return cls(name=data["name"], temperature_sensor=data.get("temperature_sensor"))
+        return cls(
+            name=data["name"],
+            temperature_sensor=data.get("temperature_sensor"),
+            setpoint_entity=data.get("setpoint_entity"),
+        )

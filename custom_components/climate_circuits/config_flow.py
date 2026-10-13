@@ -187,6 +187,9 @@ SOURCE_SCHEMA = vol.Schema(
     {
         vol.Required("name"): sel.TextSelector(),
         vol.Optional("temperature_sensor"): TEMPERATURE_SENSOR,
+        vol.Optional("setpoint_entity"): sel.EntitySelector(
+            sel.EntitySelectorConfig(domain=["climate", "number", "input_number", "sensor"])
+        ),
     }
 )
 

@@ -71,9 +71,12 @@ async def async_setup_entry(
             ]
         )
     for source in house.sources.values():
-        async_add_entities(
-            [SourceTemperatureSensor(source, "source_temperature")], config_subentry_id=source.id
-        )
+        source_entities: list[SensorEntity] = [
+            SourceTemperatureSensor(source, "source_temperature")
+        ]
+        if source.settings.setpoint_entity:
+            source_entities.append(SourceSetpointSensor(source, "source_setpoint"))
+        async_add_entities(source_entities, config_subentry_id=source.id)
     for circuit in house.circuits.values():
         entities: list[SensorEntity] = [
             CircuitStateSensor(circuit, "state"),
@@ -181,6 +184,9 @@ class TargetWaterSensor(CircuitEntity, SensorEntity):
             "dew_point": round(dew, 1) if dew is not None else None,
             "outdoor_temperature": circuit.house.outdoor,
             "house_mode": circuit.house.mode.value,
+            "source_headroom": (
+                round(headroom, 1) if (headroom := circuit.source_headroom()) is not None else None
+            ),
             "heat_curve": {key: getattr(s.heat_curve, key) for key in DEFAULT_HEAT_CURVE},
             "cool_curve": {key: getattr(s.cool_curve, key) for key in DEFAULT_COOL_CURVE},
         }
@@ -282,6 +288,22 @@ class SourceTemperatureSensor(SourceEntity, SensorEntity):
     @property
     def native_value(self) -> float | None:
         return self.source.temperature()
+
+
+class SourceSetpointSensor(SourceEntity, SensorEntity):
+    """What the heat source is set to give (the heat pump's target for the tank)."""
+
+    _attr_device_class = SensorDeviceClass.TEMPERATURE
+    _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
+    _attr_suggested_display_precision = 1
+
+    @property
+    def native_value(self) -> float | None:
+        return self.source.setpoint()
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        return {"entity": self.source.settings.setpoint_entity}
 
 
 class CallingZonesSensor(CircuitEntity, SensorEntity):

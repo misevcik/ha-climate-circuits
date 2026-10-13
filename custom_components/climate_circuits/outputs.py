@@ -441,6 +441,7 @@ class MixerController:
                 settings=self.params,
                 since_move=since_move,
                 trend=trend,
+                source=source,
             )
             if hold and hold[0] != self._hold_logged and house.logging:
                 house.activity(
