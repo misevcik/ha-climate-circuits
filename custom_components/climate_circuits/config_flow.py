@@ -129,6 +129,12 @@ HOUSE_SCHEMA = vol.Schema(
                 vol.Optional("circulation_pump"): RELAY,
                 vol.Required("threshold", default=DEFAULT_THRESHOLD): _number(20, 60, 0.5, "°C"),
                 vol.Required("delta", default=DEFAULT_DELTA): _number(0.5, 10, 0.5, "°C"),
+                vol.Optional("tank_sensor"): TEMPERATURE_SENSOR,
+                vol.Optional("tank_setpoint"): sel.EntitySelector(
+                    sel.EntitySelectorConfig(
+                        domain=["sensor", "number", "input_number", "water_heater"]
+                    )
+                ),
             }
         ),
         vol.Optional("protection"): _section(

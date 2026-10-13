@@ -162,5 +162,8 @@ Kód hotový lokálne (151 testov, ruff OK): čerpadlá okruhov, vlastná poloha
 - [x] Commit afb347c, tag `v0.1.10` pushnutý
 - [ ] Release `v0.1.10` na GitHube, update cez HACS, reštart
 - [x] Karta schémy `custom:climate-circuits-schema-card` (0.1.11), tag pushnutý
-- [ ] Release `v0.1.11`, update cez HACS, reštart, pridať kartu do dashboardu a skontrolovať
+- [x] `v0.1.11` vydaná, nainštalovaná cez HACS, reštart; obe karty registrované, atribút `layout` OK, log bez chýb
+- [x] Karta v dashboarde (screenshot 2026-10-13): funguje, pripomienky → 0.1.12
+- [x] 0.1.12: zásobník TÚV s cirkuláciou, bez zoznamu teplôt; tag pushnutý
+- [ ] Release `v0.1.12`, update, reštart; v Cirkulácii TUV vyplniť teplotu a nastavenú teplotu zásobníka
 - [ ] Poistka vo firmvéri SA8R-011: max. doba zopnutia relé zmiešavačov (čaká na súhlas)

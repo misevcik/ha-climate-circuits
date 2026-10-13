@@ -54,11 +54,15 @@
               "circulation_sensor": "Circulation return temperature",
               "circulation_pump": "Circulation pump",
               "threshold": "Threshold (pump stops)",
-              "delta": "Delta (pump starts below threshold − delta)"
+              "delta": "Delta (pump starts below threshold − delta)",
+              "tank_sensor": "Hot water tank temperature",
+              "tank_setpoint": "Hot water tank set temperature"
             },
             "data_description": {
               "circulation_sensor": "Temperature at the end of the circulation loop.",
-              "threshold": "Can also be changed on the Hot water device."
+              "threshold": "Can also be changed on the Hot water device.",
+              "tank_sensor": "Only shown in the schema card.",
+              "tank_setpoint": "What the tank is heated to, e.g. the heat pump's hot water target. Only shown in the schema card."
             }
           },
           "display": {
@@ -151,11 +155,15 @@
               "circulation_sensor": "Circulation return temperature",
               "circulation_pump": "Circulation pump",
               "threshold": "Threshold (pump stops)",
-              "delta": "Delta (pump starts below threshold − delta)"
+              "delta": "Delta (pump starts below threshold − delta)",
+              "tank_sensor": "Hot water tank temperature",
+              "tank_setpoint": "Hot water tank set temperature"
             },
             "data_description": {
               "circulation_sensor": "Temperature at the end of the circulation loop.",
-              "threshold": "Can also be changed on the Hot water device."
+              "threshold": "Can also be changed on the Hot water device.",
+              "tank_sensor": "Only shown in the schema card.",
+              "tank_setpoint": "What the tank is heated to, e.g. the heat pump's hot water target. Only shown in the schema card."
             }
           },
           "display": {

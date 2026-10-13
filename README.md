@@ -89,7 +89,7 @@ The same change is available as an action, `climate_circuits.set_curve`, targeti
 
 ## Schema card
 
-A live diagram of the heating: the heat source with its temperature and set temperature, and for every circuit the mixer position (and whether it moves), the water after the mixer against its target, the pump with flowing water while it runs, and the zones calling. Warnings (relay unavailable, source not enough, dry run) show in place; click any part for its details. It needs no configuration – the integration tells the card which entities to show.
+A live diagram of the heating: the heat source with its temperature and set temperature, the hot water tank with its circulation (return temperature, start and stop limits, pump), and for every circuit the mixer position (and whether it moves), the water after the mixer against its target, the pump with flowing water while it runs, and the zones calling. Warnings (relay unavailable, source not enough, dry run) show in place; the hot water tank temperature and set temperature come from two optional fields in *Hot water circulation*; click any part for its details. It needs no configuration – the integration tells the card which entities to show.
 
 ```yaml
 type: custom:climate-circuits-schema-card

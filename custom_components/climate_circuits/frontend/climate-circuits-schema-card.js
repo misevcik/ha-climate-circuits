@@ -19,20 +19,26 @@ const TEXTS = {
   sk: {
     title: "Schéma kúrenia", heat: "Kúrenie", cool: "Chladenie", off: "Vypnuté",
     dry_run: "Skúšobný režim – nič sa nespína", target: "cieľ", set: "nastavené",
-    pump_on: "beží", pump_off: "stojí", no_zone: "žiadna zóna", zones: "zóny",
+    pump_on: "beží", pump_off: "stojí", no_zone: "žiadna zóna",
     opening: "otvára", closing: "zatvára", homing: "homing", unknown: "poloha neznáma",
     unavailable: "relé nedostupné", starved: "zdroj nestačí", circuit_off: "okruh neovládaný",
     no_source: "bez zdroja", missing: "Nenašla sa integrácia Climate Circuits.",
     mixer: "Zmiešavač", pump: "Čerpadlo",
+    hot_water: "Zásobník TÚV", circulation: "Cirkulácia TÚV", circ_return: "spiatočka cirkulácie",
+    starts_below: "zapne pod", stops_at: "vypne pri", running: "beží", stopped: "stojí",
+    disabled: "vypnutá",
   },
   en: {
     title: "Heating schema", heat: "Heating", cool: "Cooling", off: "Off",
     dry_run: "Dry run – nothing is switched", target: "target", set: "set",
-    pump_on: "running", pump_off: "stopped", no_zone: "no zone", zones: "zones",
+    pump_on: "running", pump_off: "stopped", no_zone: "no zone",
     opening: "opening", closing: "closing", homing: "homing", unknown: "position unknown",
     unavailable: "relay unavailable", starved: "source not enough", circuit_off: "circuit not controlled",
     no_source: "no source", missing: "Climate Circuits integration not found.",
     mixer: "Mixer", pump: "Pump",
+    hot_water: "Hot water tank", circulation: "Hot water circulation", circ_return: "circulation return",
+    starts_below: "starts below", stops_at: "stops at", running: "running", stopped: "stopped",
+    disabled: "disabled",
   },
 };
 
@@ -68,7 +74,7 @@ class ClimateCircuitsSchemaCard extends HTMLElement {
 
   getCardSize() {
     const layout = this._layout();
-    return 2 + (layout ? layout.circuits.length * 3 : 1);
+    return 1 + (layout ? (layout.circuits.length + (layout.hot_water ? 1 : 0)) * 3 : 1);
   }
 
   static getStubConfig() { return {}; }
@@ -101,7 +107,9 @@ class ClimateCircuitsSchemaCard extends HTMLElement {
   _key() {
     const layout = this._layout();
     if (!layout) return "none";
-    const ids = [layout.mode, layout.control, ...layout.info];
+    const ids = [layout.mode, layout.control];
+    const hw = layout.hot_water;
+    if (hw) ids.push(hw.state, hw.temperature, hw.threshold, hw.delta, hw.enabled, hw.tank, hw.tank_setpoint);
     for (const s of layout.sources) ids.push(s.temperature, s.setpoint);
     for (const c of layout.circuits) {
       ids.push(c.state, c.target, c.zones, c.demand, c.pump, c.mixer, c.mixer_state, c.supply, c.control);
@@ -120,18 +128,11 @@ class ClimateCircuitsSchemaCard extends HTMLElement {
     const mode = this._val(layout.mode);
     const live = this._val(layout.control) === "on";
     const rows = this._rows(layout);
-    const height = TOP + rows.length * ROW + 8;
+    const height = TOP + (rows.length + (layout.hot_water ? 1 : 0)) * ROW + 8;
     let svg = "";
     for (const group of this._groups(layout, rows)) svg += this._tank(group, mode);
     rows.forEach((row) => { svg += this._circuit(row, mode, live); });
-
-    const info = layout.info.map((id) => {
-      const s = this._st(id);
-      if (!s) return "";
-      const unit = s.attributes.unit_of_measurement || "";
-      const value = num(s.state) !== null ? `${fmt(s.state)} ${unit}` : s.state;
-      return `<span class="chip" data-entity="${esc(id)}">${esc(s.attributes.friendly_name || id)}: <b>${esc(value)}</b></span>`;
-    }).join("");
+    if (layout.hot_water) svg += this._hotWater(layout.hot_water, TOP + rows.length * ROW);
 
     this.shadowRoot.innerHTML = `
       <style>${STYLE}</style>
@@ -141,7 +142,6 @@ class ClimateCircuitsSchemaCard extends HTMLElement {
           <span class="mode ${esc(mode)}" data-entity="${esc(layout.mode)}">${esc(this._t(mode) || mode || "–")}</span>
         </div>
         ${live ? "" : `<div class="dry" data-entity="${esc(layout.control)}">${this._t("dry_run")}</div>`}
-        ${info ? `<div class="chips">${info}</div>` : ""}
         <svg viewBox="0 0 ${W} ${height}" width="100%" role="img">${DEFS}${svg}</svg>
       </ha-card>`;
   }
@@ -184,11 +184,11 @@ class ClimateCircuitsSchemaCard extends HTMLElement {
     const setpoint = s.setpoint ? this._val(s.setpoint) : null;
     out += `<g data-entity="${esc(s.temperature)}" class="click">
       <rect x="${TANK.x}" y="${top}" width="${TANK.w}" height="${bottom - top}" rx="20" fill="url(#cc-tank)" class="outline"/>
-      ${this._lines(s.name, 14).map((line, i) => `<text x="${cx}" y="${top + 22 + i * 14}" text-anchor="middle" class="small strong">${esc(line)}</text>`).join("")}
-      <text x="${cx}" y="${top + 66}" text-anchor="middle" class="big">${deg(temperature)}</text>
+      ${this._lines(s.name, 14).map((line, i) => `<text x="${cx}" y="${top + 22 + i * 14}" text-anchor="middle" class="small strong ontank">${esc(line)}</text>`).join("")}
+      <text x="${cx}" y="${top + 66}" text-anchor="middle" class="big ontank">${deg(temperature)}</text>
     </g>`;
     if (setpoint !== null) {
-      out += `<text x="${cx}" y="${top + 84}" text-anchor="middle" class="tiny click" data-entity="${esc(s.setpoint)}">${this._t("set")} ${deg(setpoint)}</text>`;
+      out += `<text x="${cx}" y="${top + 84}" text-anchor="middle" class="tiny click ontank" data-entity="${esc(s.setpoint)}">${this._t("set")} ${deg(setpoint)}</text>`;
     }
     return out;
   }
@@ -256,7 +256,7 @@ class ClimateCircuitsSchemaCard extends HTMLElement {
     out += `<g class="click" data-entity="${esc(c.state || c.zones)}">
       <rect x="${RAD.x}" y="${y + 14}" width="${RAD.w}" height="86" rx="6" class="radiator${count ? " calling" : ""}" ${count ? `stroke="${hot}"` : ""}/>
       <text x="${radMid}" y="${y + 38}" text-anchor="middle" class="big">${esc(c.name)}</text>
-      <text x="${radMid}" y="${y + 58}" text-anchor="middle" class="small">${count ? `${count} ${this._t("zones")}` : this._t("no_zone")}</text>
+      <text x="${radMid}" y="${y + 58}" text-anchor="middle" class="small">${count ? this._zones(count) : this._t("no_zone")}</text>
       <text x="${radMid}" y="${y + 76}" text-anchor="middle" class="tiny muted">${esc(count ? this._short(zones, 26) : "")}</text>
     </g>`;
 
@@ -267,6 +267,61 @@ class ClimateCircuitsSchemaCard extends HTMLElement {
     if (warnings.length) {
       out += `<text x="${SUPPLY_X}" y="${retY - 10}" text-anchor="middle" class="small alert">⚠ ${esc(warnings.join(" · "))}</text>`;
     }
+    return out;
+  }
+
+  _zones(n) {
+    const lang = (this._hass && this._hass.language) || "en";
+    if (lang.startsWith("sk")) return `${n} ${n === 1 ? "zóna" : n < 5 ? "zóny" : "zón"}`;
+    return `${n} ${n === 1 ? "zone" : "zones"}`;
+  }
+
+  // The hot water tank with its circulation: the pump keeps the return between the limits.
+  _hotWater(hw, y) {
+    const pipeY = y + 50;
+    const retY = y + ROW - 30;
+    const top = y + 14;
+    const bottom = y + ROW - 22;
+    const cx = TANK.x + TANK.w / 2;
+    const radMid = RAD.x + RAD.w / 2;
+    const state = this._val(hw.state);
+    const on = state === "running";
+    const flow = on ? " flow" : "";
+    const temperature = num(this._val(hw.temperature));
+    const threshold = num(this._val(hw.threshold));
+    const delta = num(this._val(hw.delta));
+    const startsBelow = threshold !== null && delta !== null ? threshold - delta : null;
+    const color = temperature === null || startsBelow === null ? OFF
+      : temperature >= startsBelow ? "#2f9e44" : "#f08c00";
+    const tank = num(this._val(hw.tank));
+    const setpoint = num(this._val(hw.tank_setpoint));
+    let out = `<g class="click" data-entity="${esc(hw.tank || hw.state)}">
+      <rect x="${TANK.x}" y="${top}" width="${TANK.w}" height="${bottom - top}" rx="20" fill="url(#cc-dhw)" class="outline"/>
+      ${this._lines(this._t("hot_water"), 14).map((line, i) => `<text x="${cx}" y="${top + 22 + i * 14}" text-anchor="middle" class="small strong ontank">${esc(line)}</text>`).join("")}
+      <text x="${cx}" y="${top + 66}" text-anchor="middle" class="big ontank">${deg(tank)}</text>
+    </g>`;
+    if (setpoint !== null) {
+      out += `<text x="${cx}" y="${top + 84}" text-anchor="middle" class="tiny click ontank" data-entity="${esc(hw.tank_setpoint)}">${this._t("set")} ${deg(setpoint)}</text>`;
+    }
+    out += `<line x1="${TANK.x + TANK.w}" y1="${pipeY}" x2="${RAD.x}" y2="${pipeY}" class="pipe${flow}" stroke="${on ? HOT : OFF}"/>`;
+    out += `<polyline points="${radMid},${y + 100} ${radMid},${retY} ${TANK.x + TANK.w},${retY}" fill="none" class="pipe thin${flow}" stroke="${on ? COLD : OFF}"/>`;
+    out += `<g class="click" data-entity="${esc(hw.temperature)}">
+      <circle cx="${SUPPLY_X}" cy="${pipeY}" r="9" fill="var(--card-background-color, #fff)" stroke="${color}" stroke-width="3"/>
+      <text x="${SUPPLY_X}" y="${y + 24}" text-anchor="middle" class="big" style="fill:${color}">${deg(temperature)}</text>
+      <text x="${SUPPLY_X}" y="${pipeY + 30}" text-anchor="middle" class="small muted">${this._t("circ_return")}</text>
+    </g>`;
+    if (threshold !== null) {
+      out += `<text x="${SUPPLY_X}" y="${pipeY + 46}" text-anchor="middle" class="small click" data-entity="${esc(hw.threshold)}">${this._t("starts_below")} ${deg(startsBelow)} · ${this._t("stops_at")} ${deg(threshold)}</text>`;
+    }
+    out += `<g class="click" data-entity="${esc(hw.state)}">
+      <circle cx="${PUMP_X}" cy="${pipeY}" r="15" class="${on ? "pump on" : "pump"}"/>
+      <polygon points="${PUMP_X - 6},${pipeY - 8} ${PUMP_X + 9},${pipeY} ${PUMP_X - 6},${pipeY + 8}" fill="${on ? "#fff" : OFF}"/>
+      <text x="${PUMP_X}" y="${pipeY + 32}" text-anchor="middle" class="small muted">${this._t("pump")}: ${esc(state === "unavailable" ? "–" : this._t(state) || state || "–")}</text>
+    </g>`;
+    out += `<g class="click" data-entity="${esc(hw.enabled || hw.state)}">
+      <rect x="${RAD.x}" y="${y + 14}" width="${RAD.w}" height="86" rx="6" class="radiator${on ? " calling" : ""}" ${on ? `stroke="${HOT}"` : ""}/>
+      ${this._lines(this._t("circulation"), 16).map((line, i) => `<text x="${radMid}" y="${y + 40 + i * 18}" text-anchor="middle" class="big">${esc(line)}</text>`).join("")}
+    </g>`;
     return out;
   }
 
@@ -292,6 +347,9 @@ const DEFS = `<defs>
   <linearGradient id="cc-tank" x1="0" y1="0" x2="0" y2="1">
     <stop offset="0" stop-color="#ffc9a9"/><stop offset="1" stop-color="#a5d8ff"/>
   </linearGradient>
+  <linearGradient id="cc-dhw" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#ffa8a8"/><stop offset="1" stop-color="#ffe3e3"/>
+  </linearGradient>
 </defs>`;
 
 const STYLE = `
@@ -304,9 +362,6 @@ const STYLE = `
   .mode.cool { background: #d0ebff; color: #1864ab; }
   .dry { margin-top: 6px; padding: 4px 8px; border-radius: 6px; font-size: 13px; cursor: pointer;
     background: #fff3bf; color: #5c3c00; }
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 2px; }
-  .chip { font-size: 12px; padding: 2px 8px; border-radius: 10px; cursor: pointer;
-    background: var(--secondary-background-color); }
   .missing { padding: 16px; }
   svg { display: block; margin-top: 6px; font-family: var(--ha-font-family-body, Roboto, sans-serif); }
   text { fill: var(--primary-text-color); paint-order: stroke; stroke: var(--card-background-color, #fff);
@@ -316,6 +371,7 @@ const STYLE = `
   .tiny { font-size: 10px; }
   .strong { font-weight: 600; }
   .muted { fill: var(--secondary-text-color); }
+  text.ontank { fill: #212529; stroke: none; }
   .alert { fill: #e03131; font-weight: 600; }
   .click { cursor: pointer; }
   .outline { stroke: var(--secondary-text-color); stroke-width: 1.5; }

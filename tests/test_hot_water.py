@@ -168,3 +168,11 @@ async def test_other_option_change_reloads(hass: HomeAssistant, entry) -> None:
         )
         await hass.async_block_till_done()
     reload.assert_called_once()
+
+
+async def test_schema_card_gets_the_hot_water_entities(hass: HomeAssistant, entry) -> None:
+    hw = hass.states.get("sensor.climate_circuits_mode").attributes["layout"]["hot_water"]
+    assert hw["state"] == STATE
+    assert hw["threshold"] == THRESHOLD and hw["delta"] == DELTA and hw["enabled"] == ENABLED
+    assert hw["temperature"] == "sensor.hot_water_circulation_temperature"
+    assert hw["tank"] is None

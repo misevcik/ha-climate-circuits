@@ -702,12 +702,21 @@ class House(Listeners):
                     "control": find("switch", c.id, "circuit_control"),
                 }
             )
+        hot_water = None
+        if hw := self.hot_water:
+            hot_water = {
+                "state": find("sensor", hw.id, "circulation"),
+                "temperature": find("sensor", hw.id, "circulation_temperature"),
+                "threshold": find("number", hw.id, "circulation_threshold"),
+                "delta": find("number", hw.id, "circulation_delta"),
+                "enabled": find("switch", hw.id, "circulation_enabled"),
+                "tank": hw.settings.tank_sensor,
+                "tank_setpoint": hw.settings.tank_setpoint,
+            }
         return {
             "mode": find("sensor", entry_id, "mode"),
             "control": find("switch", entry_id, "control_equipment"),
-            "info": [
-                find("sensor", entry_id, f"info_{e}") or e for e in self.settings.info_sensors
-            ],
+            "hot_water": hot_water,
             "sources": [
                 {
                     "id": s.id,

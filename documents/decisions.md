@@ -3,6 +3,11 @@
 Architektúra: [architecture.md](architecture.md) (pôvodný Claude Docs dokument z 1. 10. je zastaraný)
 Názov: **Climate Circuits**, doména `climate_circuits`, repozitár `ha-climate-circuits`.
 
+## 2026-10-13 – karta schémy: TÚV namiesto zoznamu teplôt (0.1.12)
+- Používateľ: zoznam prehľadových teplôt v karte netreba (dajú sa pridať ručne ako entity); pridať **zásobník TÚV s čerpadlom, prahom a aktuálnou teplotou**.
+- Integrácia doteraz poznala len teplotu spiatočky cirkulácie → v sekcii Cirkulácia TUV dve nové nepovinné polia: teplota zásobníka TUV a jeho nastavená teplota, iba na zobrazenie (riadenie TÚV ostáva mimo integrácie).
+- Opravené: text na nádrži v tmavom režime (bez obrysu, tmavé písmo), „1 zóna / 2 zóny / 5 zón“. Testy: 199.
+
 ## 2026-10-13 – karta schémy kúrenia (0.1.11)
 - Používateľ chcel obrázok s teplotami akumulačky, ventilov atď. ako súčasť integrácie. Rozhodnutie: **vlastná karta** dodávaná integráciou (ako karta krivky), nie *picture-elements* s pevným obrázkom – tá by sa musela pre každý dom rozmiestňovať ručne.
 - Karta nepotrebuje konfiguráciu: entity zistí z atribútu `layout` na `sensor.climate_circuits_mode` (atribút sa nezapisuje do histórie).

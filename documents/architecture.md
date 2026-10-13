@@ -413,6 +413,7 @@ Cieľová teplota vody sa nezapisuje, mení sa príliš často. Texty sú v jazy
 - `custom:climate-circuits-schema-card` (súbor `frontend/climate-circuits-schema-card.js`, registruje sa ako Lovelace resource rovnako ako karta krivky).
 - Bez nastavenia: integrácia dáva na `sensor.climate_circuits_mode` atribút `layout` (zdroje, okruhy a ich entity; nezapisuje sa do histórie). Karta z neho kreslí SVG: nádrž (teplota, nastavená teplota), pre každý okruh zmiešavač (% a pohyb), výstup oproti cieľu (farba podľa odchýlky), čerpadlo (tečúca voda pri chode), zóny; upozornenia relé nedostupné, zdroj nestačí, skúšobný režim, okruh neovládaný. Klik otvorí detail entity.
 - Okruhy sú zoradené podľa zdroja, každá nádrž pokrýva svoje okruhy, takže funguje pre ľubovoľný počet zdrojov a okruhov.
+- 0.1.12: bez zoznamu prehľadových senzorov (dajú sa pridať ako bežné entity); nový riadok **Zásobník TÚV** s cirkuláciou: teplota spiatočky cirkulácie, zapne pod / vypne pri, čerpadlo, stav. Teplota a nastavená teplota zásobníka z nepovinných polí `tank_sensor`, `tank_setpoint` v sekcii Cirkulácia TUV (iba na zobrazenie).
 
 ## Karta krivky – Hotové
 

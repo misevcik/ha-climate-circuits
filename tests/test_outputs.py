@@ -618,3 +618,4 @@ async def test_mode_sensor_tells_the_schema_card_its_entities(hass, house) -> No
     assert circuit["mixer_state"] == "sensor.f1_mixer_state"
     assert circuit["target"] == "sensor.f1_target_water_temperature"
     assert circuit["supply"] == SUPPLY
+    assert layout["hot_water"] is None

@@ -54,11 +54,15 @@
               "circulation_sensor": "Teplota spiatočky cirkulácie",
               "circulation_pump": "Cirkulačné čerpadlo",
               "threshold": "Prah (čerpadlo vypne)",
-              "delta": "Delta (čerpadlo zapne pod prah − delta)"
+              "delta": "Delta (čerpadlo zapne pod prah − delta)",
+              "tank_sensor": "Teplota zásobníka TUV",
+              "tank_setpoint": "Nastavená teplota zásobníka TUV"
             },
             "data_description": {
               "circulation_sensor": "Teplota na konci cirkulačného okruhu.",
-              "threshold": "Dá sa meniť aj na zariadení Hot water."
+              "threshold": "Dá sa meniť aj na zariadení Hot water.",
+              "tank_sensor": "Iba na zobrazenie v karte schémy.",
+              "tank_setpoint": "Na koľko sa zásobník ohrieva, napr. cieľ TUV tepelného čerpadla. Iba na zobrazenie v karte schémy."
             }
           },
           "display": {
@@ -151,11 +155,15 @@
               "circulation_sensor": "Teplota spiatočky cirkulácie",
               "circulation_pump": "Cirkulačné čerpadlo",
               "threshold": "Prah (čerpadlo vypne)",
-              "delta": "Delta (čerpadlo zapne pod prah − delta)"
+              "delta": "Delta (čerpadlo zapne pod prah − delta)",
+              "tank_sensor": "Teplota zásobníka TUV",
+              "tank_setpoint": "Nastavená teplota zásobníka TUV"
             },
             "data_description": {
               "circulation_sensor": "Teplota na konci cirkulačného okruhu.",
-              "threshold": "Dá sa meniť aj na zariadení Hot water."
+              "threshold": "Dá sa meniť aj na zariadení Hot water.",
+              "tank_sensor": "Iba na zobrazenie v karte schémy.",
+              "tank_setpoint": "Na koľko sa zásobník ohrieva, napr. cieľ TUV tepelného čerpadla. Iba na zobrazenie v karte schémy."
             }
           },
           "display": {
