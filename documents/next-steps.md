@@ -159,5 +159,8 @@ Kód hotový lokálne (151 testov, ruff OK): čerpadlá okruhov, vlastná poloha
 - [ ] Krok 2: riadenie cieľa TČ podľa okruhov (len so súhlasom)
 - [x] Príčina slabej kompenzácie: horná časť nádrže je ~4 °C nad vodou pri zmiešavači → zdroj = senzor výstupného potrubia
 - [x] 0.1.10 lokálne: sekcia *Regulácia zmiešavača* (všetky parametre), ošetrenie nedostupného relé, prah kompenzácie 3 °C, °C namiesto K, [mixers.md](mixers.md) s obrázkom
-- [ ] Commit, tag, release `v0.1.10`, update cez HACS, reštart
+- [x] Commit afb347c, tag `v0.1.10` pushnutý
+- [ ] Release `v0.1.10` na GitHube, update cez HACS, reštart
+- [x] Karta schémy `custom:climate-circuits-schema-card` (0.1.11), tag pushnutý
+- [ ] Release `v0.1.11`, update cez HACS, reštart, pridať kartu do dashboardu a skontrolovať
 - [ ] Poistka vo firmvéri SA8R-011: max. doba zopnutia relé zmiešavačov (čaká na súhlas)

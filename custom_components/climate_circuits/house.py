@@ -677,6 +677,49 @@ class House(Listeners):
         message = mode_message(d.mode, d.source, by, d.reason, self.hass.config.language)
         self.activity("Climate Circuits", message, f"{self.entry.entry_id}_mode")
 
+    def layout(self) -> dict[str, Any]:
+        """Which entity shows what, for the schema card: it needs no configuration."""
+        hass, entry_id = self.hass, self.entry.entry_id
+
+        def find(platform: str, owner: str, key: str) -> str | None:
+            return entity_id_for(hass, platform, f"{owner}_{key}")
+
+        circuits = []
+        for c in self.circuits.values():
+            source = c.source()
+            circuits.append(
+                {
+                    "name": c.name,
+                    "source": source.id if source else None,
+                    "state": find("sensor", c.id, "state"),
+                    "target": find("sensor", c.id, "target_water_temperature"),
+                    "zones": find("sensor", c.id, "calling_zones"),
+                    "demand": find("binary_sensor", c.id, "demand"),
+                    "pump": find("binary_sensor", c.id, "pump"),
+                    "mixer": find("sensor", c.id, "mixer_position"),
+                    "mixer_state": find("sensor", c.id, "mixer_state"),
+                    "supply": c.settings.supply_sensor,
+                    "control": find("switch", c.id, "circuit_control"),
+                }
+            )
+        return {
+            "mode": find("sensor", entry_id, "mode"),
+            "control": find("switch", entry_id, "control_equipment"),
+            "info": [
+                find("sensor", entry_id, f"info_{e}") or e for e in self.settings.info_sensors
+            ],
+            "sources": [
+                {
+                    "id": s.id,
+                    "name": s.name,
+                    "temperature": find("sensor", s.id, "source_temperature"),
+                    "setpoint": find("sensor", s.id, "source_setpoint"),
+                }
+                for s in self.sources.values()
+            ],
+            "circuits": circuits,
+        }
+
     def mode_details(self) -> dict[str, Any]:
         """Everything the mode decision looked at."""
         s, d, hass = self.settings, self.decision, self.hass

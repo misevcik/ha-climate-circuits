@@ -97,8 +97,11 @@ def _invalid(key: str, **placeholders: str) -> ServiceValidationError:
 
 
 class ModeSensor(HouseEntity, SensorEntity):
+    """The house mode; its layout attribute feeds the schema card."""
+
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options = [m.value for m in Mode]
+    _unrecorded_attributes = frozenset({"layout"})
 
     @property
     def native_value(self) -> str:
@@ -106,7 +109,7 @@ class ModeSensor(HouseEntity, SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        return self.house.mode_details()
+        return self.house.mode_details() | {"layout": self.house.layout()}
 
 
 class InfoSensor(HouseEntity, SensorEntity):

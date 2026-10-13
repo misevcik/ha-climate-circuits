@@ -7,7 +7,7 @@ Everything is set up in the UI. It works with the relays, sensors and thermostat
 ## Features
 
 - **House mode** – heat, cool or off, taken from a heat pump or any other entity (climate, select, sensor, switch), with a fallback sensor (buffer tank or outdoor temperature) and a manual override.
-- **Weather curves** per circuit – a heating curve from the design point and the emitter exponent, a linear cooling curve that never goes below the dew point + 2 °C. A dashboard card shows the curve and lets you drag it.
+- **Weather curves** per circuit – a heating curve from the design point and the emitter exponent, a linear cooling curve that never goes below the dew point + 2 °C. A dashboard card shows the curve and lets you drag it; another one shows the whole system as a live diagram.
 - **Circuit demand** from the circuit's thermostats, with the calling zones shown.
 - **Circuit pumps** with a start delay (so the zone valves can open) and a run-on after heating.
 - **Three-point mixing valves** – the position is calculated from the relay run times, the supply temperature is regulated in steps, the valve is homed against its end stop when the position is unknown, and the motor is protected: never both relays at once, a run-time watchdog, stray relays switched off, short relay dropouts tolerated.
@@ -86,6 +86,14 @@ entity: sensor.f1_target_water_temperature
 ```
 
 The same change is available as an action, `climate_circuits.set_curve`, targeting a circuit's target water temperature sensor.
+
+## Schema card
+
+A live diagram of the heating: the heat source with its temperature and set temperature, and for every circuit the mixer position (and whether it moves), the water after the mixer against its target, the pump with flowing water while it runs, and the zones calling. Warnings (relay unavailable, source not enough, dry run) show in place; click any part for its details. It needs no configuration – the integration tells the card which entities to show.
+
+```yaml
+type: custom:climate-circuits-schema-card
+```
 
 ## How the mixing valve is driven
 

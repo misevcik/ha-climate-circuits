@@ -10,7 +10,10 @@ STORAGE_VERSION: Final = 1
 EVENT_ACTIVITY: Final = f"{DOMAIN}_activity"
 SERVICE_SET_CURVE: Final = "set_curve"
 FRONTEND_URL: Final = f"/{DOMAIN}_frontend"
-CARD_FILE: Final = "climate-circuits-curve-card.js"
+CARD_FILES: Final = (
+    "climate-circuits-curve-card.js",
+    "climate-circuits-schema-card.js",
+)
 
 EVALUATE_INTERVAL: Final = 30  # s, also without a state change
 ZONE_COMMAND_ATTEMPTS: Final = 3

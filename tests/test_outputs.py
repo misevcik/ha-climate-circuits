@@ -606,3 +606,15 @@ async def test_unavailable_pump_relay_is_reported(hass, house, clock, calls) -> 
     assert any(
         "F1 pump" in e.data["message"] and "unavailable" in e.data["message"] for e in events
     )
+
+
+async def test_mode_sensor_tells_the_schema_card_its_entities(hass, house) -> None:
+    layout = hass.states.get("sensor.climate_circuits_mode").attributes["layout"]
+    assert layout["control"] == "switch.climate_circuits_control_equipment"
+    (circuit,) = layout["circuits"]
+    assert circuit["name"] == "F1"
+    assert circuit["pump"] == PUMP_SENSOR
+    assert circuit["mixer"] == POSITION
+    assert circuit["mixer_state"] == "sensor.f1_mixer_state"
+    assert circuit["target"] == "sensor.f1_target_water_temperature"
+    assert circuit["supply"] == SUPPLY

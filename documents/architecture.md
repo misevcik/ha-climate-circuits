@@ -409,6 +409,11 @@ flowchart LR
 
 Cieľová teplota vody sa nezapisuje, mení sa príliš často. Texty sú v jazyku HA (sk / en).
 
+## Karta schémy – Hotové (0.1.11)
+- `custom:climate-circuits-schema-card` (súbor `frontend/climate-circuits-schema-card.js`, registruje sa ako Lovelace resource rovnako ako karta krivky).
+- Bez nastavenia: integrácia dáva na `sensor.climate_circuits_mode` atribút `layout` (zdroje, okruhy a ich entity; nezapisuje sa do histórie). Karta z neho kreslí SVG: nádrž (teplota, nastavená teplota), pre každý okruh zmiešavač (% a pohyb), výstup oproti cieľu (farba podľa odchýlky), čerpadlo (tečúca voda pri chode), zóny; upozornenia relé nedostupné, zdroj nestačí, skúšobný režim, okruh neovládaný. Klik otvorí detail entity.
+- Okruhy sú zoradené podľa zdroja, každá nádrž pokrýva svoje okruhy, takže funguje pre ľubovoľný počet zdrojov a okruhov.
+
 ## Karta krivky – Hotové
 
 `custom:climate-circuits-curve-card`, súčasť integrácie: integrácia ju sama sprístupní (`/climate_circuits_frontend/…`) a zaregistruje ako Lovelace resource (`?v=<mtime>`, pri zmene súboru sa URL zmení), z HACS sa nič neinštaluje. `add_extra_js_url` nestačí: skript sa načíta pred výmenou registra custom elementov a karta sa potom nenájde.

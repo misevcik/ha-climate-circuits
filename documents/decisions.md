@@ -3,6 +3,11 @@
 Architektúra: [architecture.md](architecture.md) (pôvodný Claude Docs dokument z 1. 10. je zastaraný)
 Názov: **Climate Circuits**, doména `climate_circuits`, repozitár `ha-climate-circuits`.
 
+## 2026-10-13 – karta schémy kúrenia (0.1.11)
+- Používateľ chcel obrázok s teplotami akumulačky, ventilov atď. ako súčasť integrácie. Rozhodnutie: **vlastná karta** dodávaná integráciou (ako karta krivky), nie *picture-elements* s pevným obrázkom – tá by sa musela pre každý dom rozmiestňovať ručne.
+- Karta nepotrebuje konfiguráciu: entity zistí z atribútu `layout` na `sensor.climate_circuits_mode` (atribút sa nezapisuje do histórie).
+- Overené vykreslením s testovacími dátami (JavaScriptCore + Quick Look), v HA sa overí po update. Testy: 198.
+
 ## 2026-10-13 – parametre zmiešavača, nedostupné relé, °C (0.1.10)
 - Používateľ: v integrácii sa používajú **°C, nie K** (rozdiel 1 K = 1 °C); parametre zmiešavača sa musia dať meniť; **nedostupné relé treba ošetriť**; popis zmiešavača obrázkom → [mixers.md](mixers.md) + [mixer-schema.svg](mixer-schema.svg).
 - Teplota zdroja pre zmiešavače = senzor na **výstupnom potrubí nádrže** (voda, ktorá do zmiešavača prichádza). Horná časť nádrže je ~4 °C teplejšia ako voda pri zmiešavači, so senzorom potrubia výpočet kompenzácie sedí (GF naplno: výstup 40,1, potrubie 39,9, horná časť 44,0 °C). Popis poľa zdroja upravený.

@@ -1,4 +1,4 @@
-"""Serve the curve card and register it as a Lovelace resource.
+"""Serve the cards (curve, schema) and register them as Lovelace resources.
 
 Not add_extra_js_url: an extra module runs before HA swaps in the scoped custom element
 registry and the card gets lost. It stays as the fallback for YAML dashboards.
@@ -13,10 +13,9 @@ from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.core import HomeAssistant
 
-from .const import CARD_FILE, FRONTEND_URL
+from .const import CARD_FILES, FRONTEND_URL
 
 _LOGGER = logging.getLogger(__name__)
-_BASE_URL = f"{FRONTEND_URL}/{CARD_FILE}"
 
 
 async def async_register_card(hass: HomeAssistant) -> None:
@@ -26,7 +25,13 @@ async def async_register_card(hass: HomeAssistant) -> None:
     await hass.http.async_register_static_paths(
         [StaticPathConfig(FRONTEND_URL, str(frontend), cache_headers=False)]
     )
-    url = f"{_BASE_URL}?v={int((frontend / CARD_FILE).stat().st_mtime)}"  # busts the cache
+    for card in CARD_FILES:
+        base = f"{FRONTEND_URL}/{card}"
+        url = f"{base}?v={int((frontend / card).stat().st_mtime)}"  # busts the cache
+        await _register(hass, base, url)
+
+
+async def _register(hass: HomeAssistant, base: str, url: str) -> None:
     resources = getattr(hass.data.get("lovelace"), "resources", None)
     if resources is None or not hasattr(resources, "async_create_item"):
         add_extra_js_url(hass, url)
@@ -36,7 +41,7 @@ async def async_register_card(hass: HomeAssistant) -> None:
             await resources.async_load()
             resources.loaded = True
         for item in resources.async_items():
-            if item.get("url", "").startswith(_BASE_URL):
+            if item.get("url", "").startswith(base):
                 if item["url"] != url:
                     await resources.async_update_item(item["id"], {"url": url})
                 return
