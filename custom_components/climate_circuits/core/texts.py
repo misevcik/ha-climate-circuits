@@ -108,8 +108,6 @@ _SK = {
     "mx_hold_heading": "Zmiešavač {name}: držím {position} – prívod {supply} sa už sám blíži "
     "k cieľu {target} ({trend}/min)",
     "mx_hold_no_supply": "Zmiešavač {name}: držím – chýba teplota prívodu",
-    "mx_hold_source_weak": "Zmiešavač {name}: držím {position} – zdroj {source} je na cieľ "
-    "{target} príliš studený (ohrev TÚV, odmrazovanie?), neotváram, kým sa neohreje",
     "src_short": "{name}: chce vodu {target}, ale {source} je nastavený na {setpoint} – rezerva "
     "len {spare}, prívod nemusí stačiť",
     "src_enough": "{name}: {source} nastavený na {setpoint} opäť stačí na cieľ {target}",
@@ -217,8 +215,6 @@ _EN = {
     "mx_hold_heading": "Mixer {name}: holding {position} – supply {supply} is already heading "
     "for the target {target} ({trend}/min)",
     "mx_hold_no_supply": "Mixer {name}: holding – no supply temperature",
-    "mx_hold_source_weak": "Mixer {name}: holding {position} – the source {source} is too cold "
-    "for the target {target} (hot water, defrost?), not opening until it warms up",
     "src_short": "{name}: wants {target} water, but {source} is set to {setpoint} – only {spare} "
     "to spare, the supply may fall short",
     "src_enough": "{name}: {source} set to {setpoint} covers the {target} target again",

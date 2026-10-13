@@ -62,16 +62,6 @@ def test_why_it_holds() -> None:
     assert hold_reason(demand=False, target=36.8, supply=35.0, position=74.0, settings=S) is None
 
 
-def test_why_it_holds_for_a_cold_source() -> None:
-    hold = hold_reason(
-        demand=True, target=36.8, supply=34.0, position=100.0, settings=S, source=36.0
-    )
-    assert hold[0] == "source_weak"
-    assert "the source 36.0 °C is too cold for the target 36.8 °C" in mixer_hold_text(
-        *hold, "GF", "en"
-    )
-
-
 def test_source_set_too_low_for_the_target() -> None:
     from custom_components.climate_circuits.core.texts import source_text
 
@@ -81,7 +71,7 @@ def test_source_set_too_low_for_the_target() -> None:
     )
 
 
-def test_starved_only_when_fully_open_with_a_warm_source() -> None:
+def test_starved_when_fully_open_below_the_target() -> None:
     from custom_components.climate_circuits.core.mixer import starved
 
     args = {
@@ -90,13 +80,11 @@ def test_starved_only_when_fully_open_with_a_warm_source() -> None:
         "position": 100.0,
         "supply": 39.5,
         "target": 40.3,
-        "source": 44.0,
         "settings": S,
     }
     assert starved(**args)
     assert not starved(**args | {"position": 90.0})
     assert not starved(**args | {"supply": 40.0})  # within the band
-    assert not starved(**args | {"source": 40.5})  # hot water heating: the source is cold now
     assert not starved(**args | {"demand": False})
 
 

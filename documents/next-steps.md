@@ -153,7 +153,8 @@ Kód hotový lokálne (151 testov, ruff OK): čerpadlá okruhov, vlastná poloha
 - [x] Upozornenie „zdroj nestačí“ podľa skutočnosti (zmiešavač naplno, prívod pod cieľom > 15 min) – 0.1.7
 - [x] `v0.1.7` vydaná a nainštalovaná (používateľ cez HACS)
 - [x] Oprava neprikázaného pohybu po výpadku dosky (0.1.8)
-- [ ] Vydať `v0.1.8`, update, reštart
-- [ ] Kompenzácia zdroja pri malom rozdiele zdroj − prívod (veľké kroky pri ohreve TÚV); štart okruhu so studenou vodou (prestrelenie)
+- [x] Zmiešavače neriešia TÚV; kompenzácia len pri zdroj − prívod ≥ 5 K (0.1.9)
+- [ ] Vydať `v0.1.9` (obsahuje aj opravu 0.1.8), update, reštart
+- [ ] Štart okruhu so studenou vodou (prestrelenie)
 - [ ] Krok 2: riadenie cieľa TČ podľa okruhov (len so súhlasom)
 - [ ] Rozobrať časovanie senzora nádrže voči prívodu (prečo kompenzácia nestačí)

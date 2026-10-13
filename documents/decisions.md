@@ -11,6 +11,13 @@ Názov: **Climate Circuits**, doména `climate_circuits`, repozitár `ha-climate
 - Ponechané: zónové termostaty `*_cool`, `climate.gf_thermostat` a jeho pomocné entity (používa ich integrácia), `binary_sensor.f1_occupancy` (nejednoznačné vyhľadávanie).
 - **Čaká:** `switch.gf_sw_bedroom_cool` a `light.cfg_wintergarden_stairs` sa nezmazali (zablokované povolením v Claude Code) – zmazať ručne v Settings → Helpers, alebo povoliť nástroj.
 
+## 2026-10-13 – zmiešavače neriešia TÚV
+- Hydraulika (používateľ): výstup tepelného čerpadla ide cez **trojcestný ventil** buď do akumulačky, alebo do TÚV; ventil prepína tepelné čerpadlo podľa teploty TÚV. Zmiešavače berú vodu **iba z akumulačky**.
+- Rozhodnutie používateľa: **zmiešavače sa starajú len o vodu do zón, TÚV sa vôbec nerieši.** Integrácia nevie, kedy TČ ohrieva TÚV alebo odmrazuje – predchádzajúce riešenie to len odhadovalo z teploty akumulačky.
+- Odstránené: držanie zmiešavača pri „studenom“ zdroji (0.1.6, zdroj < cieľ + 1 K) aj rozpracované držanie pri poklese pod nastavenie zdroja; text „(hot water, defrost?)“; výnimka v „zdroj nestačí“. Zmiešavač reguluje podľa prívodu vždy.
+- Ostáva: kompenzácia zmeny teploty akumulačky (voda, ktorá do zmiešavača prichádza), ale len pri rozdiele zdroj − prívod **≥ 5 K** (predtým 2 K), aby pri blízkych teplotách nerobila veľké kroky. „Zdroj nestačí“ = zmiešavač 15 min naplno a prívod pod cieľom, bez ohľadu na príčinu.
+- Otvorené: prestrelenie pri štarte okruhu so studenou vodou.
+
 ## 2026-10-13 – oprava: neprikázaný pohyb zmiešavača po výpadku dosky (0.1.8)
 - Kontrola dňa (0.1.7): GF dvakrát zasiahla poistka „emergency stop, the relay ran too long“ (7:04, 18:48). Priebeh 18:45: krok „zatvor 2,5 s“ odoslaný práve pri výpadku dosky SA8R-011; zapnutie relé doručené oneskorene; pri konci kroku stav relé ešte „off“ → `ensure(False)` vypnutie nepošle; doska sa vráti s relé **on**; integrácia to brala ako pohyb, ktorý len sleduje → relé bežalo 142 s do poistky. GF zatvoril 75 → 0 %, prívod 35,4 → 31,5 °C. 7:02 to isté s otváraním (GF naplno).
 - Oprava: (1) koniec pohybu **vždy pošle vypnutie** (`Relay.command`), nespolieha sa na stav; (2) relé, ktoré sa zapne, keď integrácia nerobí pohyb (a ovláda okruh), sa **hneď vypne** a zapíše („relay on without a command“) – predtým až pri ďalšom kroku a len ak relé nesledovala ako pohyb; (3) pohyb sa považuje za vlastný ešte pred odoslaním príkazu (zapnutie môže prísť okamžite).
