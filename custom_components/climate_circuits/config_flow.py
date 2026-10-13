@@ -51,9 +51,8 @@ MODE_ENTITY_DOMAINS = [
     "input_boolean",
 ]
 VALUES = sel.TextSelector(sel.TextSelectorConfig(multiple=True))
-TEMPERATURE_SENSOR = sel.EntitySelector(
-    sel.EntitySelectorConfig(domain="sensor", device_class="temperature")
-)
+# Any sensor: DIY temperature sensors (Modbus, templates) often have no device class.
+TEMPERATURE_SENSOR = sel.EntitySelector(sel.EntitySelectorConfig(domain="sensor"))
 RELAY = sel.EntitySelector(sel.EntitySelectorConfig(domain=["switch", "input_boolean"]))
 CLIMATES = sel.EntitySelector(sel.EntitySelectorConfig(domain="climate", multiple=True))
 

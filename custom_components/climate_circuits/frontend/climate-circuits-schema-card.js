@@ -65,10 +65,16 @@ class ClimateCircuitsSchemaCard extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
-    const key = this._key();
-    if (key !== this._lastKey) {
-      this._lastKey = key;
-      this._render();
+    try {
+      const key = this._key();
+      if (key !== this._lastKey) {
+        this._lastKey = key;
+        this._render();
+      }
+    } catch (err) {
+      // Say what went wrong instead of leaving an empty card.
+      this._lastKey = null;
+      this.shadowRoot.innerHTML = `<ha-card><div class="missing">Climate Circuits: ${esc(err && err.message)}</div></ha-card>`;
     }
   }
 
@@ -108,6 +114,7 @@ class ClimateCircuitsSchemaCard extends HTMLElement {
     const layout = this._layout();
     if (!layout) return "none";
     const ids = [layout.mode, layout.control];
+    if (!Array.isArray(layout.circuits) || !Array.isArray(layout.sources)) return "none";
     const hw = layout.hot_water;
     if (hw) ids.push(hw.state, hw.temperature, hw.threshold, hw.delta, hw.enabled, hw.tank, hw.tank_setpoint);
     for (const s of layout.sources) ids.push(s.temperature, s.setpoint);

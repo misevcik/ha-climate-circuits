@@ -3,6 +3,11 @@
 Architektúra: [architecture.md](architecture.md) (pôvodný Claude Docs dokument z 1. 10. je zastaraný)
 Názov: **Climate Circuits**, doména `climate_circuits`, repozitár `ha-climate-circuits`.
 
+## 2026-10-13 – výber teplotných senzorov bez device class (0.1.13)
+- Používateľ nevedel vybrať `sensor.gf_watertank_bottom_temperature` (zásobník TUV): senzor má jednotku °C, ale nemá `device_class: temperature`, a výber ponúkal iba senzory s ňou. To isté platí pre výstup z nádrže.
+- Rozhodnutie: všetky polia teplotných senzorov ponúkajú **každý senzor** (DIY senzory z Modbusu či šablón často device class nemajú).
+- Karta schémy: chyba v karte sa zobrazí ako text, nie prázdny čierny rámik (po 0.1.12 stará karta z cache spadla na zmenenom `layout`).
+
 ## 2026-10-13 – karta schémy: TÚV namiesto zoznamu teplôt (0.1.12)
 - Používateľ: zoznam prehľadových teplôt v karte netreba (dajú sa pridať ručne ako entity); pridať **zásobník TÚV s čerpadlom, prahom a aktuálnou teplotou**.
 - Integrácia doteraz poznala len teplotu spiatočky cirkulácie → v sekcii Cirkulácia TUV dve nové nepovinné polia: teplota zásobníka TUV a jeho nastavená teplota, iba na zobrazenie (riadenie TÚV ostáva mimo integrácie).
