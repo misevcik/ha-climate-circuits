@@ -151,6 +151,9 @@ Kód hotový lokálne (151 testov, ruff OK): čerpadlá okruhov, vlastná poloha
 - [x] Krok 1: nastavená teplota zdroja, upozornenie pri nedostatočnej rezerve, zmiešavač neotvára pri studenom zdroji (0.1.6)
 - [x] `v0.1.6` cez HACS, reštart; zdroj „Akumulačná nádrž“ má *Nastavená teplota* = cieľ TČ (45 °C), `sensor.akumulacna_nadrz_set_temperature`; rezerva GF 4,7 K, F1 7,5 K
 - [x] Upozornenie „zdroj nestačí“ podľa skutočnosti (zmiešavač naplno, prívod pod cieľom > 15 min) – 0.1.7
-- [ ] Vydať `v0.1.7` (release – používateľ večer), update cez HACS, reštart; sledovať Aktivitu GF
+- [x] `v0.1.7` vydaná a nainštalovaná (používateľ cez HACS)
+- [x] Oprava neprikázaného pohybu po výpadku dosky (0.1.8)
+- [ ] Vydať `v0.1.8`, update, reštart
+- [ ] Kompenzácia zdroja pri malom rozdiele zdroj − prívod (veľké kroky pri ohreve TÚV); štart okruhu so studenou vodou (prestrelenie)
 - [ ] Krok 2: riadenie cieľa TČ podľa okruhov (len so súhlasom)
 - [ ] Rozobrať časovanie senzora nádrže voči prívodu (prečo kompenzácia nestačí)

@@ -81,6 +81,17 @@ class Relay:
         return self._known if now - self._lost_at < RELAY_GRACE else None
 
     @callback
+    def command(self, on: bool) -> None:
+        """Send the command even when the state already says so: it may be stale (a board blip)."""
+        self._sent = (on, self.house.now(), 1)
+        call_service(
+            self.house.hass,
+            self.entity_id.split(".")[0],
+            "turn_on" if on else "turn_off",
+            entity_id=self.entity_id,
+        )
+
+    @callback
     def ensure(self, on: bool) -> bool:
         """Command the relay to on or off; True once its state says so."""
         current = self.is_on()
@@ -340,6 +351,11 @@ class MixerController:
             if self.open.is_on() and self.close.is_on() and self.circuit.controlling:
                 self._log("mixer_both")
                 self._all_off()
+            elif self.circuit.controlling and not self._busy:
+                # Not a move of ours: a command that came late through a board blip after the
+                # move had ended, or somebody else. Stop it now, not after the full travel.
+                self._log("mixer_stray")
+                self._all_off()
         else:
             cut_short = (
                 self.state == "homing"
@@ -554,18 +570,22 @@ class MixerController:
         self.state = (
             "homing" if homing else ("opening" if direction is Direction.OPEN else "closing")
         )
-        relay.ensure(True)
-        self.circuit.refresh()
+        # The move counts as ours before the command: its "on" may come back at once.
         self._finish = async_call_later(
             self.circuit.house.hass,
             min(seconds, self._max_run),
             partial(self._stop_run, relay, homing, 0),
         )
+        relay.ensure(True)
+        self.circuit.refresh()
         return True
 
     @callback
     def _stop_run(self, relay: Relay, homing: bool, tries: int, _now: Any = None) -> None:
-        relay.ensure(False)
+        if tries == 0:
+            relay.command(False)  # also when the state says off: the start may not be reported yet
+        else:
+            relay.ensure(False)
         if relay.is_on() is not False and tries < STOP_CHECKS:
             self._finish = async_call_later(
                 self.circuit.house.hass,

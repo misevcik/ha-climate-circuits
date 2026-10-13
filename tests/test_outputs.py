@@ -217,7 +217,8 @@ async def test_live_mixer_homes_unknown_position_then_regulates(hass, house, clo
     assert ("turn_on", CLOSE) in calls
     assert hass.states.get(POSITION).attributes["movement"] == "homing"
     assert hass.states.get("sensor.f1_mixer_state").state == "homing"
-    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=200))
+    clock.now += 102
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=105))  # travel + pulse
     await hass.async_block_till_done()
     assert ("turn_off", CLOSE) in calls
     assert mixer.position() == 0.0
@@ -525,3 +526,31 @@ async def test_activity_reports_a_source_that_is_not_enough(hass, house, clock, 
     await hass.async_block_till_done()
     assert any("not enough" in e.data["message"] for e in events)
     assert hass.states.get(POSITION).attributes["source_not_enough"] is True
+
+
+async def test_a_start_reported_after_the_stop_is_switched_off(hass, house, clock, calls) -> None:
+    """The board drops off just as a move starts; its "on" comes after the move ended."""
+    mixer = next(iter(house.circuits.values())).mixer
+    mixer.tracker.set(50.0)
+    await _control(hass, True)
+    set_thermostat(hass, ZONE, "heating")
+    await _tick(hass, house, clock, 100)
+    hass.services.async_remove("switch", "turn_on")  # the command is lost in the blip for now
+    turned_on: list[str] = []
+
+    async def late_on(call):
+        turned_on.append(call.data["entity_id"])
+
+    hass.services.async_register("switch", "turn_on", late_on)
+    mixer._tick(None)
+    await hass.async_block_till_done()
+    assert turned_on == [OPEN]
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=21))  # the 20 s move ends
+    await hass.async_block_till_done()
+    assert ("turn_off", OPEN) in calls  # the stop is sent although the state still says off
+    calls.clear()
+    hass.states.async_set(OPEN, "unavailable")
+    await hass.async_block_till_done()
+    hass.states.async_set(OPEN, "on")  # the late start arrives with the board
+    await hass.async_block_till_done()
+    assert ("turn_off", OPEN) in calls  # stopped at once, not after the full travel

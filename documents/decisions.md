@@ -11,6 +11,12 @@ Názov: **Climate Circuits**, doména `climate_circuits`, repozitár `ha-climate
 - Ponechané: zónové termostaty `*_cool`, `climate.gf_thermostat` a jeho pomocné entity (používa ich integrácia), `binary_sensor.f1_occupancy` (nejednoznačné vyhľadávanie).
 - **Čaká:** `switch.gf_sw_bedroom_cool` a `light.cfg_wintergarden_stairs` sa nezmazali (zablokované povolením v Claude Code) – zmazať ručne v Settings → Helpers, alebo povoliť nástroj.
 
+## 2026-10-13 – oprava: neprikázaný pohyb zmiešavača po výpadku dosky (0.1.8)
+- Kontrola dňa (0.1.7): GF dvakrát zasiahla poistka „emergency stop, the relay ran too long“ (7:04, 18:48). Priebeh 18:45: krok „zatvor 2,5 s“ odoslaný práve pri výpadku dosky SA8R-011; zapnutie relé doručené oneskorene; pri konci kroku stav relé ešte „off“ → `ensure(False)` vypnutie nepošle; doska sa vráti s relé **on**; integrácia to brala ako pohyb, ktorý len sleduje → relé bežalo 142 s do poistky. GF zatvoril 75 → 0 %, prívod 35,4 → 31,5 °C. 7:02 to isté s otváraním (GF naplno).
+- Oprava: (1) koniec pohybu **vždy pošle vypnutie** (`Relay.command`), nespolieha sa na stav; (2) relé, ktoré sa zapne, keď integrácia nerobí pohyb (a ovláda okruh), sa **hneď vypne** a zapíše („relay on without a command“) – predtým až pri ďalšom kroku a len ak relé nesledovala ako pohyb; (3) pohyb sa považuje za vlastný ešte pred odoslaním príkazu (zapnutie môže prísť okamžite).
+- Ďalšie zistenia z dňa (neriešené): pri poklese zdroja k cieľu (ohrev TÚV) kompenzácia otvára veľkými krokmi, lebo `zdroj − prívod` je malé (18:27–18:31 F1 +~30 %), potom pri návrate zdroja zatvára; pri štarte okruhu so studenou vodou (F1 17:30, prívod 20 °C) dva kroky po 20 % a prestrelenie na +4,8 K. Upozornenie „zdroj nestačí“ sa objavilo (GF 7:17–7:45), držanie pri studenom zdroji tiež (6:29, 8:49, 18:30).
+- Testy: 192.
+
 ## 2026-10-13 – upozornenie „zdroj nestačí“ podľa skutočnosti
 - Po nasadení 0.1.6: GF na 100 %, prívod 39,5 °C pri cieli 40,3 °C, nádrž 44 °C nastavená na 45 °C – rezerva podľa nastavenia 4,7 K, ale pri plne otvorenom zmiešavači je prívod ~4,5 K pod nádržou. Prah 2 K podľa nastavenia nestačí.
 - Doplnené: keď je zmiešavač **naplno (≥ 99 %)** a prívod je **pod cieľom o viac ako hysterézu dlhšie ako 15 min** (`STARVED_AFTER`), pri kúrení s požiadavkou, a zdroj **nie je** chvíľkovo studený (ohrev TÚV/odmrazovanie sa nepočíta), Aktivita zapíše „zdroj nestačí“ aj s teplotou a nastavením zdroja; keď sa prívod vráti k cieľu (alebo skončí požiadavka), zapíše „zdroj opäť stačí“. Atribút `source_not_enough` na polohe zmiešavača.
