@@ -149,6 +149,7 @@ Kód hotový lokálne (151 testov, ruff OK): čerpadlá okruhov, vlastná poloha
 
 ## Zdroj a tepelné čerpadlo (2026-10-13)
 - [x] Krok 1: nastavená teplota zdroja, upozornenie pri nedostatočnej rezerve, zmiešavač neotvára pri studenom zdroji (0.1.6)
-- [ ] Vydať `v0.1.6`, update cez HACS, reštart; v zdroji „Akumulačná nádrž“ nastaviť *Nastavená teplota* = `climate.aux_cloud_e87072401387_heat_pump_central_heating`
+- [x] `v0.1.6` cez HACS, reštart; zdroj „Akumulačná nádrž“ má *Nastavená teplota* = cieľ TČ (45 °C), `sensor.akumulacna_nadrz_set_temperature`; rezerva GF 4,7 K, F1 7,5 K
+- [ ] Zistenie: GF je na 100 % a prívod 39,5 °C pri cieli 40,3 °C, hoci rezerva je 4,7 K – pri plne otvorenom zmiešavači je prívod ~4,5 K pod teplotou nádrže (44 °C). Prah upozornenia 2 K je pre tento dom malý; zvážiť upozornenie podľa skutočnosti (zmiešavač naplno a prívod pod cieľom dlhšie ako N min) alebo nastaviteľný prah
 - [ ] Krok 2: riadenie cieľa TČ podľa okruhov (len so súhlasom)
 - [ ] Rozobrať časovanie senzora nádrže voči prívodu (prečo kompenzácia nestačí)
