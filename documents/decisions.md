@@ -11,6 +11,15 @@ Názov: **Climate Circuits**, doména `climate_circuits`, repozitár `ha-climate
 - Ponechané: zónové termostaty `*_cool`, `climate.gf_thermostat` a jeho pomocné entity (používa ich integrácia), `binary_sensor.f1_occupancy` (nejednoznačné vyhľadávanie).
 - **Čaká:** `switch.gf_sw_bedroom_cool` a `light.cfg_wintergarden_stairs` sa nezmazali (zablokované povolením v Claude Code) – zmazať ručne v Settings → Helpers, alebo povoliť nástroj.
 
+## 2026-10-13 – vyhodnotenie noci s kompenzáciou zdroja (0.1.5, 12. 10. 21:40 – 13. 10. 5:28)
+- **Celkovo (s požiadavkou):** GF |odch.| 0,99 K, v ±0,5 K 45 %, ±1 K 72 %, min −5,3 K; F1 |odch.| 1,00 K, ±0,5 K 52 %, ±1 K 72 %, −9,6/+5,1 K. Zopnutia GF 8,3/h, F1 15,6/h.
+- **Veľké odchýlky spôsobil zdroj, nie regulácia:**
+  - Ohrev TÚV tepelným čerpadlom (22:10–22:30, 2:25–2:40; TÚV 40 → 47 °C): akumulačka klesla na 33–37 °C, oba zmiešavače naplno, prívod pod cieľom; po návrate zdroja prestrelenie F1 až +5 K.
+  - 5:10–5:20 pravdepodobne odmrazovanie (výstup TČ 39 °C pri 5 °C vonku).
+  - **GF potrebuje takmer všetko teplo:** cieľ 36,8 → 40,0 °C (vonku 9 → 5 °C), akumulačka 43–47 °C; zmiešavač 80–100 %, 35 % času naplno a pod cieľom. GF termostat je virtuálny s pevnou izbovou teplotou 15 °C → GF kúri stále.
+- **Keď bolo z čoho regulovať** (zdroj ≥ cieľ + 3 K, zmiešavač nie naplno): GF |odch.| 0,57 K, ±0,5 K 53 %, ±1 K 89 %; F1 0,57 K, 60 %, 83 %. To je **približne rovnako ako večer bez kompenzácie** (0,57–0,76 K, 41–55 %) – simulácia (97 % v ±0,5 K) sa nepotvrdila. Kompenzácia ide správnym smerom (napr. 23:10–23:30 zdroj −3,3 K → GF prívod −1,5 K namiesto ~−2,6 K bez nej), ale nestačí.
+- Otvorené / návrhy: (1) požiadavka na zdroj – nastavovať teplotu vody TČ podľa najvyššieho cieľa okruhov + rezerva; (2) pri slabom zdroji (zdroj < cieľ + rezerva, napr. ohrev TÚV) nenaháňať naplno, aby po návrate zdroja neprestrelilo; (3) rozobrať časovanie senzora nádrže voči prívodu, prečo kompenzácia nestačí; (4) GF krivka/termostat – overiť, či GF naozaj potrebuje 40 °C.
+
 ## 2026-10-12 – Aktivita vysvetľuje rozhodnutia zmiešavača; prehľadové senzory ako entity
 - Používateľ chce v Aktivite vidieť, **prečo** sa deje, čo sa deje. Doteraz pri zmiešavači len „open 4 % (target 36.8, supply 35.9)“.
 - Každý pohyb má dôvod (`MixerAction.why` + hodnoty) a preložený text (`core/texts.mixer_text`): prívod pod/nad cieľom o koľko, zdroj klesol/stúpol z → na a prívod sa drží, okruh nemá požiadavku, dotlak na doraze (prívod stále pod/nad cieľom), dotlak zatvoreného zmiešavača.
