@@ -554,3 +554,55 @@ async def test_a_start_reported_after_the_stop_is_switched_off(hass, house, cloc
     hass.states.async_set(OPEN, "on")  # the late start arrives with the board
     await hass.async_block_till_done()
     assert ("turn_off", OPEN) in calls  # stopped at once, not after the full travel
+
+
+async def test_unavailable_relay_stops_the_mixer_and_is_reported(hass, house, clock, calls) -> None:
+    mixer = next(iter(house.circuits.values())).mixer
+    mixer.tracker.set(50.0)
+    await _control(hass, True)
+    set_thermostat(hass, ZONE, "heating")
+    await _tick(hass, house, clock, 100)
+    events = async_capture_events(hass, EVENT_ACTIVITY)
+    hass.states.async_set(OPEN, "unavailable")
+    await hass.async_block_till_done()
+    mixer._tick(None)  # a blip: not yet
+    assert not any("unavailable" in e.data["message"] for e in events)
+    clock.now += 6
+    calls.clear()
+    mixer._tick(None)
+    await hass.async_block_till_done()
+    assert calls == []  # supply 30 is below the target, but nothing is moved
+    assert any(
+        "F1 mixer open" in e.data["message"] and "unavailable" in e.data["message"] for e in events
+    )
+    assert hass.states.get("sensor.f1_mixer_state").state == "unavailable"
+    assert mixer.position() == 50.0  # it stood: the position is kept
+    hass.states.async_set(OPEN, "off")
+    await hass.async_block_till_done()
+    mixer._tick(None)
+    await hass.async_block_till_done()
+    assert any("available again" in e.data["message"] for e in events)
+    assert ("turn_on", OPEN) in calls  # regulates again
+
+
+async def test_move_lost_with_the_relay_is_reported(hass, house, clock) -> None:
+    circuit = next(iter(house.circuits.values()))
+    circuit.mixer.tracker.set(40.0)
+    events = async_capture_events(hass, EVENT_ACTIVITY)
+    hass.states.async_set(OPEN, "on")
+    await hass.async_block_till_done()
+    hass.states.async_set(OPEN, "unavailable")
+    await hass.async_block_till_done()
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=6))
+    await hass.async_block_till_done()
+    assert any("position unknown" in e.data["message"] for e in events)
+
+
+async def test_unavailable_pump_relay_is_reported(hass, house, clock, calls) -> None:
+    events = async_capture_events(hass, EVENT_ACTIVITY)
+    hass.states.async_set(PUMP, "unavailable")
+    await _tick(hass, house, clock)
+    await _tick(hass, house, clock, 6)
+    assert any(
+        "F1 pump" in e.data["message"] and "unavailable" in e.data["message"] for e in events
+    )

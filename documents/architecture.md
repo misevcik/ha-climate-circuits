@@ -272,16 +272,20 @@ Výsledok je v `sensor.<okruh>_target_water_temperature` s atribútmi `reason`, 
 - Stav sa synchronizuje každú minútu, takže sa obnoví aj po reštarte I/O dosky.
 
 ### Zmiešavač – Hotové lokálne (míľnik 2)
+Podrobný popis s obrázkom: [mixers.md](mixers.md).
+
 - Typ: 3-bodový pohon cez dve relé (otvor / zatvor) alebo analógový výstup 0–10 V (`number`).
 - Polohu počíta integrácia sama z potvrdených časov zopnutia relé (bez `cover_time_based`).
-- Regulácia: krok 4 % zdvihu na 1 K odchýlky (2–20 %), hysteréza; po pohybe čaká čas ustálenia (pole okruhu, predvolene 150 s), kým voda dotečie k senzoru; nerobí krok, keď teplota prívodu podľa trendu posledných 2 min dosiahne cieľ do času ustálenia. „Otvoriť“ znamená viac tepla pri kúrení aj viac chladu pri chladení. Bez požiadavky sa zmiešavač zatvorí (dotlak potom najviac raz za 6 h).
-- Teplota zdroja (akumulačka, z ktorej zmiešavač berie vodu): pri zmene o dT sa zmiešavač hneď pohne o `−p·(1−p)·dT/(zdroj − prívod)`, aby prívod ostal; len keď je zdroj aspoň 5 K nad prívodom. Zvyšok dorovná spätná väzba. Zmiešavač nerieši TÚV ani odmrazovanie – reguluje vodu do zón z toho, čo v akumulačke je.
+- Regulácia: krok 4 % zdvihu na 1 °C odchýlky (2–20 %), hysteréza; po pohybe čaká čas ustálenia (pole okruhu, predvolene 150 s), kým voda dotečie k senzoru; nerobí krok, keď teplota prívodu podľa trendu posledných 2 min dosiahne cieľ do času ustálenia. „Otvoriť“ znamená viac tepla pri kúrení aj viac chladu pri chladení. Bez požiadavky sa zmiešavač zatvorí (dotlak potom najviac raz za 6 h).
+- Teplota zdroja (akumulačka, z ktorej zmiešavač berie vodu): pri zmene o dT sa zmiešavač hneď pohne o `−p·(1−p)·dT/(zdroj − prívod)`, aby prívod ostal; len keď je zdroj aspoň 3 °C nad prívodom (nastaviteľné, dá sa vypnúť). Zvyšok dorovná spätná väzba. Zmiešavač nerieši TÚV ani odmrazovanie – reguluje vodu do zón z toho, čo v akumulačke je.
 - „Zdroj nestačí“: zmiešavač 15 min naplno a prívod pod cieľom → záznam v Aktivite a atribút `source_not_enough`.
 - Dotlak na doraze počas regulácie (2 s impulz pri 0 % / 100 %) najviac raz za 10 min; pri dosiahnutí dorazu dobeh 2 s.
 - Ochrana motora: nikdy nezopne opačný smer, kým nemá potvrdené vypnutie prvého, pauza medzi smermi, maximálna doba zopnutia (dráha + rezerva), po obnovení spojenia najprv vypne obe relé.
 - Homing (celá dráha + dotlak), keď poloha nie je známa: prvý štart, relé zopnuté pri štarte, pohyb prerušený vypnutím HA, relé nedostupné počas pohybu dlhšie ako 5 s, homing skrátený niekým iným, 7 dní bez pohybu. Inak sa po štarte pokračuje z uloženej polohy.
 - Nastavenie domu **Homovať zmiešavače pri štarte HA** (Ochrany, predvolene vypnuté): pri štarte Home Assistanta zahodí uloženú polohu, takže sa zmiešavač ~30 s po štarte zahomuje. Pri reloade integrácie nie.
 - Krátky výpadok relé (`unavailable` do 5 s) počas pohybu polohu nezahodí; výpadok v kľude sa nepočíta ako pohyb.
+- Dlhší výpadok relé (0.1.10): Aktivita (výpadok aj návrat, aj pri čerpadle), zmiešavač nič nespína, stav `unavailable`; výpadok počas pohybu → poloha neznáma, záznam, homing po návrate.
+- Parametre regulácie sú v sekcii okruhu **Regulácia zmiešavača** (`mixer`): dráha, hysteréza, čas ustálenia, krok na 1 °C, najmenší/najväčší krok, okno trendu, sledovanie zdroja, najmenší rozdiel zdroj – výstup. Staršie dáta (dráha, hysteréza, ustálenie vo `outputs`) sa čítajú ďalej.
 
 ```mermaid
 flowchart TD
@@ -347,8 +351,8 @@ Zapínateľný modul v nastaveniach domu; funguje aj v dome bez okruhov. Preber�
 | `binary_sensor.<okruh>_demand` | okruh | požiadavka, zóny, ktoré ju spôsobili |
 | `sensor.<okruh>_target_water_temperature` | okruh | cieľ vody, dôvod, rosný bod, dáta pre kartu |
 | `sensor.<okruh>_calling_zones` | okruh | mená termostatov, ktoré práve kúria / chladia („–“ keď nikto) |
-| `sensor.<okruh>_mixer_position` | okruh | poloha zmiešavača v % (vlastný výpočet z behu relé); atribút `movement`: idle, opening, closing, homing, unknown; ďalej `proposed`, teplota za zmiešavačom a cieľ |
-| `sensor.<okruh>_mixer_state` | okruh | čo zmiešavač robí: stojí, otvára, zatvára, homing, poloha neznáma |
+| `sensor.<okruh>_mixer_position` | okruh | poloha zmiešavača v % (vlastný výpočet z behu relé); atribút `movement`: idle, opening, closing, homing, unknown, unavailable; ďalej `proposed`, teplota za zmiešavačom a cieľ |
+| `sensor.<okruh>_mixer_state` | okruh | čo zmiešavač robí: stojí, otvára, zatvára, homing, poloha neznáma, relé nedostupné |
 | `sensor.hot_water_circulation_state` | TUV | rozhodnutie integrácie: beží / stojí / vypnutá / nedostupná, dôvod, kedy zapne a vypne (nie je to samotné čerpadlo) |
 | `sensor.hot_water_circulation_temperature` | TUV | aktuálna teplota spiatočky cirkulácie, podľa ktorej čerpadlo spína |
 | `number.hot_water_circulation_threshold` | TUV | prah: pri ňom čerpadlo vypne |
@@ -466,7 +470,8 @@ sequenceDiagram
 | Zóny | termostaty na kúrenie, termostaty na chladenie, vlhkomery |
 | Krivka kúrenia | izba, návrhová vonkajšia teplota, návrhová teplota vody, exponent, min, max, korekcia |
 | Krivka chladenia | izba, strmosť, min, max, korekcia |
-| Výstupy | čerpadlo, relé zmiešavača otvor / zatvor, senzor za zmiešavačom, poloha zmiešavača (cover, len na zobrazenie), čas dráhy, hysteréza (zatiaľ sa neovládajú) |
+| Výstupy | zdroj tepla, čerpadlo, relé zmiešavača otvor / zatvor, senzor za zmiešavačom, poloha zmiešavača (cover, len prvý odhad), oneskorenie a dobeh čerpadla |
+| Regulácia zmiešavača | dráha, hysteréza, čas ustálenia, krok na 1 °C, najmenší / najväčší krok, okno trendu, sledovať zdroj, najmenší rozdiel zdroj – výstup |
 
 ```mermaid
 flowchart TB

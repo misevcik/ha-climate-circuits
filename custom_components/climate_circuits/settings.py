@@ -10,16 +10,22 @@ from .const import (
     DEFAULT_COOL_CURVE,
     DEFAULT_DELTA,
     DEFAULT_EXERCISE_DAYS,
+    DEFAULT_GAIN,
     DEFAULT_HEAT_CURVE,
     DEFAULT_HYSTERESIS,
+    DEFAULT_MAX_STEP,
+    DEFAULT_MIN_SOURCE_GAP,
+    DEFAULT_MIN_STEP,
     DEFAULT_MODE_PAUSE,
     DEFAULT_PUMP_DELAY,
     DEFAULT_PUMP_RUN_ON,
     DEFAULT_SETTLE,
     DEFAULT_THRESHOLD,
     DEFAULT_TRAVEL,
+    DEFAULT_TREND_WINDOW,
 )
 from .core.curve import Curve
+from .core.mixer import MixerSettings
 from .core.mode import EntityMapping, FallbackKind, Mode, ModeSettings
 
 
@@ -107,9 +113,7 @@ class CircuitSettings:
     mixer_position: str | None
     pump_delay: float
     pump_run_on: float
-    travel: float
-    hysteresis: float
-    settle: float = DEFAULT_SETTLE
+    mixer: MixerSettings = MixerSettings()
     source: str | None = None  # subentry id of the heat source it takes water from
     source_sensor: str | None = None  # 0.1.3, before heat sources existed
 
@@ -130,9 +134,7 @@ class CircuitSettings:
             mixer_position=outputs.get("mixer_position"),
             pump_delay=float(outputs.get("pump_delay", DEFAULT_PUMP_DELAY)),
             pump_run_on=float(outputs.get("pump_run_on", DEFAULT_PUMP_RUN_ON)),
-            travel=float(outputs.get("travel", DEFAULT_TRAVEL)),
-            hysteresis=float(outputs.get("hysteresis", DEFAULT_HYSTERESIS)),
-            settle=float(outputs.get("settle", DEFAULT_SETTLE)),
+            mixer=mixer_settings(data),
             source=outputs.get("source"),
             source_sensor=outputs.get("source_sensor"),
         )
@@ -140,6 +142,28 @@ class CircuitSettings:
     @property
     def zones(self) -> tuple[str, ...]:
         return self.heating_zones + self.cooling_zones
+
+
+def mixer_section(data: Mapping[str, Any]) -> dict[str, Any]:
+    """The mixer section; before 0.1.10 travel, hysteresis and settle were in the outputs."""
+    outputs = data.get("outputs", {})
+    old = {k: outputs[k] for k in ("travel", "hysteresis", "settle") if k in outputs}
+    return old | dict(data.get("mixer", {}))
+
+
+def mixer_settings(data: Mapping[str, Any]) -> MixerSettings:
+    m = mixer_section(data)
+    return MixerSettings(
+        travel=float(m.get("travel", DEFAULT_TRAVEL)),
+        hysteresis=float(m.get("hysteresis", DEFAULT_HYSTERESIS)),
+        settle=float(m.get("settle", DEFAULT_SETTLE)),
+        gain=float(m.get("gain", DEFAULT_GAIN)),
+        min_step=int(m.get("min_step", DEFAULT_MIN_STEP)),
+        max_step=int(m.get("max_step", DEFAULT_MAX_STEP)),
+        trend_window=float(m.get("trend_window", DEFAULT_TREND_WINDOW)),
+        compensate=bool(m.get("source_compensation", True)),
+        min_source_gap=float(m.get("min_source_gap", DEFAULT_MIN_SOURCE_GAP)),
+    )
 
 
 @dataclass(frozen=True, slots=True)

@@ -3,6 +3,15 @@
 Architektúra: [architecture.md](architecture.md) (pôvodný Claude Docs dokument z 1. 10. je zastaraný)
 Názov: **Climate Circuits**, doména `climate_circuits`, repozitár `ha-climate-circuits`.
 
+## 2026-10-13 – parametre zmiešavača, nedostupné relé, °C (0.1.10)
+- Používateľ: v integrácii sa používajú **°C, nie K** (rozdiel 1 K = 1 °C); parametre zmiešavača sa musia dať meniť; **nedostupné relé treba ošetriť**; popis zmiešavača obrázkom → [mixers.md](mixers.md) + [mixer-schema.svg](mixer-schema.svg).
+- Teplota zdroja pre zmiešavače = senzor na **výstupnom potrubí nádrže** (voda, ktorá do zmiešavača prichádza). Horná časť nádrže je ~4 °C teplejšia ako voda pri zmiešavači, so senzorom potrubia výpočet kompenzácie sedí (GF naplno: výstup 40,1, potrubie 39,9, horná časť 44,0 °C). Popis poľa zdroja upravený.
+- Prah kompenzácie `min_source_gap` 5 → **3 °C** (pri senzore potrubia je rozdiel zdroj − výstup menší; pod 3 °C by šum senzora robil veľké kroky – pri 2 °C a polohe 63 % by 1 °C zmeny zdroja = 12 % pohyb).
+- Nová sekcia okruhu **Regulácia zmiešavača**: dráha, hysteréza, čas ustálenia (presunuté z Výstupov), krok na 1 °C, najmenší a najväčší krok, okno trendu, sledovať zdroj (zap/vyp), najmenší rozdiel zdroj – výstup. Staré hodnoty z `outputs` sa čítajú ďalej a formulár ich ukáže v novej sekcii. Kontrola: najmenší krok ≤ najväčší.
+- Nedostupné relé (dlhšie ako 5 s): záznam v Aktivite pri výpadku aj návrate (zmiešavač aj čerpadlo, nie počas štartu HA), zmiešavač nič nespína, stav `unavailable`, poloha ostáva; výpadok počas pohybu → záznam „poloha neznáma“, homing po návrate.
+- **Otvorené:** pri strate spojenia počas pohybu relé na doske beží ďalej – pomôže iba poistka vo firmvéri SA8R-011 (max. doba zopnutia relé zmiešavača, napr. 135 s). Čaká na súhlas.
+- Texty: „rosný bod + 2 °C“ namiesto „K“. Testy: 197.
+
 ## 2026-10-09 – upratanie nepoužívaných helperov v HA
 - Pred zmazaním záloha HA `00cd5380` („Before_helpers_cleanup_2026-10-09“).
 - Kontrola: automatizácie, skripty, scény, ostatné helpery, všetkých 5 dashboardov, options a subentries Climate Circuits, Energy, HomeKit, Scheduler, lokálne projekty v `~/work`; aj vyhľadávanie podľa častí názvov (dynamicky skladané entity_id). Neoverené: YAML template senzory v `configuration.yaml` (cez MCP sa nedajú čítať).

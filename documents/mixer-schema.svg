@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" width="960" height="560" font-family="Helvetica, Arial, sans-serif" font-size="13">
+  <rect width="960" height="560" fill="#ffffff"/>
+  <defs>
+    <marker id="hot" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#d9480f"/></marker>
+    <marker id="cold" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1c7ed6"/></marker>
+    <marker id="sig" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#495057"/></marker>
+    <linearGradient id="tank" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#ffc9a9"/><stop offset="1" stop-color="#a5d8ff"/>
+  </linearGradient>
+  </defs>
+
+  <text x="20" y="28" font-size="18" font-weight="bold" fill="#212529">Zmiešavací okruh (F1 aj GF sú rovnaké)</text>
+
+  <!-- heat pump and its three-way valve -->
+  <rect x="20" y="210" width="110" height="80" rx="8" fill="#fff4e6" stroke="#d9480f" stroke-width="2"/>
+  <text x="75" y="245" text-anchor="middle" font-weight="bold">Tepelné</text>
+  <text x="75" y="262" text-anchor="middle" font-weight="bold">čerpadlo</text>
+  <line x1="130" y1="230" x2="180" y2="230" stroke="#d9480f" stroke-width="4"/>
+  <polygon points="180,218 204,230 180,242" fill="#fff" stroke="#495057" stroke-width="2"/>
+  <polygon points="228,218 204,230 228,242" fill="#fff" stroke="#495057" stroke-width="2"/>
+  <polygon points="192,206 204,230 216,206" fill="#fff" stroke="#495057" stroke-width="2"/>
+  <text x="204" y="262" text-anchor="middle" font-size="11" fill="#495057">3-cestný ventil</text>
+  <text x="204" y="276" text-anchor="middle" font-size="11" fill="#495057">(riadi tepelko)</text>
+  <line x1="204" y1="206" x2="204" y2="120" stroke="#d9480f" stroke-width="4" marker-end="url(#hot)"/>
+  <rect x="160" y="60" width="90" height="56" rx="8" fill="#f8f9fa" stroke="#868e96" stroke-width="2"/>
+  <text x="205" y="85" text-anchor="middle" font-weight="bold" fill="#868e96">TÚV</text>
+  <text x="205" y="102" text-anchor="middle" font-size="11" fill="#868e96">integrácia nerieši</text>
+  <line x1="228" y1="230" x2="296" y2="230" stroke="#d9480f" stroke-width="4" marker-end="url(#hot)"/>
+
+  <!-- buffer tank -->
+  <rect x="300" y="130" width="110" height="250" rx="22" fill="url(#tank)" stroke="#495057" stroke-width="2"/>
+  <text x="355" y="250" text-anchor="middle" font-weight="bold">Akumulačná</text>
+  <text x="355" y="267" text-anchor="middle" font-weight="bold">nádrž</text>
+  <text x="355" y="150" text-anchor="middle" font-size="11">horná 44 °C</text>
+  <!-- tank bottom back to the heat pump -->
+  <polyline points="300,360 75,360 75,294" fill="none" stroke="#1c7ed6" stroke-width="4" marker-end="url(#cold)"/>
+
+  <!-- hot pipe from the tank outlet to the mixer -->
+  <line x1="410" y1="180" x2="566" y2="180" stroke="#d9480f" stroke-width="5"/>
+  <circle cx="470" cy="180" r="11" fill="#fff" stroke="#d9480f" stroke-width="2"/>
+  <text x="470" y="185" text-anchor="middle" font-weight="bold" fill="#d9480f">T</text>
+  <text x="470" y="210" text-anchor="middle" font-weight="bold" fill="#d9480f">Teplota zdroja</text>
+  <text x="470" y="225" text-anchor="middle" font-size="11" fill="#495057">výstup z nádrže</text>
+  <text x="470" y="239" text-anchor="middle" font-size="10" fill="#495057">gf_watertank_up_</text>
+  <text x="470" y="251" text-anchor="middle" font-size="10" fill="#495057">temperature_out</text>
+
+  <!-- mixing valve -->
+  <polygon points="566,164 596,180 566,196" fill="#fff" stroke="#212529" stroke-width="2"/>
+  <polygon points="626,164 596,180 626,196" fill="#fff" stroke="#212529" stroke-width="2"/>
+  <polygon points="580,226 596,180 612,226" fill="#fff" stroke="#212529" stroke-width="2"/>
+  <line x1="596" y1="180" x2="596" y2="140" stroke="#212529" stroke-width="2"/>
+  <rect x="566" y="104" width="60" height="36" rx="4" fill="#e9ecef" stroke="#212529" stroke-width="2"/>
+  <text x="596" y="120" text-anchor="middle" font-size="11" font-weight="bold">Pohon</text>
+  <text x="596" y="134" text-anchor="middle" font-size="11">125 s</text>
+  <text x="636" y="132" font-weight="bold">Zmiešavač</text>
+
+  <!-- relays and the integration -->
+  <rect x="470" y="44" width="250" height="36" rx="6" fill="#f3f0ff" stroke="#7048e8" stroke-width="2"/>
+  <text x="595" y="60" text-anchor="middle" font-weight="bold" fill="#5f3dc4">Relé OTVOR / ZATVOR (SA8R)</text>
+  <text x="595" y="74" text-anchor="middle" font-size="11" fill="#5f3dc4">poloha = súčet časov chodu relé</text>
+  <line x1="596" y1="80" x2="596" y2="102" stroke="#495057" stroke-width="2" marker-end="url(#sig)"/>
+
+  <!-- supply after the mixer -->
+  <line x1="626" y1="180" x2="880" y2="180" stroke="#e8590c" stroke-width="5"/>
+  <circle cx="680" cy="180" r="11" fill="#fff" stroke="#e8590c" stroke-width="2"/>
+  <text x="680" y="185" text-anchor="middle" font-weight="bold" fill="#e8590c">T</text>
+  <text x="680" y="210" text-anchor="middle" font-weight="bold" fill="#e8590c">Výstup</text>
+  <text x="680" y="225" text-anchor="middle" font-size="11" fill="#495057">za zmiešavačom</text>
+  <text x="680" y="239" text-anchor="middle" font-size="11" fill="#495057">(reguluje sa na cieľ)</text>
+  <circle cx="750" cy="180" r="16" fill="#fff" stroke="#212529" stroke-width="2"/>
+  <polygon points="742,170 762,180 742,190" fill="#212529"/>
+  <text x="750" y="215" text-anchor="middle" font-weight="bold">Čerpadlo</text>
+
+  <!-- radiators -->
+  <rect x="820" y="150" width="120" height="150" rx="6" fill="#fff" stroke="#495057" stroke-width="2"/>
+  <g stroke="#adb5bd" stroke-width="6">
+    <line x1="840" y1="165" x2="840" y2="285"/><line x1="860" y1="165" x2="860" y2="285"/>
+    <line x1="880" y1="165" x2="880" y2="285"/><line x1="900" y1="165" x2="900" y2="285"/>
+    <line x1="920" y1="165" x2="920" y2="285"/>
+  </g>
+  <text x="880" y="126" text-anchor="middle" font-weight="bold">Radiátory</text>
+  <text x="880" y="142" text-anchor="middle" font-size="11">zóny okruhu</text>
+
+  <!-- return -->
+  <polyline points="880,300 880,350 762,350" fill="none" stroke="#1c7ed6" stroke-width="4"/>
+  <line x1="762" y1="350" x2="414" y2="350" stroke="#1c7ed6" stroke-width="4" marker-end="url(#cold)"/>
+  <line x1="596" y1="350" x2="596" y2="230" stroke="#1c7ed6" stroke-width="4" marker-end="url(#cold)"/>
+  <text x="680" y="368" text-anchor="middle" fill="#1c7ed6" font-weight="bold">Spiatočka</text>
+  <text x="520" y="368" text-anchor="middle" font-size="11" fill="#1c7ed6">časť späť do nádrže</text>
+  <text x="604" y="300" font-size="11" fill="#1c7ed6">časť do zmiešavača</text>
+
+  <!-- how the mix works -->
+  <rect x="20" y="400" width="920" height="145" rx="8" fill="#f8f9fa" stroke="#dee2e6"/>
+  <text x="36" y="425" font-weight="bold" font-size="14">Čo robí zmiešavač</text>
+  <text x="36" y="447">Zmieša horúcu vodu zo zdroja so spiatočkou:  <tspan font-weight="bold">výstup ≈ spiatočka + (zdroj − spiatočka) × poloha</tspan></text>
+  <text x="36" y="467">0 % = iba spiatočka (studená), 100 % = iba voda zo zdroja. Cieľ výstupu dáva ekvitermická krivka podľa vonkajšej teploty.</text>
+  <text x="36" y="491" font-weight="bold">Každých 30 s (poradie rozhodovania):</text>
+  <text x="36" y="511">① žiadna zóna nekúri → zatvoriť   ② zmenil sa zdroj → hneď vyrovnať   ③ výstup v cieli ± hysteréza → stáť</text>
+  <text x="36" y="531">④ od pohybu neuplynul čas ustálenia → stáť   ⑤ teplota už sama ide k cieľu → stáť   ⑥ inak krok k cieľu</text>
+</svg>

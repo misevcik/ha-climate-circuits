@@ -146,5 +146,10 @@ def test_source_change_moves_at_once_even_while_settling() -> None:
 
 
 def test_no_source_compensation_close_to_the_supply() -> None:
-    # the tank fell to 38 for a supply of 35: steps would blow up, the supply regulation acts
-    assert _regulate(target=35.0, supply=35.0, source=38.0, source_ref=44.0) is None
+    # the tank fell to 37.5 for a supply of 35: steps would blow up, the supply regulation acts
+    assert _regulate(target=35.0, supply=35.0, source=37.5, source_ref=44.0) is None
+
+
+def test_source_compensation_can_be_off() -> None:
+    off = MixerSettings(compensate=False)
+    assert _regulate(target=35.0, supply=35.0, source=40.0, source_ref=44.0, settings=off) is None

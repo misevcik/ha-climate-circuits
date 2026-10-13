@@ -157,4 +157,7 @@ Kód hotový lokálne (151 testov, ruff OK): čerpadlá okruhov, vlastná poloha
 - [ ] Vydať `v0.1.9` (obsahuje aj opravu 0.1.8), update, reštart
 - [ ] Štart okruhu so studenou vodou (prestrelenie)
 - [ ] Krok 2: riadenie cieľa TČ podľa okruhov (len so súhlasom)
-- [ ] Rozobrať časovanie senzora nádrže voči prívodu (prečo kompenzácia nestačí)
+- [x] Príčina slabej kompenzácie: horná časť nádrže je ~4 °C nad vodou pri zmiešavači → zdroj = senzor výstupného potrubia
+- [x] 0.1.10 lokálne: sekcia *Regulácia zmiešavača* (všetky parametre), ošetrenie nedostupného relé, prah kompenzácie 3 °C, °C namiesto K, [mixers.md](mixers.md) s obrázkom
+- [ ] Commit, tag, release `v0.1.10`, update cez HACS, reštart
+- [ ] Poistka vo firmvéri SA8R-011: max. doba zopnutia relé zmiešavačov (čaká na súhlas)

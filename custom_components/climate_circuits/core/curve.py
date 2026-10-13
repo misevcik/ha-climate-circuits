@@ -78,5 +78,5 @@ def water_target(
         reason = f"curve clamped to {'minimum' if value == curve.minimum else 'maximum'}"
     if mode is Mode.COOL and dew is not None and value < dew + margin:
         value = dew + margin
-        reason = f"dew point {dew:.1f} °C + {margin:.1f} K"
+        reason = f"dew point {dew:.1f} °C + {margin:.1f} °C"
     return WaterTarget(round(value, 1), reason)

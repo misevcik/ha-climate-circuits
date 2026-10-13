@@ -48,12 +48,17 @@ async def test_add_circuit(hass: HomeAssistant, make_entry) -> None:
             "correction": 0,
         },
         "cool_curve": {"room": 24, "slope": 0.5, "minimum": 16, "maximum": 22, "correction": 0},
-        "outputs": {"mixer_open": "switch.open", "travel": 125, "hysteresis": 0.5},
+        "outputs": {"mixer_open": "switch.open"},
+        "mixer": {"travel": 125, "hysteresis": 0.5, "min_step": 5, "max_step": 3},
     }
     result = await hass.config_entries.subentries.async_configure(result["flow_id"], data)
     assert result["errors"] == {"base": "mixer_needs_both_relays"}
 
     data["outputs"] |= {"mixer_close": "switch.close", "supply_sensor": "sensor.supply"}
+    result = await hass.config_entries.subentries.async_configure(result["flow_id"], data)
+    assert result["errors"] == {"base": "mixer_min_step_above_max"}
+
+    data["mixer"]["max_step"] = 20
     result = await hass.config_entries.subentries.async_configure(result["flow_id"], data)
     assert result["type"] is FlowResultType.CREATE_ENTRY
     subentry = next(iter(entry.subentries.values()))

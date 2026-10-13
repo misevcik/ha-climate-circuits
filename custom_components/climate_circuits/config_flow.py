@@ -21,19 +21,25 @@ from .const import (
     DEFAULT_COOL_CURVE,
     DEFAULT_DELTA,
     DEFAULT_EXERCISE_DAYS,
+    DEFAULT_GAIN,
     DEFAULT_HEAT_CURVE,
     DEFAULT_HYSTERESIS,
+    DEFAULT_MAX_STEP,
+    DEFAULT_MIN_SOURCE_GAP,
+    DEFAULT_MIN_STEP,
     DEFAULT_MODE_PAUSE,
     DEFAULT_PUMP_DELAY,
     DEFAULT_PUMP_RUN_ON,
     DEFAULT_SETTLE,
     DEFAULT_THRESHOLD,
     DEFAULT_TRAVEL,
+    DEFAULT_TREND_WINDOW,
     DOMAIN,
     SUBENTRY_TYPE_CIRCUIT,
     SUBENTRY_TYPE_SOURCE,
 )
 from .core.mode import FallbackKind
+from .settings import mixer_section
 
 MODE_ENTITY_DOMAINS = [
     "climate",
@@ -162,8 +168,16 @@ def circuit_schema(sources: dict[str, str]) -> vol.Schema:
         {
             **CIRCUIT_SCHEMA.schema,
             vol.Required("outputs"): _section({**source, **OUTPUTS_SCHEMA.schema}),
+            vol.Required("mixer"): _section(MIXER_SCHEMA.schema),
         }
     )
+
+
+def _form_data(data: dict[str, Any]) -> dict[str, Any]:
+    """Stored circuit data for the form: older versions kept the mixer values in the outputs."""
+    moved = ("travel", "hysteresis", "settle")
+    outputs = {k: v for k, v in data.get("outputs", {}).items() if k not in moved}
+    return data | {"outputs": outputs, "mixer": mixer_section(data)}
 
 
 OUTPUTS_SCHEMA = vol.Schema(
@@ -177,9 +191,20 @@ OUTPUTS_SCHEMA = vol.Schema(
         ),
         vol.Required("pump_delay", default=DEFAULT_PUMP_DELAY): _number(0, 900, 10, "s"),
         vol.Required("pump_run_on", default=DEFAULT_PUMP_RUN_ON): _number(0, 900, 10, "s"),
+    }
+)
+
+MIXER_SCHEMA = vol.Schema(
+    {
         vol.Required("travel", default=DEFAULT_TRAVEL): _number(10, 600, 1, "s"),
         vol.Required("hysteresis", default=DEFAULT_HYSTERESIS): _number(0.1, 5, 0.1, "°C"),
         vol.Required("settle", default=DEFAULT_SETTLE): _number(30, 600, 10, "s"),
+        vol.Required("gain", default=DEFAULT_GAIN): _number(0.5, 20, 0.5, "%/°C"),
+        vol.Required("min_step", default=DEFAULT_MIN_STEP): _number(1, 20, 1, "%"),
+        vol.Required("max_step", default=DEFAULT_MAX_STEP): _number(1, 100, 1, "%"),
+        vol.Required("trend_window", default=DEFAULT_TREND_WINDOW): _number(30, 600, 10, "s"),
+        vol.Required("source_compensation", default=True): sel.BooleanSelector(),
+        vol.Required("min_source_gap", default=DEFAULT_MIN_SOURCE_GAP): _number(1, 20, 0.5, "°C"),
     }
 )
 
@@ -245,6 +270,8 @@ def _validate_circuit(data: dict[str, Any]) -> dict[str, str]:
         return {"base": "mixer_relays_same"}
     if all(mixer) and not outputs.get("supply_sensor"):
         return {"base": "mixer_needs_supply_sensor"}
+    if (m := data.get("mixer", {})) and m.get("min_step", 0) > m.get("max_step", 100):
+        return {"base": "mixer_min_step_above_max"}
     return {}
 
 
@@ -322,7 +349,7 @@ class CircuitSubentryFlow(ConfigSubentryFlow):
         return self.async_show_form(
             step_id="reconfigure",
             data_schema=self.add_suggested_values_to_schema(
-                self._schema, user_input or dict(subentry.data)
+                self._schema, user_input or _form_data(dict(subentry.data))
             ),
             errors=errors,
         )

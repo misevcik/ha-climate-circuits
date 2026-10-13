@@ -36,7 +36,6 @@ from .const import (
 from .core.mixer import (
     Direction,
     MixerAction,
-    MixerSettings,
     hold_reason,
     regulate,
     starved,
@@ -60,12 +59,20 @@ STOP_CHECKS = 12
 class Relay:
     """A switch we command; a command counts once the state confirms it, else it is repeated."""
 
-    def __init__(self, house: House, entity_id: str, label: str) -> None:
+    def __init__(
+        self,
+        house: House,
+        entity_id: str,
+        label: str,
+        log_to: tuple[str, str] | None = None,  # unique id, platform of the Activity entity
+    ) -> None:
         self.house, self.entity_id, self.label = house, entity_id, label
+        self._log_to = log_to or (f"{house.entry.entry_id}_mode", "sensor")
         self._sent: tuple[bool, float, int] | None = None  # wanted, time, attempts
         self._reported = False
         self._known: bool | None = None
         self._lost_at: float | None = None
+        self._available = True  # as last said in Activity
 
     def is_on(self) -> bool | None:
         return state.state == "on" if (state := state_of(self.house.hass, self.entity_id)) else None
@@ -79,6 +86,17 @@ class Relay:
         if self._lost_at is None:
             self._lost_at = now
         return self._known if now - self._lost_at < RELAY_GRACE else None
+
+    def available(self) -> bool:
+        """False once the relay is unavailable longer than a board blip; Activity on a change.
+
+        While Home Assistant starts the boards may still be connecting: nothing is said then.
+        """
+        ok = self.shown() is not None
+        if ok is not self._available and self.house.logging:
+            self._available = ok
+            self._log("relay_back" if ok else "relay_unavailable", label=self.label)
+        return ok
 
     @callback
     def command(self, on: bool) -> None:
@@ -125,7 +143,7 @@ class Relay:
         house.activity(
             "Climate Circuits",
             out_message(key, house.hass.config.language, **values),
-            f"{house.entry.entry_id}_mode",
+            *self._log_to,
         )
 
 
@@ -135,7 +153,8 @@ class PumpController:
     def __init__(self, circuit: Circuit) -> None:
         s, house = circuit.settings, circuit.house
         self.circuit = circuit
-        self.relay = Relay(house, s.pump, f"{circuit.name} pump")
+        log_to = (f"{circuit.id}_pump", "binary_sensor")
+        self.relay = Relay(house, s.pump, f"{circuit.name} pump", log_to)
         self.timer = PumpTimer(s.pump_delay, s.pump_run_on)
         self.decision: PumpDecision | None = None
         self._exercise_until = 0.0
@@ -149,6 +168,7 @@ class PumpController:
     def evaluate(self) -> None:
         circuit, house = self.circuit, self.circuit.house
         now, wall = house.now(), house.wall()
+        self.relay.available()  # Activity when the relay drops out and when it is back
         running = self.relay.is_on()
         stored = house.persisted["pumps"].setdefault(circuit.id, {})
         if running or "last_on" not in stored:
@@ -213,10 +233,11 @@ class MixerController:
     def __init__(self, circuit: Circuit) -> None:
         s, house = circuit.settings, circuit.house
         self.circuit = circuit
-        self.open = Relay(house, s.mixer_open, f"{circuit.name} mixer open")
-        self.close = Relay(house, s.mixer_close, f"{circuit.name} mixer close")
-        self.tracker = TravelTracker(s.travel, s.travel)
-        self.params = MixerSettings(travel=s.travel, hysteresis=s.hysteresis, settle=s.settle)
+        log_to = (f"{circuit.id}_mixer_position", "sensor")
+        self.open = Relay(house, s.mixer_open, f"{circuit.name} mixer open", log_to)
+        self.close = Relay(house, s.mixer_close, f"{circuit.name} mixer close", log_to)
+        self.params = s.mixer
+        self.tracker = TravelTracker(s.mixer.travel, s.mixer.travel)
         self.state = "idle"  # idle, opening, closing, homing
         self.proposal: MixerAction | None = None
         self._finish: CALLBACK_TYPE | None = None
@@ -383,6 +404,8 @@ class MixerController:
         self._lost = None
         if self.tracker.moving:
             self.tracker.clear()
+            if self.circuit.house.logging:
+                self._log("mixer_move_lost")
             self.circuit.refresh()
 
     def _arm_watchdog(self) -> None:
@@ -409,11 +432,13 @@ class MixerController:
         if not controlling and self.tracker.position is None and not self.tracker.moving:
             self._seed()  # the old cover may not have existed yet when the integration started
         position = self.tracker.current(now)
+        available = [relay.available() for _, relay in self._relays()]
         if controlling and self._busy:
             return
         if controlling:
-            if self.open.is_on() is None or self.close.is_on() is None:
-                return
+            if not all(available) or self.open.is_on() is None or self.close.is_on() is None:
+                circuit.refresh()
+                return  # nothing can be moved; a lost move is homed once the relays are back
             if (self.open.is_on() or self.close.is_on()) and not self.tracker.moving:
                 self._log("mixer_stray")
                 self._all_off()
@@ -609,7 +634,9 @@ class MixerController:
             self._log("mixer_homing")
 
     def status(self) -> str:
-        """idle, opening, closing, homing, or unknown while the position is not known."""
+        """idle, opening, closing, homing, unknown (position) or unavailable (a relay)."""
+        if self.open.shown() is None or self.close.shown() is None:
+            return "unavailable"
         if self.state == "homing":
             return "homing"
         if self.tracker.moving:

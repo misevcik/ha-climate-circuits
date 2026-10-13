@@ -247,20 +247,42 @@
                 "mixer_open": "Mixer open relay",
                 "mixer_close": "Mixer close relay",
                 "supply_sensor": "Supply temperature after the mixer",
-                "travel": "Full valve travel time",
-                "hysteresis": "Hysteresis",
                 "mixer_position": "Mixer position",
                 "pump_delay": "Pump start delay",
                 "pump_run_on": "Pump run-on",
-                "settle": "Mixer settle time",
                 "source": "Heat source"
               },
               "data_description": {
                 "mixer_position": "Cover of the old integration; its position is used only as a first guess until the valve is homed.",
                 "pump_delay": "Seconds of demand before the pump starts, so the zone valves can open.",
                 "pump_run_on": "Seconds the pump keeps running after heating demand ends.",
-                "settle": "Seconds to wait after a valve move before the next one, until the changed water reaches the supply sensor. Longer if the valve swings, shorter if it is slow to reach the target.",
                 "source": "Where the circuit takes its water from. With a single heat source in the house it is used even when none is chosen."
+              }
+            },
+            "mixer": {
+              "name": "Mixer regulation",
+              "description": "How the valve regulates the water temperature after the mixer. The defaults suit most radiator and floor circuits.",
+              "data": {
+                "travel": "Full valve travel time",
+                "hysteresis": "Hysteresis",
+                "settle": "Settle time",
+                "gain": "Step per 1 °C off the target",
+                "min_step": "Smallest step",
+                "max_step": "Largest step",
+                "trend_window": "Trend window",
+                "source_compensation": "Follow the heat source",
+                "min_source_gap": "Smallest source – supply difference"
+              },
+              "data_description": {
+                "travel": "Seconds the actuator needs from fully closed to fully open (on its label).",
+                "hysteresis": "The valve stays while the water after the mixer is within ± this of the target.",
+                "settle": "Seconds to wait after a valve move before the next one, until the changed water reaches the supply sensor. Longer if the valve swings, shorter if it is slow to reach the target.",
+                "gain": "How far the valve moves for each °C the water is off the target. Larger reaches the target faster but may overshoot.",
+                "min_step": "A smaller move would not change the water noticeably.",
+                "max_step": "Limits a single move far from the target.",
+                "trend_window": "Seconds of supply readings the direction of the temperature is taken from. When it is heading for the target, the valve waits.",
+                "source_compensation": "When the source temperature changes, move the valve at once so the water after the mixer stays the same, without waiting for the supply sensor.",
+                "min_source_gap": "The source must be at least this much warmer than the water after the mixer; with a smaller difference sensor noise would move the valve too much."
               }
             }
           }
@@ -319,20 +341,42 @@
                 "mixer_open": "Mixer open relay",
                 "mixer_close": "Mixer close relay",
                 "supply_sensor": "Supply temperature after the mixer",
-                "travel": "Full valve travel time",
-                "hysteresis": "Hysteresis",
                 "mixer_position": "Mixer position",
                 "pump_delay": "Pump start delay",
                 "pump_run_on": "Pump run-on",
-                "settle": "Mixer settle time",
                 "source": "Heat source"
               },
               "data_description": {
                 "mixer_position": "Cover of the old integration; its position is used only as a first guess until the valve is homed.",
                 "pump_delay": "Seconds of demand before the pump starts, so the zone valves can open.",
                 "pump_run_on": "Seconds the pump keeps running after heating demand ends.",
-                "settle": "Seconds to wait after a valve move before the next one, until the changed water reaches the supply sensor. Longer if the valve swings, shorter if it is slow to reach the target.",
                 "source": "Where the circuit takes its water from. With a single heat source in the house it is used even when none is chosen."
+              }
+            },
+            "mixer": {
+              "name": "Mixer regulation",
+              "description": "How the valve regulates the water temperature after the mixer. The defaults suit most radiator and floor circuits.",
+              "data": {
+                "travel": "Full valve travel time",
+                "hysteresis": "Hysteresis",
+                "settle": "Settle time",
+                "gain": "Step per 1 °C off the target",
+                "min_step": "Smallest step",
+                "max_step": "Largest step",
+                "trend_window": "Trend window",
+                "source_compensation": "Follow the heat source",
+                "min_source_gap": "Smallest source – supply difference"
+              },
+              "data_description": {
+                "travel": "Seconds the actuator needs from fully closed to fully open (on its label).",
+                "hysteresis": "The valve stays while the water after the mixer is within ± this of the target.",
+                "settle": "Seconds to wait after a valve move before the next one, until the changed water reaches the supply sensor. Longer if the valve swings, shorter if it is slow to reach the target.",
+                "gain": "How far the valve moves for each °C the water is off the target. Larger reaches the target faster but may overshoot.",
+                "min_step": "A smaller move would not change the water noticeably.",
+                "max_step": "Limits a single move far from the target.",
+                "trend_window": "Seconds of supply readings the direction of the temperature is taken from. When it is heading for the target, the valve waits.",
+                "source_compensation": "When the source temperature changes, move the valve at once so the water after the mixer stays the same, without waiting for the supply sensor.",
+                "min_source_gap": "The source must be at least this much warmer than the water after the mixer; with a smaller difference sensor noise would move the valve too much."
               }
             }
           }
@@ -343,7 +387,8 @@
         "mixer_needs_both_relays": "A mixing valve needs both the open and the close relay.",
         "mixer_relays_same": "The open and close relay must differ.",
         "mixer_needs_supply_sensor": "A mixing valve needs the supply temperature sensor.",
-        "design_outdoor_above_room": "The design outdoor temperature must be below the room temperature."
+        "design_outdoor_above_room": "The design outdoor temperature must be below the room temperature.",
+        "mixer_min_step_above_max": "The smallest step is larger than the largest step."
       },
       "initiate_flow": {
         "user": "Add circuit"
@@ -364,7 +409,7 @@
             "setpoint_entity": "Set temperature"
           },
           "data_description": {
-            "temperature_sensor": "For a buffer tank its top, where the circuits take the water; for a boiler or heat pump its supply.",
+            "temperature_sensor": "The water that goes to the circuits: for a buffer tank its outlet pipe to the mixers; for a boiler or heat pump its supply.",
             "setpoint_entity": "What the source is set to give, e.g. the heat pump's target for the tank (a climate's target temperature, or a number or sensor). Used to warn when a circuit wants more than the source can give."
           }
         },
@@ -377,7 +422,7 @@
             "setpoint_entity": "Set temperature"
           },
           "data_description": {
-            "temperature_sensor": "For a buffer tank its top, where the circuits take the water; for a boiler or heat pump its supply.",
+            "temperature_sensor": "The water that goes to the circuits: for a buffer tank its outlet pipe to the mixers; for a boiler or heat pump its supply.",
             "setpoint_entity": "What the source is set to give, e.g. the heat pump's target for the tank (a climate's target temperature, or a number or sensor). Used to warn when a circuit wants more than the source can give."
           }
         }
@@ -580,7 +625,8 @@
           "opening": "Opening",
           "closing": "Closing",
           "homing": "Homing (closing to the end stop)",
-          "unknown": "Position unknown"
+          "unknown": "Position unknown",
+          "unavailable": "Relay unavailable"
         }
       },
       "source_temperature": {

@@ -80,7 +80,7 @@ _SK = {
     "pump_idle": "Čerpadlo vypnuté – bez požiadavky",
     "pump_exercise": "Čerpadlo sa protáča – ešte {left} s",
     "block_pause": "Čakanie medzi kúrením a chladením – ešte {minutes} min",
-    "block_dew_point": "Chladenie zastavené – voda {supply} je pod rosným bodom {dew} + 2 K",
+    "block_dew_point": "Chladenie zastavené – voda {supply} je pod rosným bodom {dew} + 2 °C",
     "block_no_humidity": "Chladenie zablokované – chýbajú údaje o vlhkosti",
     "mixer": "Zmiešavač {name}: {reason}",
     "mixer_homing": "Zmiešavač {name}: homing, zatváram celú dráhu",
@@ -90,6 +90,12 @@ _SK = {
     "mixer_both": "Zmiešavač {name}: obe relé zapnuté, vypínam",
     "mixer_stray": "Zmiešavač {name}: relé zapnuté bez príkazu, vypínam",
     "relay_failed": "{label}: príkaz nepotvrdený po {n} pokusoch",
+    "relay_unavailable": "{label}: relé je nedostupné – kým sa nevráti, nič sa ním neprepína",
+    "relay_back": "{label}: relé je znova dostupné",
+    "mixer_move_lost": (
+        "Zmiešavač {name}: relé vypadlo počas pohybu, poloha je neznáma"
+        " – po návrate relé sa ventil zahomuje"
+    ),
     "mx_open": "otváram o {step} %",
     "mx_close": "zatváram o {step} %",
     "mx_below": "pod",
@@ -187,7 +193,7 @@ _EN = {
     "pump_idle": "Pump off – no demand",
     "pump_exercise": "Pump exercise – {left} s left",
     "block_pause": "Waiting between heating and cooling – {minutes} min left",
-    "block_dew_point": "Cooling stopped – water {supply} is below the dew point {dew} + 2 K",
+    "block_dew_point": "Cooling stopped – water {supply} is below the dew point {dew} + 2 °C",
     "block_no_humidity": "Cooling blocked – no humidity data",
     "mixer": "Mixer {name}: {reason}",
     "mixer_homing": "Mixer {name}: homing, closing the full travel",
@@ -197,6 +203,12 @@ _EN = {
     "mixer_both": "Mixer {name}: both relays on, turning them off",
     "mixer_stray": "Mixer {name}: relay on without a command, turning it off",
     "relay_failed": "{label}: command not confirmed after {n} attempts",
+    "relay_unavailable": "{label}: relay unavailable – nothing is switched until it is back",
+    "relay_back": "{label}: relay available again",
+    "mixer_move_lost": (
+        "Mixer {name}: relay dropped out during a move, position unknown"
+        " – the valve is homed once the relay is back"
+    ),
     "mx_open": "opening {step} %",
     "mx_close": "closing {step} %",
     "mx_below": "below",

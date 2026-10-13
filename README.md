@@ -7,7 +7,7 @@ Everything is set up in the UI. It works with the relays, sensors and thermostat
 ## Features
 
 - **House mode** – heat, cool or off, taken from a heat pump or any other entity (climate, select, sensor, switch), with a fallback sensor (buffer tank or outdoor temperature) and a manual override.
-- **Weather curves** per circuit – a heating curve from the design point and the emitter exponent, a linear cooling curve that never goes below the dew point + 2 K. A dashboard card shows the curve and lets you drag it.
+- **Weather curves** per circuit – a heating curve from the design point and the emitter exponent, a linear cooling curve that never goes below the dew point + 2 °C. A dashboard card shows the curve and lets you drag it.
 - **Circuit demand** from the circuit's thermostats, with the calling zones shown.
 - **Circuit pumps** with a start delay (so the zone valves can open) and a run-on after heating.
 - **Three-point mixing valves** – the position is calculated from the relay run times, the supply temperature is regulated in steps, the valve is homed against its end stop when the position is unknown, and the motor is protected: never both relays at once, a run-time watchdog, stray relays switched off, short relay dropouts tolerated.
@@ -37,7 +37,7 @@ Copy `custom_components/climate_circuits` into the `custom_components` folder of
 ## Setup
 
 1. **Settings → Devices & services → Add integration → Climate Circuits.** Set up the house: where the mode comes from, the fallback, the outdoor temperature sensor and, if you have one, the hot water circulation.
-2. **Add a circuit** (*Add circuit* on the integration's page) for every pump or mixing valve: its heating and cooling thermostats, humidity sensors for cooling, both curves and the outputs (pump, mixer relays, supply sensor, valve travel time).
+2. **Add a circuit** (*Add circuit* on the integration's page) for every pump or mixing valve: its heating and cooling thermostats, humidity sensors for cooling, both curves, the outputs (heat source, pump, mixer relays, supply sensor) and the *Mixer regulation* (valve travel time and the regulation parameters).
 3. Watch the **Activity** log and the entities in **dry run**: the integration says what it would switch and why.
 4. When it matches what you expect, turn on **Control equipment** and then each circuit's **Control pump and mixer** switch.
 
@@ -89,7 +89,7 @@ The same change is available as an action, `climate_circuits.set_curve`, targeti
 
 ## How the mixing valve is driven
 
-The valve has no position feedback, so the integration counts how long each relay runs, whoever switches it. Every 30 s it compares the supply temperature with the target and, while the difference is larger than the hysteresis, moves the valve by 5–10 %; without demand it closes it. At an end stop it adds a short pulse at most every 10 minutes. The position is saved across restarts. The valve is homed (closed for one full travel) when the position is unknown: on the first start, when a move was cut off, after a relay was unavailable for more than 5 s during a move, and after 7 days without moving. Homing on every Home Assistant start is an option under *Protections*.
+The valve has no position feedback, so the integration counts how long each relay runs, whoever switches it. Every 30 s it compares the supply temperature with the target. Outside the hysteresis it moves the valve by a step proportional to the difference (4 % per °C, 2–20 %), then waits for the settle time until the water reaches the sensor, and skips a move while the temperature is already heading for the target. When the heat source temperature changes, the valve is moved at once so the supply stays the same. All of this is set per circuit under *Mixer regulation*; without demand the valve closes. At an end stop it adds a short pulse at most every 10 minutes. The position is saved across restarts. The valve is homed (closed for one full travel) when the position is unknown: on the first start, when a move was cut off, after a relay was unavailable for more than 5 s during a move, and after 7 days without moving. A relay unavailable for longer stops the mixer and is logged in Activity, as is its return. Homing on every Home Assistant start is an option under *Protections*.
 
 ## Documentation
 

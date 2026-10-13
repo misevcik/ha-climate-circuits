@@ -27,16 +27,17 @@ class Direction(StrEnum):
 @dataclass(frozen=True, slots=True)
 class MixerSettings:
     travel: float = 125.0  # s, full stroke
-    hysteresis: float = 0.5  # K
+    hysteresis: float = 0.5  # °C
     settle: float = 150.0  # s after a move before the next one, the water reaches the sensor
     end_pulse: float = 2.0  # s
     end_pulse_interval: float = 600.0  # s, at an end stop while regulating
     idle_pulse_interval: float = 21600.0  # s, closed without demand
-    gain: float = 4.0  # % of travel per K of difference
+    gain: float = 4.0  # % of travel per °C of difference
     min_step: int = 2  # %
     max_step: int = 20  # %
     trend_window: float = 120.0  # s of supply readings the trend is taken from
-    min_source_gap: float = 5.0  # K the source must be above the supply to compensate
+    compensate: bool = True  # follow changes of the source at once
+    min_source_gap: float = 3.0  # °C the source must be above the supply to compensate
 
 
 @dataclass(frozen=True, slots=True)
@@ -61,7 +62,7 @@ def step_size(diff: float, settings: MixerSettings) -> int:
 
 
 def supply_trend(samples: Sequence[tuple[float, float]], now: float, window: float) -> float | None:
-    """K per minute over the last window; None until the readings cover half of it."""
+    """°C per minute over the last window; None until the readings cover half of it."""
     recent = [(t, v) for t, v in samples if now - t <= window]
     if len(recent) < 2 or recent[-1][0] - recent[0][0] < window / 2:
         return None
@@ -127,7 +128,7 @@ def regulate(
 ) -> MixerAction | None:
     """One step, or None to stay. Opening means "more" in both modes.
 
-    since_move: s since the last move ended; trend: supply change in K per minute;
+    since_move: s since the last move ended; trend: supply change in °C per minute;
     source: source temperature now, source_ref: what it was at the last move.
     """
     if position is None:
@@ -151,7 +152,7 @@ def regulate(
             "no demand, closed",
             "idle_pulse",
         )
-    if heating and None not in (supply, source, source_ref):
+    if settings.compensate and heating and None not in (supply, source, source_ref):
         change = source_compensation(position, supply, source, source_ref, settings)  # type: ignore[arg-type]
         if change is not None and abs(change) >= settings.min_step:
             direction = Direction.OPEN if change > 0 else Direction.CLOSE
