@@ -113,6 +113,11 @@ _SK = {
     "src_short": "{name}: chce vodu {target}, ale {source} je nastavený na {setpoint} – rezerva "
     "len {spare}, prívod nemusí stačiť",
     "src_enough": "{name}: {source} nastavený na {setpoint} opäť stačí na cieľ {target}",
+    "mx_starved": "Zmiešavač {name}: zdroj nestačí – zmiešavač je naplno už {minutes} min a "
+    "prívod {supply} je pod cieľom {target}{tail}",
+    "mx_starved_tail": "; {source} má {temperature}",
+    "mx_starved_set": " (nastavený na {setpoint})",
+    "mx_fed": "Zmiešavač {name}: zdroj opäť stačí – prívod {supply}, cieľ {target}",
     "mx_hold_no_target": "Zmiešavač {name}: držím – chýba cieľová teplota vody",
 }
 _EN = {
@@ -217,6 +222,11 @@ _EN = {
     "src_short": "{name}: wants {target} water, but {source} is set to {setpoint} – only {spare} "
     "to spare, the supply may fall short",
     "src_enough": "{name}: {source} set to {setpoint} covers the {target} target again",
+    "mx_starved": "Mixer {name}: the heat source is not enough – fully open for {minutes} min and "
+    "the supply {supply} is below the target {target}{tail}",
+    "mx_starved_tail": "; {source} is at {temperature}",
+    "mx_starved_set": " (set to {setpoint})",
+    "mx_fed": "Mixer {name}: the heat source is enough again – supply {supply}, target {target}",
     "mx_hold_no_target": "Mixer {name}: holding – no target water temperature",
 }
 _COUNTED = (ZoneStatus.SATISFIED, ZoneStatus.WAITING, ZoneStatus.OFF, ZoneStatus.UNAVAILABLE)
@@ -376,4 +386,34 @@ def source_text(
     spare = "?" if setpoint is None or target is None else f"{setpoint - target:.1f} °C"
     return _t(language)[f"src_{key}"].format(
         name=name, source=source, setpoint=_temp(setpoint), target=_temp(target), spare=spare
+    )
+
+
+def starved_text(
+    starved: bool,
+    name: str,
+    language: str,
+    *,
+    minutes: float = 0.0,
+    supply: float | None = None,
+    target: float | None = None,
+    source: str | None = None,
+    temperature: float | None = None,
+    setpoint: float | None = None,
+) -> str:
+    """The heat source is not enough for a circuit (valve fully open), or is again."""
+    t = _t(language)
+    if not starved:
+        return t["mx_fed"].format(name=name, supply=_temp(supply), target=_temp(target))
+    tail = ""
+    if source and temperature is not None:
+        tail = t["mx_starved_tail"].format(source=source, temperature=_temp(temperature))
+        if setpoint is not None:
+            tail += t["mx_starved_set"].format(setpoint=_temp(setpoint))
+    return t["mx_starved"].format(
+        name=name,
+        minutes=round(minutes),
+        supply=_temp(supply),
+        target=_temp(target),
+        tail=tail,
     )

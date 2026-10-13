@@ -567,6 +567,9 @@
           },
           "source_temperature": {
             "name": "Teplota zdroja"
+          },
+          "source_not_enough": {
+            "name": "Zdroj nestačí"
           }
         }
       },

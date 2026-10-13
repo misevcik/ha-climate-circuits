@@ -567,6 +567,9 @@
           },
           "source_temperature": {
             "name": "Source temperature"
+          },
+          "source_not_enough": {
+            "name": "Heat source not enough"
           }
         }
       },

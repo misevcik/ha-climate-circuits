@@ -11,6 +11,12 @@ Názov: **Climate Circuits**, doména `climate_circuits`, repozitár `ha-climate
 - Ponechané: zónové termostaty `*_cool`, `climate.gf_thermostat` a jeho pomocné entity (používa ich integrácia), `binary_sensor.f1_occupancy` (nejednoznačné vyhľadávanie).
 - **Čaká:** `switch.gf_sw_bedroom_cool` a `light.cfg_wintergarden_stairs` sa nezmazali (zablokované povolením v Claude Code) – zmazať ručne v Settings → Helpers, alebo povoliť nástroj.
 
+## 2026-10-13 – upozornenie „zdroj nestačí“ podľa skutočnosti
+- Po nasadení 0.1.6: GF na 100 %, prívod 39,5 °C pri cieli 40,3 °C, nádrž 44 °C nastavená na 45 °C – rezerva podľa nastavenia 4,7 K, ale pri plne otvorenom zmiešavači je prívod ~4,5 K pod nádržou. Prah 2 K podľa nastavenia nestačí.
+- Doplnené: keď je zmiešavač **naplno (≥ 99 %)** a prívod je **pod cieľom o viac ako hysterézu dlhšie ako 15 min** (`STARVED_AFTER`), pri kúrení s požiadavkou, a zdroj **nie je** chvíľkovo studený (ohrev TÚV/odmrazovanie sa nepočíta), Aktivita zapíše „zdroj nestačí“ aj s teplotou a nastavením zdroja; keď sa prívod vráti k cieľu (alebo skončí požiadavka), zapíše „zdroj opäť stačí“. Atribút `source_not_enough` na polohe zmiešavača.
+- Funguje v každom dome bez ladenia prahu. Upozornenie podľa nastavenej teploty (2 K) ostáva.
+- Krok 2 (riadenie cieľa TČ) zatiaľ vynechaný – rozhodnutie používateľa. Testy: 191.
+
 ## 2026-10-13 – zdroj pozná svoju nastavenú teplotu (krok 1)
 - Používateľ: treba zahrnúť cieľ ohrevu tepelného čerpadla – `climate.aux_cloud_…_heat_pump_central_heating` má cieľ 45 °C (eco), max 64, krok 1, dá sa nastavovať.
 - Zdroj má nepovinné pole **Nastavená teplota** (`setpoint_entity`: climate → jeho cieľová teplota, inak number/input_number/sensor). Entita `sensor.<zdroj>_set_temperature`; atribút `source_headroom` na cieľovej teplote vody okruhu.

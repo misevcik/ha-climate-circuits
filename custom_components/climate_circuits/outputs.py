@@ -31,6 +31,7 @@ from .const import (
     RELAY_RETRY,
     RELAY_RETRY_RESET,
     START_GRACE,
+    STARVED_AFTER,
 )
 from .core.mixer import (
     Direction,
@@ -38,12 +39,13 @@ from .core.mixer import (
     MixerSettings,
     hold_reason,
     regulate,
+    starved,
     supply_trend,
 )
 from .core.mode import Mode
 from .core.protect import exercise_due
 from .core.pump import PumpDecision, PumpTimer
-from .core.texts import mixer_hold_text, mixer_text, out_message, pump_text
+from .core.texts import mixer_hold_text, mixer_text, out_message, pump_text, starved_text
 from .core.travel import TravelTracker
 from .states import call_service, number, state_of
 
@@ -215,6 +217,8 @@ class MixerController:
         self._source_ref: float | None = None  # source temperature at the last move
         self._proposal_logged: tuple[Any, ...] | None = None
         self._hold_logged: str | None = None  # why it last stayed, not repeated in Activity
+        self._starved_since: float | None = None  # fully open and below the target
+        self.starved = False  # reported: the heat source is not enough
         self._unsubs: list[CALLBACK_TYPE] = []
         self._seed()
 
@@ -453,6 +457,7 @@ class MixerController:
                 self._hold_logged = hold[0]
         else:
             self._hold_logged = None
+        self._check_starved(now, position, supply, target, source)
         self.proposal = action
         if controlling and action:
             if self._execute(action, now):
@@ -462,6 +467,58 @@ class MixerController:
             if action:
                 self._source_ref = source
         circuit.refresh()
+
+    def _check_starved(
+        self,
+        now: float,
+        position: float | None,
+        supply: float | None,
+        target: float | None,
+        source: float | None,
+    ) -> None:
+        """Activity entry when the valve stays fully open below the target, and when it ends."""
+        circuit, house = self.circuit, self.circuit.house
+        if starved(
+            heating=house.mode is Mode.HEAT,
+            demand=circuit.output_demand,
+            position=position,
+            supply=supply,
+            target=target,
+            source=source,
+            settings=self.params,
+        ):
+            if self._starved_since is None:
+                self._starved_since = now
+            if self.starved or now - self._starved_since < STARVED_AFTER:
+                return
+            self.starved = True
+            heat_source = circuit.source()
+            message = starved_text(
+                True,
+                circuit.name,
+                self._language,
+                minutes=(now - self._starved_since) / 60,
+                supply=supply,
+                target=target,
+                source=heat_source.name if heat_source else None,
+                temperature=source,
+                setpoint=heat_source.setpoint() if heat_source else None,
+            )
+        else:
+            self._starved_since = None
+            fed = (
+                supply is not None
+                and target is not None
+                and supply >= target - self.params.hysteresis
+            )
+            if not self.starved or not (fed or not circuit.output_demand):
+                return
+            self.starved = False
+            message = starved_text(
+                False, circuit.name, self._language, supply=supply, target=target
+            )
+        if house.logging:
+            self._log_text(message)
 
     @property
     def _busy(self) -> bool:
@@ -545,6 +602,7 @@ class MixerController:
         return {
             "movement": self.status(),
             "position_known": self.position() is not None,
+            "source_not_enough": self.starved,
             "proposed": (
                 mixer_text(self.proposal, self.circuit.name, self._language)
                 if self.proposal

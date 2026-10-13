@@ -79,3 +79,45 @@ def test_source_set_too_low_for_the_target() -> None:
         "GF: wants 44.0 °C water, but Buffer tank is set to 45.0 °C – only 1.0 °C to spare, "
         "the supply may fall short"
     )
+
+
+def test_starved_only_when_fully_open_with_a_warm_source() -> None:
+    from custom_components.climate_circuits.core.mixer import starved
+
+    args = {
+        "heating": True,
+        "demand": True,
+        "position": 100.0,
+        "supply": 39.5,
+        "target": 40.3,
+        "source": 44.0,
+        "settings": S,
+    }
+    assert starved(**args)
+    assert not starved(**args | {"position": 90.0})
+    assert not starved(**args | {"supply": 40.0})  # within the band
+    assert not starved(**args | {"source": 40.5})  # hot water heating: the source is cold now
+    assert not starved(**args | {"demand": False})
+
+
+def test_starved_text() -> None:
+    from custom_components.climate_circuits.core.texts import starved_text
+
+    text = starved_text(
+        True,
+        "GF",
+        "en",
+        minutes=15.2,
+        supply=39.5,
+        target=40.3,
+        source="Buffer tank",
+        temperature=44.0,
+        setpoint=45.0,
+    )
+    assert text == (
+        "Mixer GF: the heat source is not enough – fully open for 15 min and the supply 39.5 °C "
+        "is below the target 40.3 °C; Buffer tank is at 44.0 °C (set to 45.0 °C)"
+    )
+    assert starved_text(False, "GF", "en", supply=40.2, target=40.3).startswith(
+        "Mixer GF: the heat source is enough again"
+    )

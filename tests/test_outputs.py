@@ -505,3 +505,23 @@ async def test_activity_says_why_the_mixer_moves(hass, house, clock, calls) -> N
     await hass.async_block_till_done()
     moves = [e.data["message"] for e in events if "Mixer F1" in e.data["message"]]
     assert moves and "below the target" in moves[0]
+
+
+async def test_activity_reports_a_source_that_is_not_enough(hass, house, clock, calls) -> None:
+    mixer = next(iter(house.circuits.values())).mixer
+    mixer.tracker.set(100.0)
+    await _control(hass, True)
+    set_thermostat(hass, ZONE, "heating")
+    hass.states.async_set(SUPPLY, "20.0")  # far below any target, tank warm
+    hass.states.async_set(SOURCE, "60.0")
+    await _tick(hass, house, clock, 100)
+    events = async_capture_events(hass, EVENT_ACTIVITY)
+    mixer._tick(None)  # an end-stop pulse first
+    await hass.async_block_till_done()
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=10))
+    await hass.async_block_till_done()
+    clock.now += 901
+    mixer._tick(None)
+    await hass.async_block_till_done()
+    assert any("not enough" in e.data["message"] for e in events)
+    assert hass.states.get(POSITION).attributes["source_not_enough"] is True

@@ -23,6 +23,7 @@ MIXER_RUN_MARGIN: Final = 15  # s a relay may run beyond a full travel plus the 
 RELAY_GRACE: Final = 5  # s a relay may be unavailable before it counts as lost (board blips)
 START_GRACE: Final = 90  # s after the start in which missing demand does not stop outputs
 SOURCE_HEADROOM: Final = 2.0  # K a heat source should be set above a circuit's target water
+STARVED_AFTER: Final = 900  # s fully open and below the target before the source is reported
 HOT_WATER_GRACE: Final = (
     60  # s after the start in which a missing circulation sensor is not reported
 )

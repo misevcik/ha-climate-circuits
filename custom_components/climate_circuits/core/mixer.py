@@ -246,3 +246,25 @@ def hold_reason(
         if (target - supply) * (target - expected) <= 0:
             return "heading", values | {"trend": trend}
     return None
+
+
+def starved(
+    *,
+    heating: bool,
+    demand: bool,
+    position: float | None,
+    supply: float | None,
+    target: float | None,
+    source: float | None,
+    settings: MixerSettings,
+) -> bool:
+    """Fully open and still below the target although the source is not just cold for a while.
+
+    A source colder than the target (hot water heating, defrost) passes; this is about a
+    source set too low, or losses between the tank and the supply sensor.
+    """
+    if not (heating and demand) or position is None or supply is None or target is None:
+        return False
+    if position < 99.0 or supply >= target - settings.hysteresis:
+        return False
+    return source is None or source >= target + settings.weak_source_margin
