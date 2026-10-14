@@ -30,6 +30,9 @@ from .const import (
     DEFAULT_MODE_PAUSE,
     DEFAULT_PUMP_DELAY,
     DEFAULT_PUMP_RUN_ON,
+    DEFAULT_SETPOINT_MARGIN,
+    DEFAULT_SETPOINT_MAX,
+    DEFAULT_SETPOINT_MIN,
     DEFAULT_SETTLE,
     DEFAULT_THRESHOLD,
     DEFAULT_TRAVEL,
@@ -221,6 +224,9 @@ SOURCE_SCHEMA = vol.Schema(
         vol.Optional("setpoint_entity"): sel.EntitySelector(
             sel.EntitySelectorConfig(domain=["climate", "number", "input_number", "sensor"])
         ),
+        vol.Required("setpoint_margin", default=DEFAULT_SETPOINT_MARGIN): _number(0, 20, 0.5, "°C"),
+        vol.Required("setpoint_min", default=DEFAULT_SETPOINT_MIN): _number(10, 80, 1, "°C"),
+        vol.Required("setpoint_max", default=DEFAULT_SETPOINT_MAX): _number(10, 80, 1, "°C"),
         vol.Optional("heater_name"): sel.TextSelector(),
         vol.Optional("heater_supply"): TEMPERATURE_SENSOR,
         vol.Optional("heater_return"): TEMPERATURE_SENSOR,
@@ -281,6 +287,12 @@ def _validate_circuit(data: dict[str, Any]) -> dict[str, str]:
         return {"base": "mixer_needs_supply_sensor"}
     if (m := data.get("mixer", {})) and m.get("min_step", 0) > m.get("max_step", 100):
         return {"base": "mixer_min_step_above_max"}
+    return {}
+
+
+def _validate_source(data: dict[str, Any]) -> dict[str, str]:
+    if data.get("setpoint_min", 0) > data.get("setpoint_max", 100):
+        return {"base": "setpoint_min_above_max"}
     return {}
 
 
@@ -368,19 +380,28 @@ class SourceSubentryFlow(ConfigSubentryFlow):
     """A buffer tank, boiler or heat pump the circuits take their water from."""
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> SubentryFlowResult:
-        if user_input is not None:
+        errors = _validate_source(user_input) if user_input is not None else {}
+        if user_input is not None and not errors:
             return self.async_create_entry(title=user_input["name"], data=user_input)
-        return self.async_show_form(step_id="user", data_schema=SOURCE_SCHEMA)
+        return self.async_show_form(
+            step_id="user",
+            data_schema=self.add_suggested_values_to_schema(SOURCE_SCHEMA, user_input or {}),
+            errors=errors,
+        )
 
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None
     ) -> SubentryFlowResult:
         subentry = self._get_reconfigure_subentry()
-        if user_input is not None:
+        errors = _validate_source(user_input) if user_input is not None else {}
+        if user_input is not None and not errors:
             return self.async_update_and_abort(
                 self._get_entry(), subentry, title=user_input["name"], data=user_input
             )
         return self.async_show_form(
             step_id="reconfigure",
-            data_schema=self.add_suggested_values_to_schema(SOURCE_SCHEMA, dict(subentry.data)),
+            data_schema=self.add_suggested_values_to_schema(
+                SOURCE_SCHEMA, user_input or dict(subentry.data)
+            ),
+            errors=errors,
         )

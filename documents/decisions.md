@@ -3,6 +3,11 @@
 Architektúra: [architecture.md](architecture.md) (pôvodný Claude Docs dokument z 1. 10. je zastaraný)
 Názov: **Climate Circuits**, doména `climate_circuits`, repozitár `ha-climate-circuits`.
 
+## 2026-10-14 – nastavovanie zdroja podľa okruhov (krok 2, 0.1.15)
+- Používateľ: poistku vo firmvéri dosky **nerobiť**; riadenie cieľovej teploty TČ **áno, zapínateľné**; ráno overiť, ako to funguje.
+- Rozhodnutia: nastavenie = najteplejší cieľ kúriaceho okruhu + rezerva; zmena najviac raz za 15 min a o ≥ 1 °C (šetrí TČ a jeho cloud API); bez požiadavky sa nemení (aby TČ neposkakovalo); iba kúrenie. Predvolená rezerva 5 °C – pre tento dom asi treba viac: pri nastavení 45 °C GF naplno nedosiahol 40,3 °C (rezerva 4,7 °C nestačila).
+- Otvorené: prestrelenie pri štarte okruhu so studenou vodou – ráno overiť, či sa ešte deje. Testy: 206.
+
 ## 2026-10-14 – karta: zdroj tepla, názov TÚV, nové symboly (0.1.14)
 - Používateľ: doplniť zdroj tepla (výstup z tepelka) a spiatočku do tepelka, **voliteľne** – bez nich sa karta prispôsobí; „Hot water tank“ preložiť / pomenovať ako akumulačku; krajšie obrázky zmiešavača a čerpadla.
 - Rozhodnutie: zdroj tepla patrí k zdroju (subentry `source`): `heater_name`, `heater_supply`, `heater_return`, iba na zobrazenie. Nádrž TUV dostala vlastný názov (`tank_name`), lebo HA používateľa je v angličtine a akumulačka má vlastný slovenský názov. Karta má voľbu `language`.

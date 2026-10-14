@@ -19,6 +19,9 @@ from .const import (
     DEFAULT_MODE_PAUSE,
     DEFAULT_PUMP_DELAY,
     DEFAULT_PUMP_RUN_ON,
+    DEFAULT_SETPOINT_MARGIN,
+    DEFAULT_SETPOINT_MAX,
+    DEFAULT_SETPOINT_MIN,
     DEFAULT_SETTLE,
     DEFAULT_THRESHOLD,
     DEFAULT_TRAVEL,
@@ -183,6 +186,10 @@ class SourceSettings:
     heater_name: str | None = None
     heater_supply: str | None = None
     heater_return: str | None = None
+    # Setting the source from the circuits (with its switch on): warmest target + margin.
+    setpoint_margin: float = DEFAULT_SETPOINT_MARGIN
+    setpoint_min: float = DEFAULT_SETPOINT_MIN
+    setpoint_max: float = DEFAULT_SETPOINT_MAX
 
     @classmethod
     def from_data(cls, data: Mapping[str, Any]) -> SourceSettings:
@@ -193,4 +200,7 @@ class SourceSettings:
             heater_name=data.get("heater_name"),
             heater_supply=data.get("heater_supply"),
             heater_return=data.get("heater_return"),
+            setpoint_margin=float(data.get("setpoint_margin", DEFAULT_SETPOINT_MARGIN)),
+            setpoint_min=float(data.get("setpoint_min", DEFAULT_SETPOINT_MIN)),
+            setpoint_max=float(data.get("setpoint_max", DEFAULT_SETPOINT_MAX)),
         )

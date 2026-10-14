@@ -18,11 +18,13 @@ from homeassistant.helpers.storage import Store
 
 from .activity import entity_id_for, log_activity
 from .const import (
+    CONTROLLABLE_SETPOINTS,
     CURVE_SECTIONS,
     DEW_POINT_MARGIN,
     EVALUATE_INTERVAL,
     HOT_WATER_GRACE,
     HOT_WATER_TUNING,
+    SETPOINT_INTERVAL,
     SOURCE_HEADROOM,
     STORAGE_KEY,
     STORAGE_VERSION,
@@ -35,11 +37,13 @@ from .core.demand import Demand, circuit_demand
 from .core.explain import CircuitExplanation, ZoneSnapshot, explain_circuit
 from .core.mode import Mode, ModeDecision, ModeSource, Override, mode_from_entity, resolve_mode
 from .core.protect import Block, Blocked, CondensationGuard, ModePause
+from .core.setpoint import SetpointDecision, SetpointSettings, setpoint_decision
 from .core.texts import (
     circuit_reason,
     circulation_message,
     mode_message,
     other_zones_kind,
+    setpoint_text,
     source_text,
     zones_message,
 )
@@ -97,10 +101,109 @@ class Source(Listeners):
         self.house = house
         self.id = subentry.subentry_id
         self.settings = SourceSettings.from_data(subentry.data)
+        self.setpoint_decision: SetpointDecision | None = None
+        self._changed_at: float | None = None  # when the setting was last changed by us
+        self._proposed: float | None = None  # dry run: the last value said in Activity
 
     @property
     def name(self) -> str:
         return self.settings.name
+
+    @property
+    def controllable(self) -> bool:
+        """Its setting can be written: a climate's target or a number."""
+        entity = self.settings.setpoint_entity
+        return bool(entity) and entity.split(".")[0] in CONTROLLABLE_SETPOINTS
+
+    @property
+    def control_enabled(self) -> bool:
+        stored = self.house.persisted["sources"].get(self.id, {})
+        return bool(stored.get("setpoint_control", False))
+
+    @callback
+    def set_control_enabled(self, enabled: bool) -> None:
+        self.house.persisted["sources"].setdefault(self.id, {})["setpoint_control"] = enabled
+        self.house.save()
+        self.house.evaluate()
+
+    def _limits(self) -> SetpointSettings:
+        """The settings, within the range and step the entity itself accepts."""
+        s = self.settings
+        state = state_of(self.house.hass, s.setpoint_entity)
+        attrs = state.attributes if state else {}
+        if state is not None and state.domain == "climate":
+            low, high = number(attrs.get("min_temp")), number(attrs.get("max_temp"))
+            step = number(attrs.get("target_temp_step")) or 1.0
+        else:
+            low, high = number(attrs.get("min")), number(attrs.get("max"))
+            step = number(attrs.get("step")) or 1.0
+        return SetpointSettings(
+            margin=s.setpoint_margin,
+            minimum=max(s.setpoint_min, low) if low is not None else s.setpoint_min,
+            maximum=min(s.setpoint_max, high) if high is not None else s.setpoint_max,
+            step=step,
+            threshold=max(1.0, step),
+            interval=SETPOINT_INTERVAL,
+        )
+
+    @callback
+    def evaluate_setpoint(self, mode: Mode) -> None:
+        """Set the source from the warmest water its heating circuits want (when switched on)."""
+        house = self.house
+        if not self.controllable:
+            return
+        targets = {
+            c.name: c.target.value
+            for c in house.circuits.values()
+            if c.source() is self and c.demand.active and c.target is not None
+        }
+        now = house.now()
+        current = self.setpoint()
+        decision = setpoint_decision(
+            heating=mode is Mode.HEAT,
+            targets=targets,
+            current=current,
+            since_change=None if self._changed_at is None else now - self._changed_at,
+            settings=self._limits(),
+        )
+        self.setpoint_decision = decision
+        if not self.control_enabled or not decision.change or decision.wanted is None:
+            return
+        live = house.control_equipment
+        if not live and decision.wanted == self._proposed:
+            return  # dry run: said once per value
+        if house.logging:
+            house.activity(
+                self.name,
+                setpoint_text(
+                    self.name,
+                    decision.wanted,
+                    current,
+                    decision.circuit,
+                    decision.target,
+                    self.settings.setpoint_margin,
+                    house.hass.config.language,
+                    dry_run=not live,
+                ),
+                f"{self.id}_source_setpoint",
+            )
+        if not live:
+            self._proposed = decision.wanted
+            return
+        self._proposed = None
+        self._changed_at = now
+        entity = self.settings.setpoint_entity
+        domain = entity.split(".")[0]
+        if domain == "climate":
+            call_service(
+                house.hass,
+                "climate",
+                "set_temperature",
+                entity_id=entity,
+                temperature=decision.wanted,
+            )
+        else:
+            call_service(house.hass, domain, "set_value", entity_id=entity, value=decision.wanted)
 
     def inputs(self) -> set[str]:
         return set(filter(None, [self.settings.temperature_sensor, self.settings.setpoint_entity]))
@@ -498,7 +601,7 @@ class House(Listeners):
         self.booting = not hass.is_running  # set up while Home Assistant starts, not a reload
         self.pause = ModePause(self.settings.mode_pause)
         self.pause_remaining = 0.0
-        self.persisted: dict[str, Any] = {"pumps": {}, "mixers": {}, "circuits": {}}
+        self.persisted: dict[str, Any] = {"pumps": {}, "mixers": {}, "circuits": {}, "sources": {}}
         self._store: Store[dict[str, Any]] = Store(
             hass, STORAGE_VERSION, f"{STORAGE_KEY}.{entry.entry_id}"
         )
@@ -656,6 +759,8 @@ class House(Listeners):
             source.refresh()
         for circuit in self.circuits.values():
             circuit.evaluate(self.mode, self.outdoor)
+        for source in self.sources.values():
+            source.evaluate_setpoint(self.mode)
         if self.hot_water:
             self.hot_water.evaluate()
         self._notify()

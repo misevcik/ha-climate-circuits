@@ -312,6 +312,12 @@ Zdroj (akumulačná nádrž, kotol, tepelné čerpadlo, hydraulický separátor)
 - **Pokryté prípady:** jedna nádrž pre všetky okruhy, dve nádrže za sebou (jeden zdroj, senzor na výstupe), dva zdroje pre rôzne okruhy, neskôr samostatná nádrž na chladenie (zdroj pri chladení).
 - **Neskôr sem patrí** požiadavka na zdroj (tabuľka nižšie) a záložný senzor režimu (dnes v nastaveniach domu).
 
+### Nastavovanie zdroja podľa okruhov – Hotové (0.1.15)
+- Prepínač zdroja **Nastavovať podľa okruhov** (`switch.<zdroj>_set_from_the_circuits`, predvolene vypnutý; vzniká, len keď *Nastavená teplota* je climate, number alebo input_number).
+- Nastavenie = najteplejšia voda, ktorú chce kúriaci okruh tohto zdroja, + **rezerva** (pole zdroja, predvolene 5 °C), v rozmedzí **najnižšie–najvyššie** (30–55 °C) a v rozsahu a kroku entity (zaokrúhlené nahor).
+- Mení sa najviac raz za 15 min a len o ≥ 1 °C (krok entity); bez požiadavky a mimo kúrenia sa nemení.
+- Ostro iba s prepínačom zdroja **a** Ovládať zariadenia; s prepínačom bez Ovládať zariadenia len záznam v Aktivite (skúšobný režim). Na `sensor.<zdroj>_set_temperature` atribúty `wanted`, `wanted_reason`, `warmest_circuit`, `controlled`.
+
 ### Požiadavka na zdroj – Plánované
 
 | Zdroj | Režimy | Výstup požiadavky | Poznámka |

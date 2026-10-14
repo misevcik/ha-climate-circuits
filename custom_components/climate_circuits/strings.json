@@ -421,14 +421,20 @@
             "setpoint_entity": "Set temperature",
             "heater_name": "Heat generator name",
             "heater_supply": "Heat generator supply temperature",
-            "heater_return": "Heat generator return temperature"
+            "heater_return": "Heat generator return temperature",
+            "setpoint_margin": "Margin above the warmest circuit",
+            "setpoint_min": "Lowest setting",
+            "setpoint_max": "Highest setting"
           },
           "data_description": {
             "temperature_sensor": "The water that goes to the circuits: for a buffer tank its outlet pipe to the mixers; for a boiler or heat pump its supply.",
             "setpoint_entity": "What the source is set to give, e.g. the heat pump's target for the tank (a climate's target temperature, or a number or sensor). Used to warn when a circuit wants more than the source can give.",
             "heater_name": "What heats this source, e.g. Heat pump. Only shown on the schema card.",
             "heater_supply": "Water leaving the heat pump or boiler towards the source. Optional, only shown on the schema card.",
-            "heater_return": "Water going back to the heat pump or boiler. Optional, only shown on the schema card."
+            "heater_return": "Water going back to the heat pump or boiler. Optional, only shown on the schema card.",
+            "setpoint_margin": "With Set from the circuits on, the source is set to the warmest water a heating circuit wants plus this. Raise it when a mixer stays fully open below its target.",
+            "setpoint_min": "The source is never set below this.",
+            "setpoint_max": "The source is never set above this."
           }
         },
         "reconfigure": {
@@ -440,14 +446,20 @@
             "setpoint_entity": "Set temperature",
             "heater_name": "Heat generator name",
             "heater_supply": "Heat generator supply temperature",
-            "heater_return": "Heat generator return temperature"
+            "heater_return": "Heat generator return temperature",
+            "setpoint_margin": "Margin above the warmest circuit",
+            "setpoint_min": "Lowest setting",
+            "setpoint_max": "Highest setting"
           },
           "data_description": {
             "temperature_sensor": "The water that goes to the circuits: for a buffer tank its outlet pipe to the mixers; for a boiler or heat pump its supply.",
             "setpoint_entity": "What the source is set to give, e.g. the heat pump's target for the tank (a climate's target temperature, or a number or sensor). Used to warn when a circuit wants more than the source can give.",
             "heater_name": "What heats this source, e.g. Heat pump. Only shown on the schema card.",
             "heater_supply": "Water leaving the heat pump or boiler towards the source. Optional, only shown on the schema card.",
-            "heater_return": "Water going back to the heat pump or boiler. Optional, only shown on the schema card."
+            "heater_return": "Water going back to the heat pump or boiler. Optional, only shown on the schema card.",
+            "setpoint_margin": "With Set from the circuits on, the source is set to the warmest water a heating circuit wants plus this. Raise it when a mixer stays fully open below its target.",
+            "setpoint_min": "The source is never set below this.",
+            "setpoint_max": "The source is never set above this."
           }
         }
       },
@@ -457,6 +469,9 @@
       "entry_type": "Heat source",
       "abort": {
         "reconfigure_successful": "The heat source was updated."
+      },
+      "error": {
+        "setpoint_min_above_max": "The lowest setting is above the highest."
       }
     }
   },
@@ -702,6 +717,9 @@
       },
       "circuit_control": {
         "name": "Control pump and mixer"
+      },
+      "setpoint_control": {
+        "name": "Set from the circuits"
       }
     },
     "number": {

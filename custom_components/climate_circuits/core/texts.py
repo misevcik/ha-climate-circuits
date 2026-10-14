@@ -117,6 +117,8 @@ _SK = {
     "src_short": "{name}: chce vodu {target}, ale {source} je nastavený na {setpoint} – rezerva "
     "len {spare}, prívod nemusí stačiť",
     "src_enough": "{name}: {source} nastavený na {setpoint} opäť stačí na cieľ {target}",
+    "sp_set": "{source}: nastavujem na {wanted} (bolo {current}) – najteplejšiu vodu chce "
+    "{circuit} ({target}) + rezerva {margin}",
     "mx_starved": "Zmiešavač {name}: zdroj nestačí – zmiešavač je naplno už {minutes} min a "
     "prívod {supply} je pod cieľom {target}{tail}",
     "mx_starved_tail": "; {source} má {temperature}",
@@ -230,6 +232,8 @@ _EN = {
     "src_short": "{name}: wants {target} water, but {source} is set to {setpoint} – only {spare} "
     "to spare, the supply may fall short",
     "src_enough": "{name}: {source} set to {setpoint} covers the {target} target again",
+    "sp_set": "{source}: setting it to {wanted} (was {current}) – {circuit} wants the warmest "
+    "water ({target}) + margin {margin}",
     "mx_starved": "Mixer {name}: the heat source is not enough – fully open for {minutes} min and "
     "the supply {supply} is below the target {target}{tail}",
     "mx_starved_tail": "; {source} is at {temperature}",
@@ -395,6 +399,28 @@ def source_text(
     return _t(language)[f"src_{key}"].format(
         name=name, source=source, setpoint=_temp(setpoint), target=_temp(target), spare=spare
     )
+
+
+def setpoint_text(
+    source: str,
+    wanted: float,
+    current: float | None,
+    circuit: str | None,
+    target: float | None,
+    margin: float,
+    language: str,
+    dry_run: bool,
+) -> str:
+    """The heat source is set from the circuits."""
+    t = _t(language)
+    return t["sp_set"].format(
+        source=source,
+        wanted=_temp(wanted),
+        current=_temp(current),
+        circuit=circuit or "?",
+        target=_temp(target),
+        margin=_temp(margin),
+    ) + (t["out_dry_run"] if dry_run else "")
 
 
 def starved_text(

@@ -116,3 +116,44 @@ async def test_schema_card_gets_the_heat_generator_only_when_set(
     tank, boiler = hass.states.get("sensor.climate_circuits_mode").attributes["layout"]["sources"]
     assert tank["heater"] == {"name": "Heat pump", "supply": "sensor.hp_out", "return": None}
     assert boiler["heater"] is None
+
+
+async def test_source_is_set_from_the_circuits_only_when_switched_on(
+    hass: HomeAssistant, make_entry
+) -> None:
+    calls: list[dict] = []
+
+    async def set_temperature(call) -> None:
+        calls.append(dict(call.data))
+
+    hass.services.async_register("climate", "set_temperature", set_temperature)
+    hass.states.async_set(HEAT_PUMP, "heat")
+    hass.states.async_set(OUTDOOR, "0.0")
+    hass.states.async_set(
+        HEAT_PUMP_TARGET, "heat", {"temperature": 45.0, "min_temp": 20, "max_temp": 60}
+    )
+    set_thermostat(hass, "climate.room", "heating")
+    events = async_capture_events(hass, EVENT_ACTIVITY)
+    source = source_data("Buffer tank", TANK_TOP)
+    source["data"] |= {"setpoint_entity": HEAT_PUMP_TARGET, "setpoint_margin": 5.0}
+    entry = await _setup(
+        hass, make_entry, source, circuit_data("F1", zones={"heating_zones": ["climate.room"]})
+    )
+    house = entry.runtime_data
+    target = float(hass.states.get("sensor.f1_target_water_temperature").state)
+    wanted = float(int(target + 5.0) + (0 if (target + 5.0).is_integer() else 1))
+    attrs = hass.states.get("sensor.buffer_tank_set_temperature").attributes
+    assert attrs["wanted"] == wanted and attrs["controlled"] is False
+    assert calls == []  # the switch is off
+
+    switch = "switch.buffer_tank_set_from_the_circuits"
+    await hass.services.async_call("switch", "turn_on", {"entity_id": switch}, blocking=True)
+    await hass.async_block_till_done()
+    assert calls == []  # Control equipment is off: only said in Activity
+    assert any(
+        "setting it to" in e.data["message"] and "dry run" in e.data["message"] for e in events
+    )
+
+    house.set_control_equipment(True)
+    await hass.async_block_till_done()
+    assert calls == [{"entity_id": HEAT_PUMP_TARGET, "temperature": wanted}]

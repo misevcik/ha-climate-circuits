@@ -421,14 +421,20 @@
             "setpoint_entity": "Nastavená teplota",
             "heater_name": "Názov zdroja tepla",
             "heater_supply": "Teplota výstupu zo zdroja tepla",
-            "heater_return": "Teplota spiatočky do zdroja tepla"
+            "heater_return": "Teplota spiatočky do zdroja tepla",
+            "setpoint_margin": "Rezerva nad najteplejší okruh",
+            "setpoint_min": "Najnižšie nastavenie",
+            "setpoint_max": "Najvyššie nastavenie"
           },
           "data_description": {
             "temperature_sensor": "Voda, ktorá ide do okruhov: pri akumulačnej nádrži jej výstupné potrubie k zmiešavačom; pri kotle alebo tepelnom čerpadle jeho výstup.",
             "setpoint_entity": "Na koľko je zdroj nastavený, napr. cieľ tepelného čerpadla pre akumulačku (cieľová teplota climate entity, alebo number či senzor). Slúži na upozornenie, keď okruh chce viac, ako zdroj môže dať.",
             "heater_name": "Čo ohrieva tento zdroj, napr. Tepelné čerpadlo. Iba na zobrazenie v karte schémy.",
             "heater_supply": "Voda z tepelného čerpadla alebo kotla do zdroja. Nepovinné, iba na zobrazenie v karte schémy.",
-            "heater_return": "Voda späť do tepelného čerpadla alebo kotla. Nepovinné, iba na zobrazenie v karte schémy."
+            "heater_return": "Voda späť do tepelného čerpadla alebo kotla. Nepovinné, iba na zobrazenie v karte schémy.",
+            "setpoint_margin": "Pri zapnutom Nastavovať podľa okruhov sa zdroj nastaví na najteplejšiu vodu, ktorú chce kúriaci okruh, plus túto rezervu. Zvýš ju, keď zmiešavač ostáva naplno pod cieľom.",
+            "setpoint_min": "Pod túto hodnotu sa zdroj nikdy nenastaví.",
+            "setpoint_max": "Nad túto hodnotu sa zdroj nikdy nenastaví."
           }
         },
         "reconfigure": {
@@ -440,14 +446,20 @@
             "setpoint_entity": "Nastavená teplota",
             "heater_name": "Názov zdroja tepla",
             "heater_supply": "Teplota výstupu zo zdroja tepla",
-            "heater_return": "Teplota spiatočky do zdroja tepla"
+            "heater_return": "Teplota spiatočky do zdroja tepla",
+            "setpoint_margin": "Rezerva nad najteplejší okruh",
+            "setpoint_min": "Najnižšie nastavenie",
+            "setpoint_max": "Najvyššie nastavenie"
           },
           "data_description": {
             "temperature_sensor": "Voda, ktorá ide do okruhov: pri akumulačnej nádrži jej výstupné potrubie k zmiešavačom; pri kotle alebo tepelnom čerpadle jeho výstup.",
             "setpoint_entity": "Na koľko je zdroj nastavený, napr. cieľ tepelného čerpadla pre akumulačku (cieľová teplota climate entity, alebo number či senzor). Slúži na upozornenie, keď okruh chce viac, ako zdroj môže dať.",
             "heater_name": "Čo ohrieva tento zdroj, napr. Tepelné čerpadlo. Iba na zobrazenie v karte schémy.",
             "heater_supply": "Voda z tepelného čerpadla alebo kotla do zdroja. Nepovinné, iba na zobrazenie v karte schémy.",
-            "heater_return": "Voda späť do tepelného čerpadla alebo kotla. Nepovinné, iba na zobrazenie v karte schémy."
+            "heater_return": "Voda späť do tepelného čerpadla alebo kotla. Nepovinné, iba na zobrazenie v karte schémy.",
+            "setpoint_margin": "Pri zapnutom Nastavovať podľa okruhov sa zdroj nastaví na najteplejšiu vodu, ktorú chce kúriaci okruh, plus túto rezervu. Zvýš ju, keď zmiešavač ostáva naplno pod cieľom.",
+            "setpoint_min": "Pod túto hodnotu sa zdroj nikdy nenastaví.",
+            "setpoint_max": "Nad túto hodnotu sa zdroj nikdy nenastaví."
           }
         }
       },
@@ -457,6 +469,9 @@
       "entry_type": "Zdroj tepla",
       "abort": {
         "reconfigure_successful": "Zdroj tepla bol upravený."
+      },
+      "error": {
+        "setpoint_min_above_max": "Najnižšie nastavenie je vyššie ako najvyššie."
       }
     }
   },
@@ -702,6 +717,9 @@
       },
       "circuit_control": {
         "name": "Ovládať čerpadlo a zmiešavač"
+      },
+      "setpoint_control": {
+        "name": "Nastavovať podľa okruhov"
       }
     },
     "number": {

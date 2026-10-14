@@ -156,7 +156,6 @@ Kód hotový lokálne (151 testov, ruff OK): čerpadlá okruhov, vlastná poloha
 - [x] Zmiešavače neriešia TÚV; kompenzácia len pri zdroj − prívod ≥ 5 K (0.1.9)
 - [ ] Vydať `v0.1.9` (obsahuje aj opravu 0.1.8), update, reštart
 - [ ] Štart okruhu so studenou vodou (prestrelenie)
-- [ ] Krok 2: riadenie cieľa TČ podľa okruhov (len so súhlasom)
 - [x] Príčina slabej kompenzácie: horná časť nádrže je ~4 °C nad vodou pri zmiešavači → zdroj = senzor výstupného potrubia
 - [x] 0.1.10 lokálne: sekcia *Regulácia zmiešavača* (všetky parametre), ošetrenie nedostupného relé, prah kompenzácie 3 °C, °C namiesto K, [mixers.md](mixers.md) s obrázkom
 - [x] Commit afb347c, tag `v0.1.10` pushnutý
@@ -169,5 +168,8 @@ Kód hotový lokálne (151 testov, ruff OK): čerpadlá okruhov, vlastná poloha
 - [x] 0.1.13: teplotné polia ponúkajú každý senzor, chyba karty ako text; tag pushnutý
 - [x] `v0.1.13` nainštalovaná, senzory zásobníka TUV nastavené
 - [x] 0.1.14: zdroj tepla v karte (voliteľne), názov nádrže TUV, nové symboly zmiešavača a čerpadla; tag pushnutý
-- [ ] Release `v0.1.14`, update, reštart; nastaviť zdroj tepla (Tepelné čerpadlo, výstup/spiatočka) a názov TÚV nádrže
-- [ ] Poistka vo firmvéri SA8R-011: max. doba zopnutia relé zmiešavačov (čaká na súhlas)
+- [x] `v0.1.14` nainštalovaná, zdroj tepla a názov TÚV nádrže nastavené, karta funguje (2026-10-14)
+- [x] Poistka vo firmvéri SA8R-011 – rozhodnutie: nerobiť (2026-10-14)
+- [x] Krok 2: nastavovanie zdroja podľa okruhov, zapínateľné (0.1.15), tag pushnutý
+- [ ] Release `v0.1.15`, update, reštart; nastaviť rezervu (návrh 8 °C), zapnúť prepínač
+- [ ] Ráno 15. 10.: overiť noc – nastavovanie TČ, regulácia zmiešavačov, štart okruhu so studenou vodou

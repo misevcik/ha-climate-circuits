@@ -306,7 +306,14 @@ class SourceSetpointSensor(SourceEntity, SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        return {"entity": self.source.settings.setpoint_entity}
+        d = self.source.setpoint_decision
+        return {
+            "entity": self.source.settings.setpoint_entity,
+            "wanted": d.wanted if d else None,
+            "wanted_reason": d.reason if d else None,
+            "warmest_circuit": d.circuit if d else None,
+            "controlled": self.source.control_enabled and self.source.house.control_equipment,
+        }
 
 
 class CallingZonesSensor(CircuitEntity, SensorEntity):

@@ -10,7 +10,7 @@ from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import ClimateCircuitsConfigEntry
-from .entity import CircuitEntity, HotWaterEntity, HouseEntity
+from .entity import CircuitEntity, HotWaterEntity, HouseEntity, SourceEntity
 
 
 async def async_setup_entry(
@@ -27,6 +27,11 @@ async def async_setup_entry(
             )
     if house.hot_water:
         async_add_entities([CirculationSwitch(house.hot_water, "circulation_enabled")])
+    for source in house.sources.values():
+        if source.controllable:
+            async_add_entities(
+                [SetpointControlSwitch(source, "setpoint_control")], config_subentry_id=source.id
+            )
 
 
 class ControlEquipmentSwitch(HouseEntity, SwitchEntity):
@@ -53,6 +58,20 @@ class CirculationSwitch(HotWaterEntity, SwitchEntity):
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         self.hot_water.set_enabled(False)
+
+
+class SetpointControlSwitch(SourceEntity, SwitchEntity):
+    """Lets the integration set the heat source from the circuits (with Control equipment on)."""
+
+    @property
+    def is_on(self) -> bool:
+        return self.source.control_enabled
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        self.source.set_control_enabled(True)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        self.source.set_control_enabled(False)
 
 
 class CircuitControlSwitch(CircuitEntity, SwitchEntity):
