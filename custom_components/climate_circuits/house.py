@@ -712,6 +712,7 @@ class House(Listeners):
                 "enabled": find("switch", hw.id, "circulation_enabled"),
                 "tank": hw.settings.tank_sensor,
                 "tank_setpoint": hw.settings.tank_setpoint,
+                "name": hw.settings.tank_name,
             }
         return {
             "mode": find("sensor", entry_id, "mode"),
@@ -723,6 +724,13 @@ class House(Listeners):
                     "name": s.name,
                     "temperature": find("sensor", s.id, "source_temperature"),
                     "setpoint": find("sensor", s.id, "source_setpoint"),
+                    "heater": {
+                        "name": s.settings.heater_name,
+                        "supply": s.settings.heater_supply,
+                        "return": s.settings.heater_return,
+                    }
+                    if s.settings.heater_supply or s.settings.heater_return
+                    else None,
                 }
                 for s in self.sources.values()
             ],

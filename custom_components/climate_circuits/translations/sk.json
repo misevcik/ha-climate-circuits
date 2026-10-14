@@ -56,13 +56,15 @@
               "threshold": "Prah (čerpadlo vypne)",
               "delta": "Delta (čerpadlo zapne pod prah − delta)",
               "tank_sensor": "Teplota zásobníka TUV",
-              "tank_setpoint": "Nastavená teplota zásobníka TUV"
+              "tank_setpoint": "Nastavená teplota zásobníka TUV",
+              "tank_name": "Názov nádrže TUV"
             },
             "data_description": {
               "circulation_sensor": "Teplota na konci cirkulačného okruhu.",
               "threshold": "Dá sa meniť aj na zariadení Hot water.",
               "tank_sensor": "Iba na zobrazenie v karte schémy.",
-              "tank_setpoint": "Na koľko sa zásobník ohrieva, napr. cieľ TUV tepelného čerpadla. Iba na zobrazenie v karte schémy."
+              "tank_setpoint": "Na koľko sa zásobník ohrieva, napr. cieľ TUV tepelného čerpadla. Iba na zobrazenie v karte schémy.",
+              "tank_name": "Zobrazí sa v karte schémy; prázdne = Nádrž TÚV."
             }
           },
           "display": {
@@ -157,13 +159,15 @@
               "threshold": "Prah (čerpadlo vypne)",
               "delta": "Delta (čerpadlo zapne pod prah − delta)",
               "tank_sensor": "Teplota zásobníka TUV",
-              "tank_setpoint": "Nastavená teplota zásobníka TUV"
+              "tank_setpoint": "Nastavená teplota zásobníka TUV",
+              "tank_name": "Názov nádrže TUV"
             },
             "data_description": {
               "circulation_sensor": "Teplota na konci cirkulačného okruhu.",
               "threshold": "Dá sa meniť aj na zariadení Hot water.",
               "tank_sensor": "Iba na zobrazenie v karte schémy.",
-              "tank_setpoint": "Na koľko sa zásobník ohrieva, napr. cieľ TUV tepelného čerpadla. Iba na zobrazenie v karte schémy."
+              "tank_setpoint": "Na koľko sa zásobník ohrieva, napr. cieľ TUV tepelného čerpadla. Iba na zobrazenie v karte schémy.",
+              "tank_name": "Zobrazí sa v karte schémy; prázdne = Nádrž TÚV."
             }
           },
           "display": {
@@ -414,11 +418,17 @@
           "data": {
             "name": "Názov",
             "temperature_sensor": "Teplota vody, ktorú dáva",
-            "setpoint_entity": "Nastavená teplota"
+            "setpoint_entity": "Nastavená teplota",
+            "heater_name": "Názov zdroja tepla",
+            "heater_supply": "Teplota výstupu zo zdroja tepla",
+            "heater_return": "Teplota spiatočky do zdroja tepla"
           },
           "data_description": {
             "temperature_sensor": "Voda, ktorá ide do okruhov: pri akumulačnej nádrži jej výstupné potrubie k zmiešavačom; pri kotle alebo tepelnom čerpadle jeho výstup.",
-            "setpoint_entity": "Na koľko je zdroj nastavený, napr. cieľ tepelného čerpadla pre akumulačku (cieľová teplota climate entity, alebo number či senzor). Slúži na upozornenie, keď okruh chce viac, ako zdroj môže dať."
+            "setpoint_entity": "Na koľko je zdroj nastavený, napr. cieľ tepelného čerpadla pre akumulačku (cieľová teplota climate entity, alebo number či senzor). Slúži na upozornenie, keď okruh chce viac, ako zdroj môže dať.",
+            "heater_name": "Čo ohrieva tento zdroj, napr. Tepelné čerpadlo. Iba na zobrazenie v karte schémy.",
+            "heater_supply": "Voda z tepelného čerpadla alebo kotla do zdroja. Nepovinné, iba na zobrazenie v karte schémy.",
+            "heater_return": "Voda späť do tepelného čerpadla alebo kotla. Nepovinné, iba na zobrazenie v karte schémy."
           }
         },
         "reconfigure": {
@@ -427,11 +437,17 @@
           "data": {
             "name": "Názov",
             "temperature_sensor": "Teplota vody, ktorú dáva",
-            "setpoint_entity": "Nastavená teplota"
+            "setpoint_entity": "Nastavená teplota",
+            "heater_name": "Názov zdroja tepla",
+            "heater_supply": "Teplota výstupu zo zdroja tepla",
+            "heater_return": "Teplota spiatočky do zdroja tepla"
           },
           "data_description": {
             "temperature_sensor": "Voda, ktorá ide do okruhov: pri akumulačnej nádrži jej výstupné potrubie k zmiešavačom; pri kotle alebo tepelnom čerpadle jeho výstup.",
-            "setpoint_entity": "Na koľko je zdroj nastavený, napr. cieľ tepelného čerpadla pre akumulačku (cieľová teplota climate entity, alebo number či senzor). Slúži na upozornenie, keď okruh chce viac, ako zdroj môže dať."
+            "setpoint_entity": "Na koľko je zdroj nastavený, napr. cieľ tepelného čerpadla pre akumulačku (cieľová teplota climate entity, alebo number či senzor). Slúži na upozornenie, keď okruh chce viac, ako zdroj môže dať.",
+            "heater_name": "Čo ohrieva tento zdroj, napr. Tepelné čerpadlo. Iba na zobrazenie v karte schémy.",
+            "heater_supply": "Voda z tepelného čerpadla alebo kotla do zdroja. Nepovinné, iba na zobrazenie v karte schémy.",
+            "heater_return": "Voda späť do tepelného čerpadla alebo kotla. Nepovinné, iba na zobrazenie v karte schémy."
           }
         }
       },

@@ -2,15 +2,15 @@
 // type: custom:climate-circuits-schema-card   (entity: sensor.climate_circuits_mode, optional)
 // The integration publishes which entity shows what in the mode sensor's "layout" attribute.
 
-const W = 760;
 const ROW = 150;
 const TOP = 16;
-const TANK = { x: 16, w: 112 };
-const HEADER_X = 160;
-const MIXER_X = 300;
-const SUPPLY_X = 400;
-const PUMP_X = 515;
-const RAD = { x: 590, w: 150 };
+const HEATER_W = 150; // extra room on the left when a heat generator is shown
+// x positions; shifted right when the heat generator (heat pump, boiler) is drawn.
+const geometry = (dx) => ({
+  w: 760 + dx, heaterX: 16, heaterW: 112, tankX: 16 + dx, tankW: 112, header: 160 + dx,
+  mixer: 300 + dx, supply: 400 + dx, pump: 515 + dx, radX: 590 + dx, radW: 150,
+});
+let G = geometry(0);
 const HOT = "#e8590c";
 const COLD = "#1c7ed6";
 const OFF = "#adb5bd";
@@ -24,7 +24,7 @@ const TEXTS = {
     unavailable: "relé nedostupné", starved: "zdroj nestačí", circuit_off: "okruh neovládaný",
     no_source: "bez zdroja", missing: "Nenašla sa integrácia Climate Circuits.",
     mixer: "Zmiešavač", pump: "Čerpadlo",
-    hot_water: "Zásobník TÚV", circulation: "Cirkulácia TÚV", circ_return: "spiatočka cirkulácie",
+    hot_water: "Nádrž TÚV", heater: "Zdroj tepla", heater_out: "výstup", heater_in: "spiatočka", circulation: "Cirkulácia TÚV", circ_return: "spiatočka cirkulácie",
     starts_below: "zapne pod", stops_at: "vypne pri", running: "beží", stopped: "stojí",
     disabled: "vypnutá",
   },
@@ -36,7 +36,7 @@ const TEXTS = {
     unavailable: "relay unavailable", starved: "source not enough", circuit_off: "circuit not controlled",
     no_source: "no source", missing: "Climate Circuits integration not found.",
     mixer: "Mixer", pump: "Pump",
-    hot_water: "Hot water tank", circulation: "Hot water circulation", circ_return: "circulation return",
+    hot_water: "Hot water tank", heater: "Heat generator", heater_out: "supply", heater_in: "return", circulation: "Circulation", circ_return: "circulation return",
     starts_below: "starts below", stops_at: "stops at", running: "running", stopped: "stopped",
     disabled: "disabled",
   },
@@ -85,8 +85,12 @@ class ClimateCircuitsSchemaCard extends HTMLElement {
 
   static getStubConfig() { return {}; }
 
+  _lang() {
+    return this._config.language || (this._hass && this._hass.language) || "en";
+  }
+
   _t(key) {
-    const lang = (this._hass && this._hass.language) || "en";
+    const lang = this._lang();
     return (lang.startsWith("sk") ? TEXTS.sk : TEXTS.en)[key];
   }
 
@@ -117,7 +121,10 @@ class ClimateCircuitsSchemaCard extends HTMLElement {
     if (!Array.isArray(layout.circuits) || !Array.isArray(layout.sources)) return "none";
     const hw = layout.hot_water;
     if (hw) ids.push(hw.state, hw.temperature, hw.threshold, hw.delta, hw.enabled, hw.tank, hw.tank_setpoint);
-    for (const s of layout.sources) ids.push(s.temperature, s.setpoint);
+    for (const s of layout.sources) {
+      ids.push(s.temperature, s.setpoint);
+      if (s.heater) ids.push(s.heater.supply, s.heater.return);
+    }
     for (const c of layout.circuits) {
       ids.push(c.state, c.target, c.zones, c.demand, c.pump, c.mixer, c.mixer_state, c.supply, c.control);
     }
@@ -126,7 +133,7 @@ class ClimateCircuitsSchemaCard extends HTMLElement {
   }
 
   _render() {
-    LANG = (this._hass && this._hass.language) || "en";
+    LANG = this._lang();
     const layout = this._layout();
     if (!layout) {
       this.shadowRoot.innerHTML = `<ha-card><div class="missing">${this._t("missing")}</div></ha-card>`;
@@ -134,12 +141,15 @@ class ClimateCircuitsSchemaCard extends HTMLElement {
     }
     const mode = this._val(layout.mode);
     const live = this._val(layout.control) === "on";
+    G = geometry(layout.sources.some((s) => s.heater) ? HEATER_W : 0);
     const rows = this._rows(layout);
     const height = TOP + (rows.length + (layout.hot_water ? 1 : 0)) * ROW + 8;
     let svg = "";
     for (const group of this._groups(layout, rows)) svg += this._tank(group, mode);
     rows.forEach((row) => { svg += this._circuit(row, mode, live); });
     if (layout.hot_water) svg += this._hotWater(layout.hot_water, TOP + rows.length * ROW);
+    const heated = this._groups(layout, rows).find((g) => g.source && g.source.heater);
+    if (heated) svg += this._heater(heated, layout.hot_water ? TOP + rows.length * ROW : null);
 
     this.shadowRoot.innerHTML = `
       <style>${STYLE}</style>
@@ -149,7 +159,7 @@ class ClimateCircuitsSchemaCard extends HTMLElement {
           <span class="mode ${esc(mode)}" data-entity="${esc(layout.mode)}">${esc(this._t(mode) || mode || "–")}</span>
         </div>
         ${live ? "" : `<div class="dry" data-entity="${esc(layout.control)}">${this._t("dry_run")}</div>`}
-        <svg viewBox="0 0 ${W} ${height}" width="100%" role="img">${DEFS}${svg}</svg>
+        <svg viewBox="0 0 ${G.w} ${height}" width="100%" role="img">${DEFS}${svg}</svg>
       </ha-card>`;
   }
 
@@ -178,10 +188,10 @@ class ClimateCircuitsSchemaCard extends HTMLElement {
     const bottom = group.rows[group.rows.length - 1].y + ROW - 22;
     const first = group.rows[0].y + 50;
     const last = group.rows[group.rows.length - 1].y + 50;
-    const cx = TANK.x + TANK.w / 2;
+    const cx = G.tankX + G.tankW / 2;
     const hot = mode === "cool" ? COLD : HOT;
-    let out = `<line x1="${TANK.x + TANK.w}" y1="${first}" x2="${HEADER_X}" y2="${first}" class="pipe" stroke="${hot}"/>`;
-    out += `<line x1="${HEADER_X}" y1="${first}" x2="${HEADER_X}" y2="${last}" class="pipe" stroke="${hot}"/>`;
+    let out = `<line x1="${G.tankX + G.tankW}" y1="${first}" x2="${G.header}" y2="${first}" class="pipe" stroke="${hot}"/>`;
+    out += `<line x1="${G.header}" y1="${first}" x2="${G.header}" y2="${last}" class="pipe" stroke="${hot}"/>`;
     if (!group.source) {
       out += `<text x="${cx}" y="${first + 4}" text-anchor="middle" class="muted">${this._t("no_source")}</text>`;
       return out;
@@ -190,7 +200,7 @@ class ClimateCircuitsSchemaCard extends HTMLElement {
     const temperature = this._val(s.temperature);
     const setpoint = s.setpoint ? this._val(s.setpoint) : null;
     out += `<g data-entity="${esc(s.temperature)}" class="click">
-      <rect x="${TANK.x}" y="${top}" width="${TANK.w}" height="${bottom - top}" rx="20" fill="url(#cc-tank)" class="outline"/>
+      <rect x="${G.tankX}" y="${top}" width="${G.tankW}" height="${bottom - top}" rx="20" fill="url(#cc-tank)" class="outline"/>
       ${this._lines(s.name, 14).map((line, i) => `<text x="${cx}" y="${top + 22 + i * 14}" text-anchor="middle" class="small strong ontank">${esc(line)}</text>`).join("")}
       <text x="${cx}" y="${top + 66}" text-anchor="middle" class="big ontank">${deg(temperature)}</text>
     </g>`;
@@ -215,45 +225,40 @@ class ClimateCircuitsSchemaCard extends HTMLElement {
     let out = "";
 
     // Pipes: header -> mixer -> radiators, and the return.
-    out += `<line x1="${HEADER_X}" y1="${pipeY}" x2="${MIXER_X - 24}" y2="${pipeY}" class="pipe${flow}" stroke="${hot}"/>`;
-    out += `<line x1="${MIXER_X + 24}" y1="${pipeY}" x2="${RAD.x}" y2="${pipeY}" class="pipe${flow}" stroke="${pumpOn ? hot : OFF}"/>`;
-    const radMid = RAD.x + RAD.w / 2;
-    out += `<polyline points="${radMid},${y + 100} ${radMid},${retY} ${TANK.x + TANK.w},${retY}" fill="none" class="pipe thin${flow}" stroke="${pumpOn ? COLD : OFF}"/>`;
+    out += `<line x1="${G.header}" y1="${pipeY}" x2="${G.mixer - 20}" y2="${pipeY}" class="pipe${flow}" stroke="${hot}"/>`;
+    out += `<line x1="${G.mixer + 20}" y1="${pipeY}" x2="${G.radX}" y2="${pipeY}" class="pipe${flow}" stroke="${pumpOn ? hot : OFF}"/>`;
+    const radMid = G.radX + G.radW / 2;
+    out += `<polyline points="${radMid},${y + 100} ${radMid},${retY} ${G.tankX + G.tankW},${retY}" fill="none" class="pipe thin${flow}" stroke="${pumpOn ? COLD : OFF}"/>`;
 
     // Mixer.
     if (c.mixer) {
       const position = num(this._val(c.mixer));
       const movement = this._attr(c.mixer, "movement") || "idle";
       const state = this._val(c.mixer_state) || movement;
-      out += `<line x1="${MIXER_X}" y1="${retY}" x2="${MIXER_X}" y2="${pipeY + 18}" class="pipe thin${flow}" stroke="${pumpOn ? COLD : OFF}"/>`;
+      out += `<line x1="${G.mixer}" y1="${retY}" x2="${G.mixer}" y2="${pipeY + 20}" class="pipe thin${flow}" stroke="${pumpOn ? COLD : OFF}"/>`;
       out += `<g class="click" data-entity="${esc(c.mixer)}">
-        <rect x="${MIXER_X - 34}" y="${y + 8}" width="68" height="74" fill="transparent"/>
-        <polygon points="${MIXER_X - 24},${pipeY - 13} ${MIXER_X},${pipeY} ${MIXER_X - 24},${pipeY + 13}" class="valve"/>
-        <polygon points="${MIXER_X + 24},${pipeY - 13} ${MIXER_X},${pipeY} ${MIXER_X + 24},${pipeY + 13}" class="valve"/>
-        <polygon points="${MIXER_X - 12},${pipeY + 26} ${MIXER_X},${pipeY} ${MIXER_X + 12},${pipeY + 26}" class="valve"/>
-        <text x="${MIXER_X}" y="${y + 24}" text-anchor="middle" class="big">${position === null ? "?" : Math.round(position)} %${movement === "opening" ? " ▲" : movement === "closing" || movement === "homing" ? " ▼" : ""}</text>
-        <rect x="${MIXER_X - 30}" y="${y + 29}" width="60" height="4" rx="2" class="track"/>
-        <rect x="${MIXER_X - 30}" y="${y + 29}" width="${0.6 * Math.max(0, Math.min(100, position ?? 0))}" height="4" rx="2" fill="${hot}"/>
+        <rect x="${G.mixer - 34}" y="${y}" width="68" height="${pipeY - y + 24}" fill="transparent"/>
+        <text x="${G.mixer - 20}" y="${y + 20}" text-anchor="end" class="big">${position === null ? "?" : Math.round(position)} %${movement === "opening" ? " ▲" : movement === "closing" || movement === "homing" ? " ▼" : ""}</text>
+        ${this._valve(G.mixer, pipeY, position, hot, COLD, movement !== "idle")}
       </g>`;
       const label = state !== "idle" ? this._t(state) || state : this._t("mixer");
-      out += `<text x="${MIXER_X}" y="${pipeY + 42}" text-anchor="middle" class="small${state === "unavailable" ? " alert" : " muted"}">${esc(label)}</text>`;
+      out += `<text x="${G.mixer}" y="${pipeY + 40}" text-anchor="middle" class="small${state === "unavailable" ? " alert" : " muted"}">${esc(label)}</text>`;
     } else {
-      out += `<line x1="${MIXER_X - 24}" y1="${pipeY}" x2="${MIXER_X + 24}" y2="${pipeY}" class="pipe" stroke="${hot}"/>`;
+      out += `<line x1="${G.mixer - 24}" y1="${pipeY}" x2="${G.mixer + 24}" y2="${pipeY}" class="pipe" stroke="${hot}"/>`;
     }
 
     // Supply temperature against the target.
     out += `<g class="click" data-entity="${esc(c.target)}">
-      <circle cx="${SUPPLY_X}" cy="${pipeY}" r="9" fill="var(--card-background-color, #fff)" stroke="${color}" stroke-width="3"/>
-      <text x="${SUPPLY_X}" y="${y + 24}" text-anchor="middle" class="big" style="fill:${color}">${deg(supply)}</text>
-      <text x="${SUPPLY_X}" y="${pipeY + 30}" text-anchor="middle" class="small muted">${this._t("target")} ${deg(target)}</text>
+      <circle cx="${G.supply}" cy="${pipeY}" r="9" fill="var(--card-background-color, #fff)" stroke="${color}" stroke-width="3"/>
+      <text x="${G.supply}" y="${y + 24}" text-anchor="middle" class="big" style="fill:${color}">${deg(supply)}</text>
+      <text x="${G.supply}" y="${pipeY + 30}" text-anchor="middle" class="small muted">${this._t("target")} ${deg(target)}</text>
     </g>`;
 
     // Pump.
     if (c.pump) {
       out += `<g class="click" data-entity="${esc(c.pump)}">
-        <circle cx="${PUMP_X}" cy="${pipeY}" r="15" class="${pumpOn ? "pump on" : "pump"}"/>
-        <polygon points="${PUMP_X - 6},${pipeY - 8} ${PUMP_X + 9},${pipeY} ${PUMP_X - 6},${pipeY + 8}" fill="${pumpOn ? "#fff" : OFF}"/>
-        <text x="${PUMP_X}" y="${pipeY + 32}" text-anchor="middle" class="small muted">${this._t("pump")}: ${this._t(pumpOn ? "pump_on" : "pump_off")}</text>
+        ${this._pumpIcon(G.pump, pipeY, pumpOn)}
+        <text x="${G.pump}" y="${pipeY + 34}" text-anchor="middle" class="small muted">${this._t("pump")}: ${this._t(pumpOn ? "pump_on" : "pump_off")}</text>
       </g>`;
     }
 
@@ -261,7 +266,7 @@ class ClimateCircuitsSchemaCard extends HTMLElement {
     const count = num(this._attr(c.zones, "count")) || 0;
     const zones = this._val(c.zones);
     out += `<g class="click" data-entity="${esc(c.state || c.zones)}">
-      <rect x="${RAD.x}" y="${y + 14}" width="${RAD.w}" height="86" rx="6" class="radiator${count ? " calling" : ""}" ${count ? `stroke="${hot}"` : ""}/>
+      <rect x="${G.radX}" y="${y + 14}" width="${G.radW}" height="86" rx="6" class="radiator${count ? " calling" : ""}" ${count ? `stroke="${hot}"` : ""}/>
       <text x="${radMid}" y="${y + 38}" text-anchor="middle" class="big">${esc(c.name)}</text>
       <text x="${radMid}" y="${y + 58}" text-anchor="middle" class="small">${count ? this._zones(count) : this._t("no_zone")}</text>
       <text x="${radMid}" y="${y + 76}" text-anchor="middle" class="tiny muted">${esc(count ? this._short(zones, 26) : "")}</text>
@@ -272,13 +277,84 @@ class ClimateCircuitsSchemaCard extends HTMLElement {
     if (this._attr(c.mixer, "source_not_enough")) warnings.push(this._t("starved"));
     if (live && c.control && this._val(c.control) !== "on") warnings.push(this._t("circuit_off"));
     if (warnings.length) {
-      out += `<text x="${SUPPLY_X}" y="${retY - 10}" text-anchor="middle" class="small alert">⚠ ${esc(warnings.join(" · "))}</text>`;
+      out += `<text x="${G.supply}" y="${retY - 10}" text-anchor="middle" class="small alert">⚠ ${esc(warnings.join(" · "))}</text>`;
+    }
+    return out;
+  }
+
+  // Three-way mixing valve: body with three ports, actuator on top, a ring showing the opening.
+  _valve(x, y, position, hot, cold, moving) {
+    const r = 11;
+    const len = 2 * Math.PI * r;
+    const p = Math.max(0, Math.min(100, position ?? 0)) / 100;
+    return `
+      <rect x="${x - 3}" y="${y - 34}" width="6" height="14" class="stem"/>
+      <rect x="${x - 13}" y="${y - 44}" width="26" height="14" rx="4" class="actuator${moving ? " moving" : ""}"/>
+      <path d="M${x - 20},${y - 8} L${x - 20},${y + 8} M${x + 20},${y - 8} L${x + 20},${y + 8} M${x - 8},${y + 20} L${x + 8},${y + 20}" class="flange"/>
+      <circle cx="${x}" cy="${y}" r="18" class="body"/>
+      <circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="${cold}" stroke-width="5" opacity="0.55"/>
+      <circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="${hot}" stroke-width="5"
+        stroke-dasharray="${(len * p).toFixed(1)} ${len.toFixed(1)}" transform="rotate(-90 ${x} ${y})"/>`;
+  }
+
+  // Circulation pump: casing with an impeller that turns while it runs.
+  _pumpIcon(x, y, on) {
+    const blade = "M0,0 C3,-7 9,-9 13,-5";
+    const blades = [0, 90, 180, 270].map((a) => `<path d="${blade}" transform="rotate(${a})"/>`).join("");
+    return `
+      <g transform="translate(${x} ${y})">
+        <circle r="18" class="${on ? "casing on" : "casing"}"/>
+        <g class="${on ? "impeller on" : "impeller"}">${blades}<circle r="3"/>
+          ${on ? '<animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="1.2s" repeatCount="indefinite"/>' : ""}
+        </g>
+      </g>`;
+  }
+
+  // The heat generator (heat pump, boiler) heating a source, and the hot water tank through
+  // its diverting valve when there is one.
+  _heater(group, hotWaterY) {
+    const h = group.source.heater;
+    const top = group.rows[0].y + 14;
+    const x = G.heaterX;
+    const w = G.heaterW;
+    const cx = x + w / 2;
+    const boxTop = top + 10;
+    const boxBottom = top + 100;
+    const supply = num(this._val(h.supply));
+    const ret = num(this._val(h.return));
+    const running = supply !== null && ret !== null && supply - ret > 1;
+    const flow = running ? " flow" : "";
+    const supplyY = top + 30;
+    const returnY = boxBottom - 14;
+    let out = `<line x1="${x + w}" y1="${supplyY}" x2="${G.tankX}" y2="${supplyY}" class="pipe${flow}" stroke="${running ? HOT : OFF}"/>`;
+    out += `<line x1="${G.tankX}" y1="${returnY}" x2="${x + w}" y2="${returnY}" class="pipe thin${flow}" stroke="${running ? COLD : OFF}"/>`;
+    if (hotWaterY !== null) {
+      // Diverting valve on the supply: the heat generator heats either the tank or the hot water.
+      const vx = x + w + 18;
+      const dhwY = hotWaterY + 50;
+      out += `<polyline points="${vx},${supplyY} ${vx},${dhwY} ${G.tankX},${dhwY}" fill="none" class="pipe thin" stroke="${OFF}"/>`;
+      out += `<polygon points="${vx - 7},${supplyY - 12} ${vx + 7},${supplyY - 12} ${vx},${supplyY}" class="body"/>`;
+      out += `<polygon points="${vx - 7},${supplyY + 12} ${vx + 7},${supplyY + 12} ${vx},${supplyY}" class="body"/>`;
+    }
+    out += `<g class="click" data-entity="${esc(h.supply || h.return)}">
+      <rect x="${x}" y="${boxTop}" width="${w}" height="${boxBottom - boxTop}" rx="10" class="heater${running ? " on" : ""}"/>
+      ${this._lines(h.name || this._t("heater"), 14).map((line, i) => `<text x="${cx}" y="${boxTop + 22 + i * 15}" text-anchor="middle" class="small strong">${esc(line)}</text>`).join("")}
+    </g>`;
+    if (h.supply) {
+      out += `<g class="click" data-entity="${esc(h.supply)}">
+        <text x="${cx}" y="${boxTop + 62}" text-anchor="middle" class="small"><tspan class="muted">${this._t("heater_out")}</tspan> <tspan class="strong" style="fill:${HOT}">${deg(supply)}</tspan></text>
+      </g>`;
+    }
+    if (h.return) {
+      out += `<g class="click" data-entity="${esc(h.return)}">
+        <text x="${cx}" y="${boxTop + 80}" text-anchor="middle" class="small"><tspan class="muted">${this._t("heater_in")}</tspan> <tspan class="strong" style="fill:${COLD}">${deg(ret)}</tspan></text>
+      </g>`;
     }
     return out;
   }
 
   _zones(n) {
-    const lang = (this._hass && this._hass.language) || "en";
+    const lang = this._lang();
     if (lang.startsWith("sk")) return `${n} ${n === 1 ? "zóna" : n < 5 ? "zóny" : "zón"}`;
     return `${n} ${n === 1 ? "zone" : "zones"}`;
   }
@@ -289,8 +365,8 @@ class ClimateCircuitsSchemaCard extends HTMLElement {
     const retY = y + ROW - 30;
     const top = y + 14;
     const bottom = y + ROW - 22;
-    const cx = TANK.x + TANK.w / 2;
-    const radMid = RAD.x + RAD.w / 2;
+    const cx = G.tankX + G.tankW / 2;
+    const radMid = G.radX + G.radW / 2;
     const state = this._val(hw.state);
     const on = state === "running";
     const flow = on ? " flow" : "";
@@ -303,32 +379,34 @@ class ClimateCircuitsSchemaCard extends HTMLElement {
     const tank = num(this._val(hw.tank));
     const setpoint = num(this._val(hw.tank_setpoint));
     let out = `<g class="click" data-entity="${esc(hw.tank || hw.state)}">
-      <rect x="${TANK.x}" y="${top}" width="${TANK.w}" height="${bottom - top}" rx="20" fill="url(#cc-dhw)" class="outline"/>
-      ${this._lines(this._t("hot_water"), 14).map((line, i) => `<text x="${cx}" y="${top + 22 + i * 14}" text-anchor="middle" class="small strong ontank">${esc(line)}</text>`).join("")}
+      <rect x="${G.tankX}" y="${top}" width="${G.tankW}" height="${bottom - top}" rx="20" fill="url(#cc-dhw)" class="outline"/>
+      ${this._lines(hw.name || this._t("hot_water"), 14).map((line, i) => `<text x="${cx}" y="${top + 22 + i * 14}" text-anchor="middle" class="small strong ontank">${esc(line)}</text>`).join("")}
       <text x="${cx}" y="${top + 66}" text-anchor="middle" class="big ontank">${deg(tank)}</text>
     </g>`;
     if (setpoint !== null) {
       out += `<text x="${cx}" y="${top + 84}" text-anchor="middle" class="tiny click ontank" data-entity="${esc(hw.tank_setpoint)}">${this._t("set")} ${deg(setpoint)}</text>`;
     }
-    out += `<line x1="${TANK.x + TANK.w}" y1="${pipeY}" x2="${RAD.x}" y2="${pipeY}" class="pipe${flow}" stroke="${on ? HOT : OFF}"/>`;
-    out += `<polyline points="${radMid},${y + 100} ${radMid},${retY} ${TANK.x + TANK.w},${retY}" fill="none" class="pipe thin${flow}" stroke="${on ? COLD : OFF}"/>`;
+    out += `<line x1="${G.tankX + G.tankW}" y1="${pipeY}" x2="${G.radX}" y2="${pipeY}" class="pipe${flow}" stroke="${on ? HOT : OFF}"/>`;
+    out += `<polyline points="${radMid},${y + 100} ${radMid},${retY} ${G.tankX + G.tankW},${retY}" fill="none" class="pipe thin${flow}" stroke="${on ? COLD : OFF}"/>`;
     out += `<g class="click" data-entity="${esc(hw.temperature)}">
-      <circle cx="${SUPPLY_X}" cy="${pipeY}" r="9" fill="var(--card-background-color, #fff)" stroke="${color}" stroke-width="3"/>
-      <text x="${SUPPLY_X}" y="${y + 24}" text-anchor="middle" class="big" style="fill:${color}">${deg(temperature)}</text>
-      <text x="${SUPPLY_X}" y="${pipeY + 30}" text-anchor="middle" class="small muted">${this._t("circ_return")}</text>
+      <circle cx="${G.supply}" cy="${pipeY}" r="9" fill="var(--card-background-color, #fff)" stroke="${color}" stroke-width="3"/>
+      <text x="${G.supply}" y="${y + 24}" text-anchor="middle" class="big" style="fill:${color}">${deg(temperature)}</text>
+      <text x="${G.supply}" y="${pipeY + 30}" text-anchor="middle" class="small muted">${this._t("circ_return")}</text>
     </g>`;
-    if (threshold !== null) {
-      out += `<text x="${SUPPLY_X}" y="${pipeY + 46}" text-anchor="middle" class="small click" data-entity="${esc(hw.threshold)}">${this._t("starts_below")} ${deg(startsBelow)} · ${this._t("stops_at")} ${deg(threshold)}</text>`;
-    }
     out += `<g class="click" data-entity="${esc(hw.state)}">
-      <circle cx="${PUMP_X}" cy="${pipeY}" r="15" class="${on ? "pump on" : "pump"}"/>
-      <polygon points="${PUMP_X - 6},${pipeY - 8} ${PUMP_X + 9},${pipeY} ${PUMP_X - 6},${pipeY + 8}" fill="${on ? "#fff" : OFF}"/>
-      <text x="${PUMP_X}" y="${pipeY + 32}" text-anchor="middle" class="small muted">${this._t("pump")}: ${esc(state === "unavailable" ? "–" : this._t(state) || state || "–")}</text>
+      ${this._pumpIcon(G.pump, pipeY, on)}
+      <text x="${G.pump}" y="${pipeY + 34}" text-anchor="middle" class="small muted">${this._t("pump")}: ${esc(state === "unavailable" ? "–" : this._t(state) || state || "–")}</text>
     </g>`;
     out += `<g class="click" data-entity="${esc(hw.enabled || hw.state)}">
-      <rect x="${RAD.x}" y="${y + 14}" width="${RAD.w}" height="86" rx="6" class="radiator${on ? " calling" : ""}" ${on ? `stroke="${HOT}"` : ""}/>
-      ${this._lines(this._t("circulation"), 16).map((line, i) => `<text x="${radMid}" y="${y + 40 + i * 18}" text-anchor="middle" class="big">${esc(line)}</text>`).join("")}
+      <rect x="${G.radX}" y="${y + 14}" width="${G.radW}" height="86" rx="6" class="radiator${on ? " calling" : ""}" ${on ? `stroke="${HOT}"` : ""}/>
+      <text x="${radMid}" y="${y + 38}" text-anchor="middle" class="big">${esc(this._short(this._t("circulation"), 18))}</text>
     </g>`;
+    if (threshold !== null) {
+      out += `<g class="click" data-entity="${esc(hw.threshold)}">
+        <text x="${radMid}" y="${y + 60}" text-anchor="middle" class="small">${this._t("starts_below")} ${deg(startsBelow)}</text>
+        <text x="${radMid}" y="${y + 78}" text-anchor="middle" class="small">${this._t("stops_at")} ${deg(threshold)}</text>
+      </g>`;
+    }
     return out;
   }
 
@@ -386,10 +464,19 @@ const STYLE = `
   .pipe.thin { stroke-width: 4; }
   .flow { stroke-dasharray: 14 8; animation: cc-flow 1.2s linear infinite; }
   @keyframes cc-flow { to { stroke-dashoffset: -22; } }
-  .valve { fill: var(--card-background-color, #fff); stroke: var(--primary-text-color); stroke-width: 2; }
-  .track { fill: var(--divider-color, #ddd); }
-  .pump { fill: var(--card-background-color, #fff); stroke: var(--primary-text-color); stroke-width: 2; }
-  .pump.on { fill: #2f9e44; stroke: #2f9e44; }
+  .body { fill: var(--card-background-color, #fff); stroke: var(--primary-text-color); stroke-width: 2; }
+  .flange { stroke: var(--primary-text-color); stroke-width: 3; stroke-linecap: round; }
+  .stem { fill: var(--secondary-text-color); }
+  .actuator { fill: var(--secondary-background-color, #eee); stroke: var(--primary-text-color); stroke-width: 1.5; }
+  .actuator.moving { fill: #ffd43b; }
+  .casing { fill: var(--card-background-color, #fff); stroke: var(--primary-text-color); stroke-width: 2; }
+  .casing.on { fill: #2f9e44; stroke: #2b8a3e; }
+  .impeller path { fill: none; stroke: var(--secondary-text-color); stroke-width: 3; stroke-linecap: round; }
+  .impeller circle { fill: var(--secondary-text-color); }
+  .impeller.on path { stroke: #fff; }
+  .impeller.on circle { fill: #fff; }
+  .heater { fill: var(--secondary-background-color, #f5f5f5); stroke: var(--divider-color, #ccc); stroke-width: 2; }
+  .heater.on { stroke: #e8590c; stroke-width: 3; }
   .radiator { fill: var(--secondary-background-color, #f5f5f5); stroke: var(--divider-color, #ccc); stroke-width: 2; }
   .radiator.calling { stroke-width: 3; }
 `;

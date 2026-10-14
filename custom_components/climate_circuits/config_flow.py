@@ -128,6 +128,7 @@ HOUSE_SCHEMA = vol.Schema(
                 vol.Optional("circulation_pump"): RELAY,
                 vol.Required("threshold", default=DEFAULT_THRESHOLD): _number(20, 60, 0.5, "°C"),
                 vol.Required("delta", default=DEFAULT_DELTA): _number(0.5, 10, 0.5, "°C"),
+                vol.Optional("tank_name"): sel.TextSelector(),
                 vol.Optional("tank_sensor"): TEMPERATURE_SENSOR,
                 vol.Optional("tank_setpoint"): sel.EntitySelector(
                     sel.EntitySelectorConfig(
@@ -220,6 +221,9 @@ SOURCE_SCHEMA = vol.Schema(
         vol.Optional("setpoint_entity"): sel.EntitySelector(
             sel.EntitySelectorConfig(domain=["climate", "number", "input_number", "sensor"])
         ),
+        vol.Optional("heater_name"): sel.TextSelector(),
+        vol.Optional("heater_supply"): TEMPERATURE_SENSOR,
+        vol.Optional("heater_return"): TEMPERATURE_SENSOR,
     }
 )
 

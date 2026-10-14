@@ -37,6 +37,7 @@ class HotWaterSettings:
     delta: float
     tank_sensor: str | None = None  # only shown: the hot water tank itself
     tank_setpoint: str | None = None
+    tank_name: str | None = None
 
     @classmethod
     def from_options(cls, options: Mapping[str, Any]) -> HotWaterSettings | None:
@@ -51,6 +52,7 @@ class HotWaterSettings:
             float(hw.get("delta", DEFAULT_DELTA)),
             hw.get("tank_sensor"),
             hw.get("tank_setpoint"),
+            hw.get("tank_name"),
         )
 
 
@@ -177,6 +179,10 @@ class SourceSettings:
     name: str
     temperature_sensor: str | None
     setpoint_entity: str | None = None  # what the source is set to: a climate, number or sensor
+    # Only shown on the schema card: what heats the source (heat pump, boiler).
+    heater_name: str | None = None
+    heater_supply: str | None = None
+    heater_return: str | None = None
 
     @classmethod
     def from_data(cls, data: Mapping[str, Any]) -> SourceSettings:
@@ -184,4 +190,7 @@ class SourceSettings:
             name=data["name"],
             temperature_sensor=data.get("temperature_sensor"),
             setpoint_entity=data.get("setpoint_entity"),
+            heater_name=data.get("heater_name"),
+            heater_supply=data.get("heater_supply"),
+            heater_return=data.get("heater_return"),
         )

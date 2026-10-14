@@ -167,5 +167,7 @@ Kód hotový lokálne (151 testov, ruff OK): čerpadlá okruhov, vlastná poloha
 - [x] 0.1.12: zásobník TÚV s cirkuláciou, bez zoznamu teplôt; tag pushnutý
 - [x] `v0.1.12` nainštalovaná; karta čierna = stará karta z cache
 - [x] 0.1.13: teplotné polia ponúkajú každý senzor, chyba karty ako text; tag pushnutý
-- [ ] Release `v0.1.13`, update, reštart; v Cirkulácii TUV vyplniť teplotu (`sensor.gf_watertank_bottom_temperature`) a nastavenú teplotu zásobníka
+- [x] `v0.1.13` nainštalovaná, senzory zásobníka TUV nastavené
+- [x] 0.1.14: zdroj tepla v karte (voliteľne), názov nádrže TUV, nové symboly zmiešavača a čerpadla; tag pushnutý
+- [ ] Release `v0.1.14`, update, reštart; nastaviť zdroj tepla (Tepelné čerpadlo, výstup/spiatočka) a názov TÚV nádrže
 - [ ] Poistka vo firmvéri SA8R-011: max. doba zopnutia relé zmiešavačov (čaká na súhlas)

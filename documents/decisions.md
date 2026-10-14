@@ -3,6 +3,11 @@
 Architektúra: [architecture.md](architecture.md) (pôvodný Claude Docs dokument z 1. 10. je zastaraný)
 Názov: **Climate Circuits**, doména `climate_circuits`, repozitár `ha-climate-circuits`.
 
+## 2026-10-14 – karta: zdroj tepla, názov TÚV, nové symboly (0.1.14)
+- Používateľ: doplniť zdroj tepla (výstup z tepelka) a spiatočku do tepelka, **voliteľne** – bez nich sa karta prispôsobí; „Hot water tank“ preložiť / pomenovať ako akumulačku; krajšie obrázky zmiešavača a čerpadla.
+- Rozhodnutie: zdroj tepla patrí k zdroju (subentry `source`): `heater_name`, `heater_supply`, `heater_return`, iba na zobrazenie. Nádrž TUV dostala vlastný názov (`tank_name`), lebo HA používateľa je v angličtine a akumulačka má vlastný slovenský názov. Karta má voľbu `language`.
+- Senzory zásobníka TUV prepnuté z prehľadových kópií na pôvodné entity. Testy: 200.
+
 ## 2026-10-13 – výber teplotných senzorov bez device class (0.1.13)
 - Používateľ nevedel vybrať `sensor.gf_watertank_bottom_temperature` (zásobník TUV): senzor má jednotku °C, ale nemá `device_class: temperature`, a výber ponúkal iba senzory s ňou. To isté platí pre výstup z nádrže.
 - Rozhodnutie: všetky polia teplotných senzorov ponúkajú **každý senzor** (DIY senzory z Modbusu či šablón často device class nemajú).

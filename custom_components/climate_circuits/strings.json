@@ -56,13 +56,15 @@
               "threshold": "Threshold (pump stops)",
               "delta": "Delta (pump starts below threshold − delta)",
               "tank_sensor": "Hot water tank temperature",
-              "tank_setpoint": "Hot water tank set temperature"
+              "tank_setpoint": "Hot water tank set temperature",
+              "tank_name": "Hot water tank name"
             },
             "data_description": {
               "circulation_sensor": "Temperature at the end of the circulation loop.",
               "threshold": "Can also be changed on the Hot water device.",
               "tank_sensor": "Only shown in the schema card.",
-              "tank_setpoint": "What the tank is heated to, e.g. the heat pump's hot water target. Only shown in the schema card."
+              "tank_setpoint": "What the tank is heated to, e.g. the heat pump's hot water target. Only shown in the schema card.",
+              "tank_name": "Shown on the schema card; empty = Hot water tank."
             }
           },
           "display": {
@@ -157,13 +159,15 @@
               "threshold": "Threshold (pump stops)",
               "delta": "Delta (pump starts below threshold − delta)",
               "tank_sensor": "Hot water tank temperature",
-              "tank_setpoint": "Hot water tank set temperature"
+              "tank_setpoint": "Hot water tank set temperature",
+              "tank_name": "Hot water tank name"
             },
             "data_description": {
               "circulation_sensor": "Temperature at the end of the circulation loop.",
               "threshold": "Can also be changed on the Hot water device.",
               "tank_sensor": "Only shown in the schema card.",
-              "tank_setpoint": "What the tank is heated to, e.g. the heat pump's hot water target. Only shown in the schema card."
+              "tank_setpoint": "What the tank is heated to, e.g. the heat pump's hot water target. Only shown in the schema card.",
+              "tank_name": "Shown on the schema card; empty = Hot water tank."
             }
           },
           "display": {
@@ -414,11 +418,17 @@
           "data": {
             "name": "Name",
             "temperature_sensor": "Temperature of the water it gives",
-            "setpoint_entity": "Set temperature"
+            "setpoint_entity": "Set temperature",
+            "heater_name": "Heat generator name",
+            "heater_supply": "Heat generator supply temperature",
+            "heater_return": "Heat generator return temperature"
           },
           "data_description": {
             "temperature_sensor": "The water that goes to the circuits: for a buffer tank its outlet pipe to the mixers; for a boiler or heat pump its supply.",
-            "setpoint_entity": "What the source is set to give, e.g. the heat pump's target for the tank (a climate's target temperature, or a number or sensor). Used to warn when a circuit wants more than the source can give."
+            "setpoint_entity": "What the source is set to give, e.g. the heat pump's target for the tank (a climate's target temperature, or a number or sensor). Used to warn when a circuit wants more than the source can give.",
+            "heater_name": "What heats this source, e.g. Heat pump. Only shown on the schema card.",
+            "heater_supply": "Water leaving the heat pump or boiler towards the source. Optional, only shown on the schema card.",
+            "heater_return": "Water going back to the heat pump or boiler. Optional, only shown on the schema card."
           }
         },
         "reconfigure": {
@@ -427,11 +437,17 @@
           "data": {
             "name": "Name",
             "temperature_sensor": "Temperature of the water it gives",
-            "setpoint_entity": "Set temperature"
+            "setpoint_entity": "Set temperature",
+            "heater_name": "Heat generator name",
+            "heater_supply": "Heat generator supply temperature",
+            "heater_return": "Heat generator return temperature"
           },
           "data_description": {
             "temperature_sensor": "The water that goes to the circuits: for a buffer tank its outlet pipe to the mixers; for a boiler or heat pump its supply.",
-            "setpoint_entity": "What the source is set to give, e.g. the heat pump's target for the tank (a climate's target temperature, or a number or sensor). Used to warn when a circuit wants more than the source can give."
+            "setpoint_entity": "What the source is set to give, e.g. the heat pump's target for the tank (a climate's target temperature, or a number or sensor). Used to warn when a circuit wants more than the source can give.",
+            "heater_name": "What heats this source, e.g. Heat pump. Only shown on the schema card.",
+            "heater_supply": "Water leaving the heat pump or boiler towards the source. Optional, only shown on the schema card.",
+            "heater_return": "Water going back to the heat pump or boiler. Optional, only shown on the schema card."
           }
         }
       },

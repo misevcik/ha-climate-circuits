@@ -93,7 +93,10 @@ A live diagram of the heating: the heat source with its temperature and set temp
 
 ```yaml
 type: custom:climate-circuits-schema-card
+language: sk   # optional, the card's language when it differs from Home Assistant's
 ```
+
+Optional, only for the card: a heat source can name what heats it (heat pump, boiler) with its supply and return temperatures – the card then draws it left of the source, with the diverting valve to the hot water tank. The hot water tank can have its own name.
 
 ## How the mixing valve is driven
 

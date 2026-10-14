@@ -105,3 +105,14 @@ async def test_set_temperature_and_a_warning_when_too_low(hass: HomeAssistant, m
     hass.states.async_set(HEAT_PUMP_TARGET, "heat", {"temperature": 60.0})
     await hass.async_block_till_done()
     assert any("covers the" in e.data["message"] for e in events)
+
+
+async def test_schema_card_gets_the_heat_generator_only_when_set(
+    hass: HomeAssistant, make_entry
+) -> None:
+    heated = source_data("Buffer tank", TANK_TOP)
+    heated["data"] |= {"heater_name": "Heat pump", "heater_supply": "sensor.hp_out"}
+    await _setup(hass, make_entry, heated, source_data("Boiler", BOILER))
+    tank, boiler = hass.states.get("sensor.climate_circuits_mode").attributes["layout"]["sources"]
+    assert tank["heater"] == {"name": "Heat pump", "supply": "sensor.hp_out", "return": None}
+    assert boiler["heater"] is None
