@@ -1,17 +1,16 @@
-"""The pump and the mixing valve of a circuit.
+"""The mixing valve of a circuit, driven by two relays.
 
 They switch only while Control equipment and the circuit's own switch are on.
 
 Safety rules for the valve motor: the two relays are never on together, a relay never runs
 longer than a full travel plus margin, a move that may be cut short (reload, stop) turns the
-relay off, and an unknown position is homed against the end stop before regulating.
-"""
+relay off, and an unknown position is homed against the end stop before regulating."""
 
 from __future__ import annotations
 
 from datetime import timedelta
 from functools import partial
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 from homeassistant.const import EVENT_HOMEASSISTANT_STOP
 from homeassistant.core import CALLBACK_TYPE, Event, EventStateChangedData, callback
@@ -23,204 +22,36 @@ from homeassistant.helpers.event import (
 
 from .const import (
     EVALUATE_INTERVAL,
-    EXERCISE_PUMP_SECONDS,
     MIXER_HOMING_DELAY,
     MIXER_RUN_MARGIN,
-    RELAY_ATTEMPTS,
     RELAY_GRACE,
-    RELAY_RETRY,
-    RELAY_RETRY_RESET,
     START_GRACE,
     STARVED_AFTER,
 )
-from .core.mixer import (
-    Direction,
-    MixerAction,
-    hold_reason,
-    regulate,
-    starved,
-    supply_trend,
-)
+from .core.mixer import Direction, MixerAction, hold_reason, regulate, starved, supply_trend
 from .core.mode import Mode
 from .core.protect import exercise_due
-from .core.pump import PumpDecision, PumpTimer
-from .core.texts import mixer_hold_text, mixer_text, out_message, pump_text, starved_text
+from .core.texts import mixer_hold_text, mixer_text, out_message, starved_text
 from .core.travel import TravelTracker
+from .relay import Relay
 from .states import call_service, number, state_of
 
 if TYPE_CHECKING:
-    from .house import Circuit, House
+    from .circuit import Circuit
 
 
 STOP_CHECK_INTERVAL = 3  # s between looks whether a stopped relay really is off
 STOP_CHECKS = 12
 
 
-class Relay:
-    """A switch we command; a command counts once the state confirms it, else it is repeated."""
+class _Inputs(NamedTuple):
+    """What one regulation step looks at."""
 
-    def __init__(
-        self,
-        house: House,
-        entity_id: str,
-        label: str,
-        log_to: tuple[str, str] | None = None,  # unique id, platform of the Activity entity
-    ) -> None:
-        self.house, self.entity_id, self.label = house, entity_id, label
-        self._log_to = log_to or (f"{house.entry.entry_id}_mode", "sensor")
-        self._sent: tuple[bool, float, int] | None = None  # wanted, time, attempts
-        self._reported = False
-        self._known: bool | None = None
-        self._lost_at: float | None = None
-        self._available = True  # as last said in Activity
-
-    def is_on(self) -> bool | None:
-        return state.state == "on" if (state := state_of(self.house.hass, self.entity_id)) else None
-
-    def shown(self) -> bool | None:
-        """For display: the last known state through a short blip of the relay board."""
-        if (current := self.is_on()) is not None:
-            self._known, self._lost_at = current, None
-            return current
-        now = self.house.now()
-        if self._lost_at is None:
-            self._lost_at = now
-        return self._known if now - self._lost_at < RELAY_GRACE else None
-
-    def available(self) -> bool:
-        """False once the relay is unavailable longer than a board blip; Activity on a change.
-
-        While Home Assistant starts the boards may still be connecting: nothing is said then.
-        """
-        ok = self.shown() is not None
-        if ok is not self._available and self.house.logging:
-            self._available = ok
-            self._log("relay_back" if ok else "relay_unavailable", label=self.label)
-        return ok
-
-    @callback
-    def command(self, on: bool) -> None:
-        """Send the command even when the state already says so: it may be stale (a board blip)."""
-        self._sent = (on, self.house.now(), 1)
-        call_service(
-            self.house.hass,
-            self.entity_id.split(".")[0],
-            "turn_on" if on else "turn_off",
-            entity_id=self.entity_id,
-        )
-
-    @callback
-    def ensure(self, on: bool) -> bool:
-        """Command the relay to on or off; True once its state says so."""
-        current = self.is_on()
-        if current is None:
-            return False
-        if current is on:
-            self._sent, self._reported = None, False
-            return True
-        now = self.house.now()
-        sent = self._sent if self._sent and self._sent[0] is on else (on, -RELAY_RETRY_RESET, 0)
-        if now - sent[1] < RELAY_RETRY:
-            return False
-        if sent[2] >= RELAY_ATTEMPTS:
-            if not self._reported:
-                self._reported = True
-                self._log("relay_failed", label=self.label, n=sent[2])
-            if now - sent[1] < RELAY_RETRY_RESET:
-                return False
-            sent = (on, sent[1], 0)  # not confirmed for a long time: try again
-        self._sent = (on, now, sent[2] + 1)
-        call_service(
-            self.house.hass,
-            self.entity_id.split(".")[0],
-            "turn_on" if on else "turn_off",
-            entity_id=self.entity_id,
-        )
-        return False
-
-    def _log(self, key: str, **values: Any) -> None:
-        house = self.house
-        house.activity(
-            "Climate Circuits",
-            out_message(key, house.hass.config.language, **values),
-            *self._log_to,
-        )
-
-
-class PumpController:
-    """Starts when demand lasted long enough for the valves to open; runs on after heating."""
-
-    def __init__(self, circuit: Circuit) -> None:
-        s, house = circuit.settings, circuit.house
-        self.circuit = circuit
-        log_to = (f"{circuit.id}_pump", "binary_sensor")
-        self.relay = Relay(house, s.pump, f"{circuit.name} pump", log_to)
-        self.timer = PumpTimer(s.pump_delay, s.pump_run_on)
-        self.decision: PumpDecision | None = None
-        self._exercise_until = 0.0
-        self._was_running = False
-        self._logged: tuple[Any, ...] | None = None
-
-    def inputs(self) -> set[str]:
-        return {self.relay.entity_id}
-
-    @callback
-    def evaluate(self) -> None:
-        circuit, house = self.circuit, self.circuit.house
-        now, wall = house.now(), house.wall()
-        self.relay.available()  # Activity when the relay drops out and when it is back
-        running = self.relay.is_on()
-        stored = house.persisted["pumps"].setdefault(circuit.id, {})
-        if running or "last_on" not in stored:
-            stored["last_on"] = wall
-        if self._was_running and not running:
-            house.save()
-        self._was_running = bool(running)
-        demand = circuit.output_demand
-        if not demand and running and now - house.started < START_GRACE:
-            return  # the zones may not be loaded yet: keep a running pump as it is
-        if (
-            circuit.controlling
-            and not demand
-            and not running
-            and self._exercise_until <= now
-            and exercise_due(stored["last_on"], wall, house.settings.exercise_days)
-        ):
-            self._exercise_until = now + EXERCISE_PUMP_SECONDS
-        self.decision = self.timer.update(
-            now,
-            demand,
-            house.mode is Mode.HEAT,
-            bool(running),
-            max(self._exercise_until - now, 0.0),
-        )
-        self._log_change()
-        if circuit.controlling:
-            self.relay.ensure(self.decision.on)
-
-    def text(self) -> str | None:
-        if self.decision is None:
-            return None
-        house = self.circuit.house
-        return pump_text(
-            self.decision,
-            self.circuit.blocked,
-            house.hass.config.language,
-            dry_run=not self.circuit.controlling,
-        )
-
-    @callback
-    def _log_change(self) -> None:
-        """Activity entry when the pump starts, stops or waits for another reason."""
-        decision, house = self.decision, self.circuit.house
-        if not house.logging or decision is None:
-            return
-        key = (decision.on, decision.reason, self.circuit.blocked and self.circuit.blocked.block)
-        if key != self._logged:
-            self._logged = key
-            house.activity(
-                self.circuit.name, self.text() or "", f"{self.circuit.id}_pump", "binary_sensor"
-            )
+    target: float | None
+    supply: float | None
+    source: float | None
+    since_move: float | None
+    trend: float | None
 
 
 class MixerController:
@@ -426,87 +257,111 @@ class MixerController:
 
     @callback
     def _tick(self, _now: Any) -> None:
+        """Every EVALUATE_INTERVAL: guard the relays, find the end stop if needed, regulate."""
         circuit, house = self.circuit, self.circuit.house
         now = house.now()
-        controlling = circuit.controlling
-        if not controlling and self.tracker.position is None and not self.tracker.moving:
+        if not circuit.controlling and self.tracker.position is None and not self.tracker.moving:
             self._seed()  # the old cover may not have existed yet when the integration started
-        position = self.tracker.current(now)
-        available = [relay.available() for _, relay in self._relays()]
-        if controlling and self._busy:
-            return
-        if controlling:
-            if not all(available) or self.open.is_on() is None or self.close.is_on() is None:
-                circuit.refresh()
-                return  # nothing can be moved; a lost move is homed once the relays are back
-            if (self.open.is_on() or self.close.is_on()) and not self.tracker.moving:
-                self._log("mixer_stray")
-                self._all_off()
+        relays_available = all([relay.available() for _, relay in self._relays()])
+        if circuit.controlling:
+            if self._busy:
                 return
-            last_move = house.persisted["mixers"].get(circuit.id, {}).get("last_move")
-            if not circuit.output_demand and exercise_due(
-                last_move, house.wall(), house.settings.exercise_days
-            ):
-                self.tracker.clear()  # idle for days: find the end stop again
-                position = None
+            if not self._relays_ready(relays_available):
+                circuit.refresh()
+                return
+            self._forget_position_after_idle_days()
+        position = self.tracker.current(now)
         if position is None:  # nothing to regulate until the end stop is found
-            if controlling and now - house.started >= MIXER_HOMING_DELAY:
+            if circuit.controlling and now - house.started >= MIXER_HOMING_DELAY:
                 self._home()
             return
         if not circuit.output_demand and now - house.started < START_GRACE:
             return  # the zones may not be loaded yet: no closing for lack of demand
-        target = circuit.target.value if circuit.target else None
+        inputs = self._read_inputs(now)
+        action = regulate(
+            heating=house.mode is Mode.HEAT,
+            demand=circuit.output_demand,
+            target=inputs.target,
+            supply=inputs.supply,
+            position=position,
+            since_end_pulse=None if self._last_end_pulse is None else now - self._last_end_pulse,
+            settings=self.params,
+            since_move=inputs.since_move,
+            trend=inputs.trend,
+            source=inputs.source,
+            source_ref=self._source_ref,
+        )
+        self._log_hold(action, position, inputs)
+        self._check_starved(now, position, inputs.supply, inputs.target, inputs.source)
+        self.proposal = action
+        self._act(action, now, inputs.source)
+        circuit.refresh()
+
+    def _relays_ready(self, available: bool) -> bool:
+        """Both relays known and off; one that runs without a move of ours is stopped."""
+        if not available or self.open.is_on() is None or self.close.is_on() is None:
+            return False  # nothing can be moved; a lost move is homed once the relays are back
+        if (self.open.is_on() or self.close.is_on()) and not self.tracker.moving:
+            self._log("mixer_stray")
+            self._all_off()
+            return False
+        return True
+
+    def _forget_position_after_idle_days(self) -> None:
+        """A valve that has not moved for days is homed: it finds its end stop again."""
+        circuit, house = self.circuit, self.circuit.house
+        last_move = house.persisted["mixers"].get(circuit.id, {}).get("last_move")
+        if not circuit.output_demand and exercise_due(
+            last_move, house.wall(), house.settings.exercise_days
+        ):
+            self.tracker.clear()
+
+    def _read_inputs(self, now: float) -> _Inputs:
+        circuit = self.circuit
         supply = circuit.supply_temperature()
         if supply is not None:
             self._supply = [(t, v) for t, v in self._supply if now - t <= 600] + [(now, supply)]
         source = circuit.source_temperature()
         if source is None or self._source_ref is None:
             self._source_ref = source  # (re)start from here: no jump when the sensor returns
-        since_move = None if self._move_ended is None else now - self._move_ended
-        trend = supply_trend(self._supply, now, self.params.trend_window)
-        action = regulate(
-            heating=house.mode is Mode.HEAT,
-            demand=circuit.output_demand,
-            target=target,
+        return _Inputs(
+            target=circuit.target.value if circuit.target else None,
             supply=supply,
-            position=position,
-            since_end_pulse=None if self._last_end_pulse is None else now - self._last_end_pulse,
-            settings=self.params,
-            since_move=since_move,
-            trend=trend,
             source=source,
-            source_ref=self._source_ref,
+            since_move=None if self._move_ended is None else now - self._move_ended,
+            trend=supply_trend(self._supply, now, self.params.trend_window),
         )
-        if action is None:
-            hold = hold_reason(
-                demand=circuit.output_demand,
-                target=target,
-                supply=supply,
-                position=position,
-                settings=self.params,
-                since_move=since_move,
-                trend=trend,
-            )
-            if hold and hold[0] != self._hold_logged and house.logging:
-                house.activity(
-                    circuit.name,
-                    mixer_hold_text(hold[0], hold[1], circuit.name, house.hass.config.language),
-                    f"{circuit.id}_mixer_position",
-                )
-            if hold:
-                self._hold_logged = hold[0]
-        else:
+
+    def _log_hold(self, action: MixerAction | None, position: float, inputs: _Inputs) -> None:
+        """Activity: why the valve stays, once per reason."""
+        if action is not None:
             self._hold_logged = None
-        self._check_starved(now, position, supply, target, source)
-        self.proposal = action
-        if controlling and action:
-            if self._execute(action, now):
-                self._source_ref = source
-        elif not controlling:
+            return
+        hold = hold_reason(
+            demand=self.circuit.output_demand,
+            target=inputs.target,
+            supply=inputs.supply,
+            position=position,
+            settings=self.params,
+            since_move=inputs.since_move,
+            trend=inputs.trend,
+        )
+        if hold is None:
+            return
+        key, values = hold
+        if key != self._hold_logged and self.circuit.house.logging:
+            self._log_text(mixer_hold_text(key, values, self.circuit.name, self._language))
+        self._hold_logged = key
+
+    def _act(self, action: MixerAction | None, now: float, source: float | None) -> None:
+        """Move the valve, or in dry run say what would move."""
+        if self.circuit.controlling:
+            moved = action is not None and self._execute(action, now)
+        else:
             self._log_proposal(action)
-            if action:
-                self._source_ref = source
-        circuit.refresh()
+            moved = action is not None
+        if moved:
+            self._source_ref = source  # the next compensation counts from here
 
     def _check_starved(
         self,

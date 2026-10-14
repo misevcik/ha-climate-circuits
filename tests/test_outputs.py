@@ -16,7 +16,7 @@ from pytest_homeassistant_custom_component.common import (
 
 from custom_components.climate_circuits.const import EVENT_ACTIVITY
 
-from .conftest import HEAT_PUMP, circuit_data, set_thermostat
+from .conftest import HEAT_PUMP, circuit_data, set_thermostat, source_data
 
 ZONE = "climate.living"
 PUMP = "switch.f1_pump_relay"
@@ -76,12 +76,12 @@ async def house(hass: HomeAssistant, make_entry, clock: Clock):
                 "mixer_open": OPEN,
                 "mixer_close": CLOSE,
                 "supply_sensor": SUPPLY,
-                "source_sensor": SOURCE,
                 "pump_delay": 180,
                 "pump_run_on": 180,
                 "travel": 100,
             },
-        )
+        ),
+        source_data("Tank", SOURCE),
     )
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()

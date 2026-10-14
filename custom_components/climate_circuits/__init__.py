@@ -9,9 +9,11 @@ from homeassistant.helpers import config_validation as cv, device_registry as dr
 from homeassistant.helpers.typing import ConfigType
 
 from .card import async_register_card
+from .circuit import Circuit
 from .const import DOMAIN, SUBENTRY_TYPE_CIRCUIT, SUBENTRY_TYPE_SOURCE
 from .entity import device_info
-from .house import Circuit, House, Source
+from .house import House
+from .source import Source
 
 PLATFORMS = [
     Platform.BINARY_SENSOR,

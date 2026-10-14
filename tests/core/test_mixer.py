@@ -7,7 +7,6 @@ import pytest
 from custom_components.climate_circuits.core.mixer import (
     Direction,
     MixerSettings,
-    advance,
     regulate,
     source_compensation,
     step_size,
@@ -29,12 +28,6 @@ def _regulate(**kwargs):
     }
     args.update(kwargs)
     return regulate(**args)
-
-
-def test_advance_clamps() -> None:
-    assert advance(50.0, Direction.OPEN, 10.0, 100.0) == 60.0
-    assert advance(5.0, Direction.CLOSE, 10.0, 100.0) == 0.0
-    assert advance(98.0, Direction.OPEN, 10.0, 100.0) == 100.0
 
 
 @pytest.mark.parametrize(("diff", "step"), [(0.6, 2), (1.4, 6), (2.5, 10), (-3.0, 12), (12.0, 20)])

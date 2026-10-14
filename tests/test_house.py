@@ -170,7 +170,7 @@ async def test_mode_details_show_sources(hass: HomeAssistant, make_entry) -> Non
     assert attributes["source_state"] == "unavailable"
     assert attributes["fallback_temperature"] == 35.0
     assert attributes["heat_threshold"] == 28.0
-    assert attributes["Hot water"] == "45.0 °C"
+    assert hass.states.get("sensor.climate_circuits_hot_water").state == "45.0"
 
     hass.states.async_set(HEAT_PUMP, "heat", {"hvac_action": "heating"})
     hass.states.async_set(
@@ -182,7 +182,6 @@ async def test_mode_details_show_sources(hass: HomeAssistant, make_entry) -> Non
     attributes = hass.states.get(MODE).attributes
     assert attributes["source"] == "entity"
     assert attributes["source_action"] == "heating"
-    assert attributes["Hot water"] == "47.5 °C"
 
 
 async def test_circuit_state_explains_why(hass: HomeAssistant, make_entry) -> None:

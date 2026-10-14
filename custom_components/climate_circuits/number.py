@@ -12,7 +12,7 @@ from . import ClimateCircuitsConfigEntry
 from .activity import log_activity
 from .core.texts import change_message, curve_parameter_label
 from .entity import HotWaterEntity
-from .house import HotWater
+from .hot_water import HotWater
 
 
 async def async_setup_entry(

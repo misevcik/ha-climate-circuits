@@ -124,7 +124,6 @@ class CircuitSettings:
     pump_run_on: float
     mixer: MixerSettings = MixerSettings()
     source: str | None = None  # subentry id of the heat source it takes water from
-    source_sensor: str | None = None  # 0.1.3, before heat sources existed
 
     @classmethod
     def from_data(cls, data: Mapping[str, Any]) -> CircuitSettings:
@@ -145,7 +144,6 @@ class CircuitSettings:
             pump_run_on=float(outputs.get("pump_run_on", DEFAULT_PUMP_RUN_ON)),
             mixer=mixer_settings(data),
             source=outputs.get("source"),
-            source_sensor=outputs.get("source_sensor"),
         )
 
     @property

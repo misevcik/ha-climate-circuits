@@ -5,8 +5,12 @@ from __future__ import annotations
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity import Entity
 
+from .circuit import Circuit
 from .const import DOMAIN
-from .house import Circuit, HotWater, House, Listeners, Source
+from .hot_water import HotWater
+from .house import House
+from .listeners import Listeners
+from .source import Source
 
 
 def device_info(identifier: str, name: str, via: str | None = None) -> DeviceInfo:

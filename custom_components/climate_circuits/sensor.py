@@ -35,6 +35,7 @@ from .core.texts import (
 )
 from .entity import CircuitEntity, HotWaterEntity, HouseEntity, SourceEntity
 from .house import House
+from .schema_layout import schema_layout
 from .states import number, state_of
 
 _TEMP = vol.All(vol.Coerce(float), vol.Range(min=-40, max=90))
@@ -109,7 +110,7 @@ class ModeSensor(HouseEntity, SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        return self.house.mode_details() | {"layout": self.house.layout()}
+        return self.house.mode_details() | {"layout": schema_layout(self.house)}
 
 
 class InfoSensor(HouseEntity, SensorEntity):

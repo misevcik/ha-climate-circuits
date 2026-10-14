@@ -3,6 +3,12 @@
 Architektúra: [architecture.md](architecture.md) (pôvodný Claude Docs dokument z 1. 10. je zastaraný)
 Názov: **Climate Circuits**, doména `climate_circuits`, repozitár `ha-climate-circuits`.
 
+## 2026-10-14 – refaktor kódu (0.1.16)
+- Používateľ: prejsť kód, zmazať nepotrebné funkcie, sprehľadniť.
+- `house.py` (890 riadkov, 6 tried) rozdelený na `house.py`, `source.py`, `circuit.py`, `hot_water.py`, `zone_switcher.py`, `listeners.py`, `schema_layout.py`; `outputs.py` (650 riadkov) na `relay.py`, `pump_control.py`, `mixer_control.py`.
+- Zmazané: `core.mixer.advance` (nepoužívaná), staré pole okruhu `source_sensor` z 0.1.3 (nahradil ho zdroj tepla), prehľadové senzory v atribútoch `sensor.climate_circuits_mode` (sú samostatné entity).
+- Dlhé metódy rozbité na pomenované kroky: krok zmiešavača (`_relays_ready`, `_forget_position_after_idle_days`, `_read_inputs`, `_log_hold`, `_act`), nastavovanie zdroja (`_heating_targets`, `_log_setpoint`, `_write_setpoint`). Správanie bez zmeny, 205 testov.
+
 ## 2026-10-14 – nastavovanie zdroja podľa okruhov (krok 2, 0.1.15)
 - Používateľ: poistku vo firmvéri dosky **nerobiť**; riadenie cieľovej teploty TČ **áno, zapínateľné**; ráno overiť, ako to funguje.
 - Rozhodnutia: nastavenie = najteplejší cieľ kúriaceho okruhu + rezerva; zmena najviac raz za 15 min a o ≥ 1 °C (šetrí TČ a jeho cloud API); bez požiadavky sa nemení (aby TČ neposkakovalo); iba kúrenie. Predvolená rezerva 5 °C – pre tento dom asi treba viac: pri nastavení 45 °C GF naplno nedosiahol 40,3 °C (rezerva 4,7 °C nestačila).

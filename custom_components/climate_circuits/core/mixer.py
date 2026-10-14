@@ -51,11 +51,6 @@ class MixerAction:
     values: dict[str, float] = field(default_factory=dict)
 
 
-def advance(position: float, direction: Direction, seconds: float, travel: float) -> float:
-    delta = 100.0 * seconds / travel
-    return min(max(position + (delta if direction is Direction.OPEN else -delta), 0.0), 100.0)
-
-
 def step_size(diff: float, settings: MixerSettings) -> int:
     """A small step near the target, a larger one far from it."""
     return min(max(round(abs(diff) * settings.gain), settings.min_step), settings.max_step)

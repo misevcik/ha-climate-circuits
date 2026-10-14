@@ -39,21 +39,34 @@ custom_components/climate_circuits/
 │   ├── mode.py           režim domu zo zdrojov
 │   ├── demand.py         požiadavka okruhu zo zón
 │   ├── explain.py        prečo okruh kúri / nekúri, stav každej zóny
-│   ├── texts.py          vety vysvetlení (sk / en)
 │   ├── curve.py          ekvitermické krivky, rosný bod, cieľ vody
+│   ├── mixer.py          krok regulácie zmiešavača, kompenzácia zdroja, „zdroj nestačí“
+│   ├── travel.py         poloha ventilu z časov chodu relé
+│   ├── pump.py           oneskorenie štartu a dobeh čerpadla
+│   ├── setpoint.py       nastavenie zdroja podľa okruhov
+│   ├── protect.py        pauza kúrenie/chladenie, kondenzácia, protáčanie
 │   ├── circulation.py    hysteréza cirkulácie TUV
 │   ├── zones.py          ktoré termostaty vypnúť / zapnúť pri zmene režimu
-│   └── mixer.py          model polohy a krok regulácie zmiešavača (zatiaľ nepoužité)
-├── house.py              runtime: dom, okruhy, cirkulácia TUV, prepínanie termostatov; píše Aktivitu
-├── settings.py           typované nastavenia z options a subentries (kľúče ako reťazce)
-├── const.py              doména, intervaly, predvolené krivky
-├── config_flow.py        dom, options, subentry okruhu
-├── activity.py           zápis do Aktivity (logbook)
-├── logbook.py            popis udalostí pre logbook
-├── entity.py             zariadenie domu a okruhov
-├── card.py               sprístupnenie karty a registrácia ako Lovelace resource
-├── sensor.py, binary_sensor.py, select.py, switch.py, number.py (cirkulácia TUV)
-└── frontend/climate-circuits-curve-card.js   interaktívna karta krivky
+│   └── texts.py          vety pre Aktivitu a stavy (sk / en)
+├── house.py              dom: režim, uloženie stavu, vyhodnotenie všetkého, atribúty režimu
+├── source.py             zdroj tepla: teplota, nastavená teplota, nastavovanie podľa okruhov
+├── circuit.py            okruh: zóny, požiadavka, cieľ vody, ochrany, upozornenie na zdroj
+├── hot_water.py          cirkulácia TUV
+├── zone_switcher.py      prepínanie termostatov pri zmene režimu
+├── relay.py              relé s potvrdzovaním povelu a sledovaním dostupnosti
+├── pump_control.py       čerpadlo okruhu
+├── mixer_control.py      zmiešavač okruhu: relé, poloha, homing, ochrany motora, regulácia
+├── schema_layout.py      ktoré entity ukazuje karta schémy
+├── listeners.py          oznamovanie zmien entitám
+├── settings.py           typované nastavenia z options a subentries
+├── const.py              doména, intervaly, predvolené hodnoty
+├── config_flow.py        dom, options, subentry okruhu a zdroja
+├── activity.py, logbook.py   zápis do Aktivity
+├── entity.py             zariadenia domu, okruhov, zdrojov a TUV
+├── card.py               sprístupnenie kariet a registrácia ako Lovelace resource
+├── states.py             čítanie stavov entít, volanie služieb
+├── sensor.py, binary_sensor.py, select.py, switch.py, number.py
+└── frontend/             karta krivky a karta schémy
 ```
 
 ```mermaid
@@ -68,7 +81,8 @@ flowchart TB
     INIT["__init__.py<br/>setup, update listener"]
     FLOW["config_flow.py"]
     SET["settings.py"]
-    HOUSE["house.py<br/>House, Circuit, HotWater, ZoneSwitcher"]
+    HOUSE["house.py, source.py, circuit.py,<br/>hot_water.py, zone_switcher.py"]
+    OUT["relay.py, pump_control.py,<br/>mixer_control.py"]
     ENT["entity.py + sensor / binary_sensor /<br/>select / switch / number"]
     ACT["activity.py + logbook.py"]
     CARD["card.py + frontend/"]
@@ -90,7 +104,7 @@ flowchart TB
   HOUSE --> MODE & DEMAND & EXPLAIN & CURVE & CIRC & ZONES & TEXTS
   HOUSE --> ENT --> STATES
   HOUSE --> ACT --> LOGBOOK
-  HOUSE -->|"povely (len pri control_equipment)"| STATES
+  HOUSE --> OUT -->|"povely (len pri control_equipment)"| STATES
   CARD --> UI
   UI -->|"set_curve"| ENT
 ```
@@ -308,7 +322,7 @@ Zdroj (akumulačná nádrž, kotol, tepelné čerpadlo, hydraulický separátor)
 - **Zdroj:** názov, senzor teploty vody, ktorú zdroj dáva okruhom (pri akumulačke jej horná časť).
 - **Entita:** `sensor.<zdroj>_temperature`.
 - **Okruh si vyberie zdroj** v sekcii Výstupy. Keď je v dome jediný zdroj a okruh žiadny nemá vybraný, použije ten. Bez zdroja okruh reguluje len podľa prívodu.
-- **Regulácia zmiešavača** berie teplotu zdroja odtiaľto (kompenzácia zmeny zdroja). Dočasne sa ešte číta staré pole okruhu `source_sensor` z verzie 0.1.3, keď okruh zdroj nemá.
+- **Regulácia zmiešavača** berie teplotu zdroja odtiaľto (kompenzácia zmeny zdroja).
 - **Pokryté prípady:** jedna nádrž pre všetky okruhy, dve nádrže za sebou (jeden zdroj, senzor na výstupe), dva zdroje pre rôzne okruhy, neskôr samostatná nádrž na chladenie (zdroj pri chladení).
 - **Neskôr sem patrí** požiadavka na zdroj (tabuľka nižšie) a záložný senzor režimu (dnes v nastaveniach domu).
 
