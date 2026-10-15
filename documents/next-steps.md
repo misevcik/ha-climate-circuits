@@ -172,4 +172,8 @@ Kód hotový lokálne (151 testov, ruff OK): čerpadlá okruhov, vlastná poloha
 - [x] Poistka vo firmvéri SA8R-011 – rozhodnutie: nerobiť (2026-10-14)
 - [x] Krok 2: nastavovanie zdroja podľa okruhov, zapínateľné (0.1.15), tag pushnutý
 - [ ] Release `v0.1.15`, update, reštart; nastaviť rezervu (návrh 8 °C), zapnúť prepínač
-- [ ] Ráno 15. 10.: overiť noc – nastavovanie TČ, regulácia zmiešavačov, štart okruhu so studenou vodou
+- [x] Noc 14./15. 10. overená (GF 69 % v ±0,5 °C, F1 47 %), opravy reštartu v 0.1.17, tag pushnutý
+- [ ] Release `v0.1.17`, update, reštart
+- [ ] Zmerať skutočný čas dráhy pohonu F1 (odhad polohy uteká)
+- [ ] Nastavovanie TČ: rezerva a zapnutie – čaká na používateľa
+- [ ] Štart okruhu so studenou vodou – overiť pri najbližšom štarte

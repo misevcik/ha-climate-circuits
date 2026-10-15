@@ -60,6 +60,7 @@ class House(Listeners):
         self._unsubs: list[Callable[[], None]] = []
         self._snapshot = self._config_snapshot()
         self._logged_mode: tuple[Mode, ModeSource] | None = None
+        self._last_outdoor: float | None = None  # used while the outdoor sensor is unavailable
 
     def _config_snapshot(self) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
         entry = self.entry
@@ -122,6 +123,7 @@ class House(Listeners):
         if (last := data.get("last_mode")) is not None:
             self.last_mode = Mode(last)
         self.zones.mode = self.last_mode  # a change while HA was down still switches zones
+        self._last_outdoor = data.get("last_outdoor")
         for key in self.persisted:
             self.persisted[key] = data.get(key, {})
         if pause := data.get("pause"):
@@ -138,6 +140,7 @@ class House(Listeners):
             "override": self.override.value,
             "control_equipment": self.control_equipment,
             "last_mode": self.last_mode.value if self.last_mode else None,
+            "last_outdoor": self._last_outdoor,
             "circulation_enabled": self.hot_water.enabled if self.hot_water else True,
             "pause": {
                 "active": self.pause.active.value if self.pause.active else None,
@@ -202,7 +205,7 @@ class House(Listeners):
         if reliable and decision.mode is not self.last_mode:
             self.last_mode = decision.mode
             self.save()
-        self.outdoor = float_of(self.hass, s.outdoor_sensor)
+        self.outdoor = self._outdoor()
         before = (self.pause.active, self.pause.stopped_at)
         self.pause_remaining = self.pause.check(self.mode, self.wall()) if reliable else 0.0
         if (self.pause.active, self.pause.stopped_at) != before:
@@ -216,6 +219,18 @@ class House(Listeners):
         if self.hot_water:
             self.hot_water.evaluate()
         self._notify()
+
+    def _outdoor(self) -> float | None:
+        """The outdoor temperature; the last known one while the sensor is unavailable.
+
+        After a restart the weather sensor may come a minute late: without this the target
+        water would drop to the curve's minimum and the mixers would start closing.
+        """
+        outdoor = float_of(self.hass, self.settings.outdoor_sensor)
+        if outdoor is None:
+            return self._last_outdoor
+        self._last_outdoor = outdoor  # saved with the rest, e.g. when Home Assistant stops
+        return outdoor
 
     def _decided_by(self) -> str | None:
         s = self.settings

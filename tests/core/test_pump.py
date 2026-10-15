@@ -43,6 +43,13 @@ def test_a_pump_that_already_runs_is_not_made_to_wait() -> None:
     assert decide(timer, 0, True, running=True).on
 
 
+def test_a_pump_seen_running_while_waiting_is_kept_on() -> None:
+    # After a restart the relay board connects late: demand first, then the running pump.
+    timer = PumpTimer(delay=180, run_on=0)
+    assert not decide(timer, 0, True).on
+    assert decide(timer, 2, True, running=True).on
+
+
 def test_exercise_runs_an_idle_pump() -> None:
     timer = PumpTimer(delay=180, run_on=180)
     decision = timer.update(0, False, True, running=False, exercise_left=45)

@@ -41,7 +41,8 @@ class PumpTimer:
         """running: the pump is already on (e.g. after a restart), so nothing is waited for."""
         if demand:
             self._demand_ended = None
-            if self._demand_since is None:
+            if self._demand_since is None or (running and not self._on):
+                # A pump that already runs (after a restart, an exercise) waits for nothing.
                 self._demand_since = now - self.delay if running else now
             left = self._demand_since + self.delay - now
             self._on = left <= 0

@@ -619,3 +619,17 @@ async def test_mode_sensor_tells_the_schema_card_its_entities(hass, house) -> No
     assert circuit["target"] == "sensor.f1_target_water_temperature"
     assert circuit["supply"] == SUPPLY
     assert layout["hot_water"] is None
+
+
+async def test_relay_board_connecting_at_start_is_not_a_drop_out(hass, house, clock) -> None:
+    events = async_capture_events(hass, EVENT_ACTIVITY)
+    mixer = next(iter(house.circuits.values())).mixer
+    mixer.close._known = None  # never seen since the start
+    hass.states.async_set(CLOSE, "unavailable")
+    await _tick(hass, house, clock, 30)
+    mixer._tick(None)
+    assert not any("unavailable" in e.data["message"] for e in events)
+    await _tick(hass, house, clock, 61)  # past the start grace
+    mixer._tick(None)
+    await hass.async_block_till_done()
+    assert any("unavailable" in e.data["message"] for e in events)

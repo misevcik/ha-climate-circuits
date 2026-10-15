@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 from homeassistant.core import callback
 
-from .const import RELAY_ATTEMPTS, RELAY_GRACE, RELAY_RETRY, RELAY_RETRY_RESET
+from .const import RELAY_ATTEMPTS, RELAY_GRACE, RELAY_RETRY, RELAY_RETRY_RESET, START_GRACE
 from .core.texts import out_message
 from .states import call_service, state_of
 
@@ -48,9 +48,10 @@ class Relay:
     def available(self) -> bool:
         """False once the relay is unavailable longer than a board blip; Activity on a change.
 
-        While Home Assistant starts the boards may still be connecting: nothing is said then.
+        While Home Assistant starts the boards may still be connecting: that is no drop-out.
         """
-        ok = self.shown() is not None
+        starting = self.house.now() - self.house.started < START_GRACE
+        ok = self.shown() is not None or (starting and self._known is None)
         if ok is not self._available and self.house.logging:
             self._available = ok
             self._log("relay_back" if ok else "relay_unavailable", label=self.label)

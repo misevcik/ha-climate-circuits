@@ -100,6 +100,18 @@ async def test_demand_and_target(hass: HomeAssistant, make_entry) -> None:
     assert float(hass.states.get(F1_TARGET).state) == 44.0
 
 
+async def test_last_outdoor_temperature_while_the_sensor_is_unavailable(
+    hass: HomeAssistant, make_entry
+) -> None:
+    hass.states.async_set(HEAT_PUMP, "heat")
+    hass.states.async_set(OUTDOOR, "-5")
+    await _setup(hass, make_entry, F1)
+    assert float(hass.states.get(F1_TARGET).state) == 44.0
+    hass.states.async_set(OUTDOOR, "unavailable")
+    await hass.async_block_till_done()
+    assert float(hass.states.get(F1_TARGET).state) == 44.0  # not the curve's minimum
+
+
 async def test_cooling_target_respects_dew_point(hass: HomeAssistant, make_entry) -> None:
     hass.states.async_set(HEAT_PUMP, "cool")
     hass.states.async_set(OUTDOOR, "40")

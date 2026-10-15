@@ -3,6 +3,18 @@
 Architektúra: [architecture.md](architecture.md) (pôvodný Claude Docs dokument z 1. 10. je zastaraný)
 Názov: **Climate Circuits**, doména `climate_circuits`, repozitár `ha-climate-circuits`.
 
+## 2026-10-15 – noc 14./15. 10. a opravy reštartu (0.1.17)
+- Noc 22:00–5:45 (oba okruhy celú noc v prevádzke, 0.1.15/0.1.16, kompenzácia od 3 °C, nastavovanie TČ vypnuté):
+  - GF: 69 % času v ±0,5 °C, 88 % v ±1 °C; F1: 47 % / 71 %, výkyvy až −2,8 °C. ~15 pohybov za hodinu na zmiešavač (predtým 75–95).
+  - Výstup z nádrže kolíše 41–46 °C (cyklovanie TČ); poklesy ~3:00, ~4:45 a 5:30 (37,7 °C, asi ohrev TÚV) → oba zmiešavače naplno, výstup 3–5 °C pod cieľom.
+  - F1 je pomalý a poloha nesedí: o 2:40 pri zdroji 45,7 °C dal 37 °C pri 54 %, o 3:25 pri 44,2 °C ten istý výstup až pri 93 %. Podozrenie: skutočný čas dráhy pohonu F1 nie je 125 s, alebo krátke impulzy (2–3 s) pohon nepohnú → odhad polohy uteká. Treba zmerať čas dráhy F1.
+  - Štart okruhu so studenou vodou sa v noci nevyskytol (oba bežali celú noc) – neoverené.
+- Opravy po reštarte HA o 5:45 (0.1.17):
+  - Čerpadlo F1 sa na 4 min vyplo: pri štarte doska relé ešte nebola pripojená, požiadavka začala odpočítavať oneskorenie štartu a keď sa relé ukázalo zapnuté, vyplo ho. Teraz bežiace čerpadlo počas čakania nečaká.
+  - „Relé nedostupné“ hneď pri štarte: relé, ktoré sa od štartu ešte neukázalo, nie je výpadok počas ochrannej doby 90 s.
+  - Cieľ vody na minútu spadol na minimum krivky (F1 23 °C, GF 26 °C), lebo vonkajšia teplota ešte nebola → posledná známa vonkajšia teplota (ukladá sa).
+- Nastavovanie TČ: prepínač vypnutý, rezerva predvolená 5 °C (chcelo by 46 °C); TČ je nastavené na 50 °C. Testy: 208.
+
 ## 2026-10-14 – refaktor kódu (0.1.16)
 - Používateľ: prejsť kód, zmazať nepotrebné funkcie, sprehľadniť.
 - `house.py` (890 riadkov, 6 tried) rozdelený na `house.py`, `source.py`, `circuit.py`, `hot_water.py`, `zone_switcher.py`, `listeners.py`, `schema_layout.py`; `outputs.py` (650 riadkov) na `relay.py`, `pump_control.py`, `mixer_control.py`.
