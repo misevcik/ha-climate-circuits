@@ -119,6 +119,12 @@ _SK = {
     "src_enough": "{name}: {source} nastavený na {setpoint} opäť stačí na cieľ {target}",
     "sp_set": "{source}: nastavujem na {wanted} (bolo {current}) – najteplejšiu vodu chce "
     "{circuit} ({target}) + rezerva {margin}",
+    "sp_margin_raise": "{source}: rezerva zvýšená na {margin} – zdroj nestačí pre {circuit}",
+    "sp_margin_lower": "{source}: rezerva znížená na {margin} – zmiešavače sú už hodinu pod 70 % "
+    "a v cieli, voda je teplejšia, ako treba",
+    "sp_manual": "{source}: nastavenie zmenené ručne na {value} – automatika pozastavená "
+    "do {until}",
+    "sp_resumed": "{source}: pauza po ručnej zmene skončila, nastavujem opäť podľa okruhov",
     "mx_starved": "Zmiešavač {name}: zdroj nestačí – zmiešavač je naplno už {minutes} min a "
     "prívod {supply} je pod cieľom {target}{tail}",
     "mx_starved_tail": "; {source} má {temperature}",
@@ -234,6 +240,14 @@ _EN = {
     "src_enough": "{name}: {source} set to {setpoint} covers the {target} target again",
     "sp_set": "{source}: setting it to {wanted} (was {current}) – {circuit} wants the warmest "
     "water ({target}) + margin {margin}",
+    "sp_margin_raise": "{source}: margin raised to {margin} – the source is not enough for "
+    "{circuit}",
+    "sp_margin_lower": "{source}: margin lowered to {margin} – the mixers have been below 70 % and "
+    "at their targets for an hour, the water is warmer than needed",
+    "sp_manual": "{source}: setting changed by hand to {value} – automatic setting paused until "
+    "{until}",
+    "sp_resumed": "{source}: the pause after a change by hand is over, setting it from the "
+    "circuits again",
     "mx_starved": "Mixer {name}: the heat source is not enough – fully open for {minutes} min and "
     "the supply {supply} is below the target {target}{tail}",
     "mx_starved_tail": "; {source} is at {temperature}",
@@ -421,6 +435,19 @@ def setpoint_text(
         target=_temp(target),
         margin=_temp(margin),
     ) + (t["out_dry_run"] if dry_run else "")
+
+
+def setpoint_event_text(key: str, source: str, language: str, **values: Any) -> str:
+    """The margin learned, a change by hand, the end of its pause."""
+    formatted = {
+        k: _temp(v)
+        if isinstance(v, float)
+        else v.strftime("%H:%M")
+        if hasattr(v, "strftime")
+        else v
+        for k, v in values.items()
+    }
+    return _t(language)[f"sp_{key}"].format(source=source, **formatted)
 
 
 def starved_text(

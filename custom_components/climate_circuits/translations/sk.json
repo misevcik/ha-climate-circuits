@@ -422,7 +422,6 @@
             "heater_name": "Názov zdroja tepla",
             "heater_supply": "Teplota výstupu zo zdroja tepla",
             "heater_return": "Teplota spiatočky do zdroja tepla",
-            "setpoint_margin": "Rezerva nad najteplejší okruh",
             "setpoint_min": "Najnižšie nastavenie",
             "setpoint_max": "Najvyššie nastavenie"
           },
@@ -432,7 +431,6 @@
             "heater_name": "Čo ohrieva tento zdroj, napr. Tepelné čerpadlo. Iba na zobrazenie v karte schémy.",
             "heater_supply": "Voda z tepelného čerpadla alebo kotla do zdroja. Nepovinné, iba na zobrazenie v karte schémy.",
             "heater_return": "Voda späť do tepelného čerpadla alebo kotla. Nepovinné, iba na zobrazenie v karte schémy.",
-            "setpoint_margin": "Pri zapnutom Nastavovať podľa okruhov sa zdroj nastaví na najteplejšiu vodu, ktorú chce kúriaci okruh, plus túto rezervu. Zvýš ju, keď zmiešavač ostáva naplno pod cieľom.",
             "setpoint_min": "Pod túto hodnotu sa zdroj nikdy nenastaví.",
             "setpoint_max": "Nad túto hodnotu sa zdroj nikdy nenastaví."
           }
@@ -447,7 +445,6 @@
             "heater_name": "Názov zdroja tepla",
             "heater_supply": "Teplota výstupu zo zdroja tepla",
             "heater_return": "Teplota spiatočky do zdroja tepla",
-            "setpoint_margin": "Rezerva nad najteplejší okruh",
             "setpoint_min": "Najnižšie nastavenie",
             "setpoint_max": "Najvyššie nastavenie"
           },
@@ -457,7 +454,6 @@
             "heater_name": "Čo ohrieva tento zdroj, napr. Tepelné čerpadlo. Iba na zobrazenie v karte schémy.",
             "heater_supply": "Voda z tepelného čerpadla alebo kotla do zdroja. Nepovinné, iba na zobrazenie v karte schémy.",
             "heater_return": "Voda späť do tepelného čerpadla alebo kotla. Nepovinné, iba na zobrazenie v karte schémy.",
-            "setpoint_margin": "Pri zapnutom Nastavovať podľa okruhov sa zdroj nastaví na najteplejšiu vodu, ktorú chce kúriaci okruh, plus túto rezervu. Zvýš ju, keď zmiešavač ostáva naplno pod cieľom.",
             "setpoint_min": "Pod túto hodnotu sa zdroj nikdy nenastaví.",
             "setpoint_max": "Nad túto hodnotu sa zdroj nikdy nenastaví."
           }
@@ -695,6 +691,9 @@
             "name": "Relé"
           }
         }
+      },
+      "source_not_enough": {
+        "name": "Zdroj nestačí"
       }
     },
     "select": {
@@ -728,6 +727,9 @@
       },
       "circulation_delta": {
         "name": "Delta cirkulácie"
+      },
+      "setpoint_margin": {
+        "name": "Rezerva nad najteplejší okruh"
       }
     }
   },

@@ -30,7 +30,6 @@ from .const import (
     DEFAULT_MODE_PAUSE,
     DEFAULT_PUMP_DELAY,
     DEFAULT_PUMP_RUN_ON,
-    DEFAULT_SETPOINT_MARGIN,
     DEFAULT_SETPOINT_MAX,
     DEFAULT_SETPOINT_MIN,
     DEFAULT_SETTLE,
@@ -224,7 +223,6 @@ SOURCE_SCHEMA = vol.Schema(
         vol.Optional("setpoint_entity"): sel.EntitySelector(
             sel.EntitySelectorConfig(domain=["climate", "number", "input_number", "sensor"])
         ),
-        vol.Required("setpoint_margin", default=DEFAULT_SETPOINT_MARGIN): _number(0, 20, 0.5, "°C"),
         vol.Required("setpoint_min", default=DEFAULT_SETPOINT_MIN): _number(10, 80, 1, "°C"),
         vol.Required("setpoint_max", default=DEFAULT_SETPOINT_MAX): _number(10, 80, 1, "°C"),
         vol.Optional("heater_name"): sel.TextSelector(),

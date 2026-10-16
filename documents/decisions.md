@@ -3,6 +3,25 @@
 Architektúra: [architecture.md](architecture.md) (pôvodný Claude Docs dokument z 1. 10. je zastaraný)
 Názov: **Climate Circuits**, doména `climate_circuits`, repozitár `ha-climate-circuits`.
 
+## 2026-10-16 – automatické nastavovanie tepelka: pravidlá (0.1.18)
+- Ráno 16. 10. (vonku 2,5 °C) GF 3× „zdroj nestačí“ (4:53, 5:27, 6:59): výstup z nádrže 39–40,5 °C pri nastavení TČ 45–46 °C; vrch nádrže je o 4–5 °C teplejší ako výstup k zmiešavačom. Nastavenie TČ v noci menil používateľ ručne (45 → 46 → 50 °C).
+- Pravidlá (rozhodnutia používateľa):
+  - nastavenie = najteplejší cieľ kúriaceho okruhu + **rezerva**; krok 1 °C, najviac raz za 15 min, limity 30–55 °C a rozsah TČ;
+  - **rezerva sa učí** (štart 8 °C, rozsah 3–15 °C): +1 °C, keď niektorý okruh hlási „zdroj nestačí“ (najviac raz za 30 min, nádrž sa musí stihnúť ohriať); −1 °C, keď sú všetky kúriace zmiešavače ≤ 70 % a v cieli 1 h; uložená cez reštart; **dá sa zmeniť ručne** (number entita zdroja), učenie pokračuje od nej. Pole rezervy v nastaveniach zdroja zrušené (bola len predvolená hodnota);
+  - **ručná zmena** nastavenia TČ (aplikácia AUX) → automatika sa **pozastaví na 4 h** a zapíše to do Aktivity; ďalšia ručná zmena pauzu predĺži;
+  - **bez kúrenia** sa nastavenie nemení;
+  - TÚV nerieši.
+- „Zdroj nestačí“ aj ako `binary_sensor.<okruh>_source_not_enough` (história, history_stats); dnes len atribút a záznam v Aktivite.
+
+## 2026-10-15 – je tepelné čerpadlo dobre dimenzované? (rozbor, bez zmeny kódu)
+- Otázka používateľa: dá sa z požadovanej a skutočnej teploty výstupu a spiatočky určiť, či je TČ dobre dimenzované. Príkon TČ meria `sensor.dtsu666_celkovy_vykon_pt`; TČ samo posiela len stav a nastavenia (žiadny prietok, otáčky ani výkon).
+- Dáta 13.–15. 10. (5-min štatistiky príkonu, vonku 2,5–15 °C):
+  - kúrenie beží na ustálených ~1,3–1,5 kW elektrického príkonu, bez ohľadu na vonkajšiu teplotu;
+  - pri 2,5–8 °C vonku beží TČ 92–100 % času, pri 11–15 °C 17–50 % (cykluje);
+  - nádrž drží ~41–46 °C pri nastavení 45–47 °C (výstup z nádrže ~3 °C pod nastavením) → zatiaľ stíha;
+  - každé 3–4 h špička 4–5,8 kW na 15–25 min = ohrev TÚV (TÚV 38 → 45 °C za ~20 min). Používateľ: elektrická špirála nie je nainštalovaná → je to kompresor naplno.
+- Záver: kompresor vie odobrať ~5,5 kW, pri kúrení beží na ~1,4 kW (asi blízko spodnej hranice modulácie – pri 11–15 °C už cykluje, cykly ~50–60 min, nie krátke). Pri −12 až −15 °C bude strata domu zhruba 2× vyššia ako pri +3 °C → ~3 kW príkonu, teda s rezervou. TČ nie je poddimenzované, skôr má rezervu; v prechodnom období mierne predimenzované. Presné čísla (tepelný výkon, COP) až s prietokom. Nižšie nastavenie zdroja (krok 2) zlepší COP. Chýba prietok vody (výkon = prietok × 1,163 × (výstup − spiatočka)) a typ/menovitý výkon TČ. S prietokom by integrácia vedela počítať tepelný výkon a COP.
+
 ## 2026-10-15 – noc 14./15. 10. a opravy reštartu (0.1.17)
 - Noc 22:00–5:45 (oba okruhy celú noc v prevádzke, 0.1.15/0.1.16, kompenzácia od 3 °C, nastavovanie TČ vypnuté):
   - GF: 69 % času v ±0,5 °C, 88 % v ±1 °C; F1: 47 % / 71 %, výkyvy až −2,8 °C. ~15 pohybov za hodinu na zmiešavač (predtým 75–95).

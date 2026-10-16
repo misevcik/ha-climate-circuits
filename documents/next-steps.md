@@ -175,5 +175,7 @@ Kód hotový lokálne (151 testov, ruff OK): čerpadlá okruhov, vlastná poloha
 - [x] Noc 14./15. 10. overená (GF 69 % v ±0,5 °C, F1 47 %), opravy reštartu v 0.1.17, tag pushnutý
 - [ ] Release `v0.1.17`, update, reštart
 - [ ] Zmerať skutočný čas dráhy pohonu F1 (odhad polohy uteká)
-- [ ] Nastavovanie TČ: rezerva a zapnutie – čaká na používateľa
+- [x] Pravidlá nastavovania TČ (učiaca sa rezerva, ručná rezerva, pauza 4 h po ručnej zmene, bez kúrenia nemení) + `binary_sensor.<okruh>_source_not_enough` – 0.1.18, tag pushnutý
+- [ ] Release `v0.1.18`, update, reštart; zapnúť *Set from the circuits*
+- [ ] Typ a výkon TČ od používateľa (dimenzovanie)
 - [ ] Štart okruhu so studenou vodou – overiť pri najbližšom štarte

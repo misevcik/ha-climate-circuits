@@ -526,6 +526,7 @@ async def test_activity_reports_a_source_that_is_not_enough(hass, house, clock, 
     await hass.async_block_till_done()
     assert any("not enough" in e.data["message"] for e in events)
     assert hass.states.get(POSITION).attributes["source_not_enough"] is True
+    assert hass.states.get("binary_sensor.f1_source_not_enough").state == "on"
 
 
 async def test_a_start_reported_after_the_stop_is_switched_off(hass, house, clock, calls) -> None:

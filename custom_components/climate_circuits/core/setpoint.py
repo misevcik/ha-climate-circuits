@@ -55,3 +55,42 @@ def setpoint_decision(
     if since_change is not None and since_change < s.interval:
         return SetpointDecision(wanted, False, "wait", circuit, target)
     return SetpointDecision(wanted, True, "demand", circuit, target)
+
+
+@dataclass(frozen=True, slots=True)
+class MarginSettings:
+    """How the margin above the warmest circuit target learns from the mixers."""
+
+    minimum: float = 3.0
+    maximum: float = 15.0
+    step: float = 1.0
+    raise_after: float = 1800.0  # s between raises: the tank needs time to heat up
+    lower_after: float = 3600.0  # s of water warmer than needed before each lowering
+
+
+def next_margin(
+    margin: float,
+    *,
+    starved: bool,
+    comfortable_for: float | None,
+    since_change: float | None,
+    settings: MarginSettings,
+) -> tuple[float, str | None]:
+    """The margin after this look at the mixers, and why it changed (raise, lower) or None.
+
+    starved: a heating circuit's mixer is fully open and still below its target;
+    comfortable_for: s all heating mixers have been well below fully open and at their target.
+    """
+    s = settings
+    if starved:
+        if margin < s.maximum and (since_change is None or since_change >= s.raise_after):
+            return min(margin + s.step, s.maximum), "raise"
+        return margin, None
+    if (
+        comfortable_for is not None
+        and comfortable_for >= s.lower_after
+        and margin > s.minimum
+        and (since_change is None or since_change >= s.lower_after)
+    ):
+        return max(margin - s.step, s.minimum), "lower"
+    return margin, None

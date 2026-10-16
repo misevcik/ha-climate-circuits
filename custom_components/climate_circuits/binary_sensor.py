@@ -1,4 +1,4 @@
-"""Demand of each circuit."""
+"""Demand, pump and a heat source that is not enough, per circuit."""
 
 from __future__ import annotations
 
@@ -21,6 +21,8 @@ async def async_setup_entry(
         entities: list[BinarySensorEntity] = [DemandSensor(circuit, "demand")]
         if circuit.pump:
             entities.append(PumpSensor(circuit, "pump"))
+        if circuit.mixer:
+            entities.append(SourceNotEnoughSensor(circuit, "source_not_enough"))
         async_add_entities(entities, config_subentry_id=circuit.id)
 
 
@@ -55,3 +57,13 @@ class PumpSensor(CircuitEntity, BinarySensorEntity):
             "controlled": self.circuit.controlling,
             "entity": pump.relay.entity_id,
         }
+
+
+class SourceNotEnoughSensor(CircuitEntity, BinarySensorEntity):
+    """The mixer is fully open and the supply stays below the target: the water is not enough."""
+
+    _attr_device_class = BinarySensorDeviceClass.PROBLEM
+
+    @property
+    def is_on(self) -> bool:
+        return bool(self.circuit.mixer and self.circuit.mixer.starved)

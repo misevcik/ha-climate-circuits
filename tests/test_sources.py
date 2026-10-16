@@ -157,3 +157,87 @@ async def test_source_is_set_from_the_circuits_only_when_switched_on(
     house.set_control_equipment(True)
     await hass.async_block_till_done()
     assert calls == [{"entity_id": HEAT_PUMP_TARGET, "temperature": wanted}]
+
+
+async def _heat_pump_house(hass: HomeAssistant, make_entry, calls: list[dict]):
+    async def set_temperature(call) -> None:
+        calls.append(dict(call.data))
+        hass.states.async_set(
+            HEAT_PUMP_TARGET,
+            "heat",
+            {"temperature": call.data["temperature"], "min_temp": 20, "max_temp": 60},
+        )
+
+    hass.services.async_register("climate", "set_temperature", set_temperature)
+    hass.states.async_set(HEAT_PUMP, "heat")
+    hass.states.async_set(OUTDOOR, "0.0")
+    hass.states.async_set(
+        HEAT_PUMP_TARGET, "heat", {"temperature": 45.0, "min_temp": 20, "max_temp": 60}
+    )
+    set_thermostat(hass, "climate.room", "heating")
+    source = source_data("Buffer tank", TANK_TOP)
+    source["data"] |= {"setpoint_entity": HEAT_PUMP_TARGET}
+    entry = await _setup(
+        hass, make_entry, source, circuit_data("F1", zones={"heating_zones": ["climate.room"]})
+    )
+    house = entry.runtime_data
+    house.set_control_equipment(True)
+    switch = "switch.buffer_tank_set_from_the_circuits"
+    await hass.services.async_call("switch", "turn_on", {"entity_id": switch}, blocking=True)
+    await hass.async_block_till_done()
+    return house
+
+
+async def test_a_change_by_hand_pauses_the_automatic_setting(
+    hass: HomeAssistant, make_entry
+) -> None:
+    calls: list[dict] = []
+    events = async_capture_events(hass, EVENT_ACTIVITY)
+    house = await _heat_pump_house(hass, make_entry, calls)
+    source = next(iter(house.sources.values()))
+    assert len(calls) == 1 and source.margin == 8.0  # set once, nothing seen as by hand
+    assert source.paused_until is None
+
+    hass.states.async_set(
+        HEAT_PUMP_TARGET, "heat", {"temperature": 50.0, "min_temp": 20, "max_temp": 60}
+    )
+    await hass.async_block_till_done()
+    assert any("changed by hand to 50.0" in e.data["message"] for e in events)
+    assert source.paused_until is not None
+    source._changed_at = None  # no waiting for the 15 min between changes
+    house.evaluate()
+    await hass.async_block_till_done()
+    assert len(calls) == 1  # paused
+
+    wall = house.wall()
+    house.wall = lambda: wall + 4 * 3600 + 1
+    house.evaluate()
+    await hass.async_block_till_done()
+    assert len(calls) == 2  # set again after the pause
+    assert any("pause after a change by hand is over" in e.data["message"] for e in events)
+
+
+async def test_margin_learns_and_can_be_set_by_hand(hass: HomeAssistant, make_entry) -> None:
+    calls: list[dict] = []
+    house = await _heat_pump_house(hass, make_entry, calls)
+    source = next(iter(house.sources.values()))
+    circuit = next(iter(house.circuits.values()))
+
+    class Mixer:
+        starved = True
+        params = type("P", (), {"hysteresis": 0.5})()
+
+        def position(self) -> float:
+            return 100.0
+
+    circuit.mixer = Mixer()
+    house.evaluate()
+    await hass.async_block_till_done()
+    assert source.margin == 9.0
+
+    margin = "number.buffer_tank_margin_above_the_warmest_circuit"
+    await hass.services.async_call(
+        "number", "set_value", {"entity_id": margin, "value": 6}, blocking=True
+    )
+    assert source.margin == 6.0
+    assert hass.states.get(margin).state == "6.0"

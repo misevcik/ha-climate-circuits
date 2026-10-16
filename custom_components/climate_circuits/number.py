@@ -1,4 +1,4 @@
-"""Hot water circulation threshold and delta, stored in the house options."""
+"""Hot water circulation threshold and delta (house options); a heat source's margin."""
 
 from __future__ import annotations
 
@@ -11,8 +11,9 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from . import ClimateCircuitsConfigEntry
 from .activity import log_activity
 from .core.texts import change_message, curve_parameter_label
-from .entity import HotWaterEntity
+from .entity import HotWaterEntity, SourceEntity
 from .hot_water import HotWater
+from .source import Source
 
 
 async def async_setup_entry(
@@ -20,6 +21,11 @@ async def async_setup_entry(
     entry: ClimateCircuitsConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
+    for source in entry.runtime_data.sources.values():
+        if source.controllable:
+            async_add_entities(
+                [SourceMargin(source, "setpoint_margin")], config_subentry_id=source.id
+            )
     if hot_water := entry.runtime_data.hot_water:
         async_add_entities(
             [
@@ -58,3 +64,24 @@ class CirculationNumber(HotWaterEntity, NumberEntity):
         )
         label = curve_parameter_label("circulation", self._key, self.hass.config.language)
         log_activity(self.hass, "Hot water", change_message(label, old, value), self.entity_id)
+
+
+class SourceMargin(SourceEntity, NumberEntity):
+    """°C the source is set above the warmest circuit target; learned, and settable by hand."""
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS  # a difference: no device class
+    _attr_native_min_value = 0
+    _attr_native_max_value = 20
+    _attr_native_step = 0.5
+    _attr_mode = NumberMode.BOX
+
+    def __init__(self, source: Source, key: str) -> None:
+        super().__init__(source, key)
+
+    @property
+    def native_value(self) -> float:
+        return self.source.margin
+
+    async def async_set_native_value(self, value: float) -> None:
+        self.source.set_margin(value)

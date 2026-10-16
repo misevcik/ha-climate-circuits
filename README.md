@@ -87,6 +87,14 @@ entity: sensor.f1_target_water_temperature
 
 The same change is available as an action, `climate_circuits.set_curve`, targeting a circuit's target water temperature sensor.
 
+## Setting the heat source from the circuits
+
+A heat source whose *set temperature* is a climate or a number (a heat pump's target) gets the switch **Set from the circuits** (off by default). With it and *Control equipment* on, the source is set to the warmest water a heating circuit wants plus a margin, at most every 15 minutes and by whole steps; without heating demand it is left alone.
+
+- The margin learns: it rises by 1 °C when a circuit reports *Source not enough* (`binary_sensor.<circuit>_source_not_enough`: the mixer is fully open and the supply stays below its target), and falls by 1 °C after an hour with every heating mixer below 70 % and at its target. It can also be set by hand (`number.<source>_margin_above_the_warmest_circuit`).
+- A change of the setting made elsewhere (e.g. the heat pump's app) pauses the automatic setting for 4 hours.
+- Every change and its reason is written to Activity.
+
 ## Schema card
 
 A live diagram of the heating: the heat source with its temperature and set temperature, the hot water tank with its circulation (return temperature, start and stop limits, pump), and for every circuit the mixer position (and whether it moves), the water after the mixer against its target, the pump with flowing water while it runs, and the zones calling. Warnings (relay unavailable, source not enough, dry run) show in place; the hot water tank temperature and set temperature come from two optional fields in *Hot water circulation*; click any part for its details. It needs no configuration – the integration tells the card which entities to show.
