@@ -24,6 +24,10 @@ const TEXTS = {
     unavailable: "relé nedostupné", starved: "zdroj nestačí", circuit_off: "okruh neovládaný",
     no_source: "bez zdroja", missing: "Nenašla sa integrácia Climate Circuits.",
     mixer: "Zmiešavač", pump: "Čerpadlo",
+    auto: "Nastavovanie tepelka", auto_off: "vypnuté", auto_on: "zapnuté",
+    auto_dry: "skúšobný režim", auto_paused: "pozastavené do {t} (ručná zmena)",
+    auto_set: "nastavené", auto_wants: "chce", auto_margin: "rezerva",
+    auto_idle: "nikto nekúri, nemení sa", auto_cool: "nekúri sa, nemení sa",
     hot_water: "Nádrž TÚV", heater: "Zdroj tepla", heater_out: "výstup", heater_in: "spiatočka", circulation: "Cirkulácia TÚV", circ_return: "spiatočka cirkulácie",
     starts_below: "zapne pod", stops_at: "vypne pri", running: "beží", stopped: "stojí",
     disabled: "vypnutá",
@@ -36,6 +40,10 @@ const TEXTS = {
     unavailable: "relay unavailable", starved: "source not enough", circuit_off: "circuit not controlled",
     no_source: "no source", missing: "Climate Circuits integration not found.",
     mixer: "Mixer", pump: "Pump",
+    auto: "Heat source setting", auto_off: "off", auto_on: "on",
+    auto_dry: "dry run", auto_paused: "paused until {t} (changed by hand)",
+    auto_set: "set", auto_wants: "wants", auto_margin: "margin",
+    auto_idle: "no circuit heats, left as it is", auto_cool: "not heating, left as it is",
     hot_water: "Hot water tank", heater: "Heat generator", heater_out: "supply", heater_in: "return", circulation: "Circulation", circ_return: "circulation return",
     starts_below: "starts below", stops_at: "stops at", running: "running", stopped: "stopped",
     disabled: "disabled",
@@ -122,7 +130,7 @@ class ClimateCircuitsSchemaCard extends HTMLElement {
     const hw = layout.hot_water;
     if (hw) ids.push(hw.state, hw.temperature, hw.threshold, hw.delta, hw.enabled, hw.tank, hw.tank_setpoint);
     for (const s of layout.sources) {
-      ids.push(s.temperature, s.setpoint);
+      ids.push(s.temperature, s.setpoint, s.setpoint_control, s.margin);
       if (s.heater) ids.push(s.heater.supply, s.heater.return);
     }
     for (const c of layout.circuits) {
@@ -159,6 +167,7 @@ class ClimateCircuitsSchemaCard extends HTMLElement {
           <span class="mode ${esc(mode)}" data-entity="${esc(layout.mode)}">${esc(this._t(mode) || mode || "–")}</span>
         </div>
         ${live ? "" : `<div class="dry" data-entity="${esc(layout.control)}">${this._t("dry_run")}</div>`}
+        ${layout.sources.map((src) => this._autoLine(src, live)).join("")}
         <svg viewBox="0 0 ${G.w} ${height}" width="100%" role="img">${DEFS}${svg}</svg>
       </ha-card>`;
   }
@@ -353,6 +362,34 @@ class ClimateCircuitsSchemaCard extends HTMLElement {
     return out;
   }
 
+  // How the heat source is set from the circuits, for debugging: state, set, wanted and why.
+  _autoLine(src, live) {
+    if (!src.setpoint_control || !this._st(src.setpoint_control)) return "";
+    const on = this._val(src.setpoint_control) === "on";
+    const a = (k) => this._attr(src.setpoint, k);
+    const paused = a("paused_until");
+    let state = this._t(on ? "auto_on" : "auto_off");
+    if (on && paused) {
+      const t = new Date(paused).toLocaleTimeString(LANG, { hour: "2-digit", minute: "2-digit" });
+      state = this._t("auto_paused").replace("{t}", t);
+    } else if (on && !live) state = this._t("auto_dry");
+    const set = num(this._val(src.setpoint));
+    const wanted = num(a("wanted"));
+    const margin = num(this._val(src.margin) ?? a("margin"));
+    let detail;
+    if (wanted === null) {
+      detail = this._t(a("wanted_reason") === "not_heating" ? "auto_cool" : "auto_idle");
+    } else {
+      detail = `${this._t("auto_wants")} <b>${deg(wanted)}</b> = ${esc(a("warmest_circuit") || "?")} `
+        + `${deg(a("warmest_target"))} + `
+        + `<span class="link" data-entity="${esc(src.margin)}">${this._t("auto_margin")} ${deg(margin)}</span>`;
+    }
+    return `<div class="auto ${on ? (paused ? "paused" : "on") : "off"}" data-entity="${esc(src.setpoint_control)}">
+      <b>${this._t("auto")}</b> (${esc(src.name)}): ${esc(state)} ·
+      <span class="link" data-entity="${esc(src.setpoint)}">${this._t("auto_set")} ${deg(set)}</span> · ${detail}
+    </div>`;
+  }
+
   _zones(n) {
     const lang = this._lang();
     if (lang.startsWith("sk")) return `${n} ${n === 1 ? "zóna" : n < 5 ? "zóny" : "zón"}`;
@@ -448,6 +485,12 @@ const STYLE = `
   .dry { margin-top: 6px; padding: 4px 8px; border-radius: 6px; font-size: 13px; cursor: pointer;
     background: #fff3bf; color: #5c3c00; }
   .missing { padding: 16px; }
+  .auto { margin-top: 6px; padding: 4px 8px; border-radius: 6px; font-size: 13px; cursor: pointer;
+    background: var(--secondary-background-color); line-height: 1.5; }
+  .auto.on { border-left: 4px solid #2f9e44; }
+  .auto.paused { border-left: 4px solid #f08c00; }
+  .auto.off { border-left: 4px solid var(--divider-color, #ccc); }
+  .auto .link { text-decoration: underline dotted; }
   svg { display: block; margin-top: 6px; font-family: var(--ha-font-family-body, Roboto, sans-serif); }
   text { fill: var(--primary-text-color); paint-order: stroke; stroke: var(--card-background-color, #fff);
     stroke-width: 4px; stroke-linejoin: round; }

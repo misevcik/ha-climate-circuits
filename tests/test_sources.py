@@ -241,3 +241,6 @@ async def test_margin_learns_and_can_be_set_by_hand(hass: HomeAssistant, make_en
     )
     assert source.margin == 6.0
     assert hass.states.get(margin).state == "6.0"
+    (card,) = hass.states.get("sensor.climate_circuits_mode").attributes["layout"]["sources"]
+    assert card["setpoint_control"] == "switch.buffer_tank_set_from_the_circuits"
+    assert card["margin"] == margin

@@ -313,6 +313,7 @@ class SourceSetpointSensor(SourceEntity, SensorEntity):
             "wanted": d.wanted if d else None,
             "wanted_reason": d.reason if d else None,
             "warmest_circuit": d.circuit if d else None,
+            "warmest_target": d.target if d else None,
             "margin": self.source.margin,
             "paused_until": self.source.paused_until,
             "controlled": self.source.control_enabled and self.source.house.control_equipment,

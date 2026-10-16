@@ -333,6 +333,7 @@ Zdroj (akumulačná nádrž, kotol, tepelné čerpadlo, hydraulický separátor)
 - **Ručná zmena** nastavenia (napr. aplikácia TČ), ktorú nespravila integrácia → automatika sa pozastaví na 4 h (`paused_until`), ďalšia ručná zmena pauzu predĺži; začiatok aj koniec pauzy v Aktivite.
 - Na `sensor.<zdroj>_set_temperature` atribúty `wanted`, `wanted_reason`, `warmest_circuit`, `margin`, `paused_until`, `controlled`.
 - „Zdroj nestačí“ aj ako `binary_sensor.<okruh>_source_not_enough` (pri okruhu so zmiešavačom).
+- Karta schémy ukazuje pod hlavičkou riadok **Nastavovanie tepelka**: stav (zapnuté / vypnuté / skúšobný režim / pozastavené do …), nastavené, čo chce a prečo (okruh + cieľ + rezerva); klik otvorí prepínač, nastavenú teplotu alebo rezervu (0.1.19).
 
 ### Požiadavka na zdroj – Plánované
 
