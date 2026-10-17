@@ -162,7 +162,7 @@ async def test_source_is_set_from_the_circuits_only_when_switched_on(
     assert calls == [{"entity_id": HEAT_PUMP_TARGET, "temperature": wanted}]
 
 
-async def _heat_pump_house(hass: HomeAssistant, make_entry, calls: list[dict]):
+async def _heat_pump_house(hass: HomeAssistant, make_entry, calls: list[dict], **source_fields):
     async def set_temperature(call) -> None:
         calls.append(dict(call.data))
         hass.states.async_set(
@@ -178,7 +178,7 @@ async def _heat_pump_house(hass: HomeAssistant, make_entry, calls: list[dict]):
     )
     set_thermostat(hass, "climate.room", "heating")
     source = source_data("Buffer tank", TANK_TOP)
-    source["data"] |= {"setpoint_entity": HEAT_PUMP_TARGET}
+    source["data"] |= {"setpoint_entity": HEAT_PUMP_TARGET, **source_fields}
     entry = await _setup(
         hass, make_entry, source, circuit_data("F1", zones={"heating_zones": ["climate.room"]})
     )
@@ -322,3 +322,43 @@ async def test_a_list_of_linked_entities_shows_the_first_and_how_many_follow(
     linked = hass.states.get("sensor.f1_heating_thermostats")
     assert linked.state == "Kitchen +1"
     assert linked.attributes["Office"] == "climate.office"
+
+
+async def test_margin_is_not_raised_while_the_heat_pump_heats_hot_water(
+    hass: HomeAssistant, make_entry
+) -> None:
+    calls: list[dict] = []
+    events = async_capture_events(hass, EVENT_ACTIVITY)
+    hass.states.async_set("sensor.hp_out", "44.0")
+    house = await _heat_pump_house(hass, make_entry, calls, heater_supply="sensor.hp_out")
+    source = next(iter(house.sources.values()))
+    circuit = next(iter(house.circuits.values()))
+
+    class Mixer:
+        starved = True
+        params = type("P", (), {"hysteresis": 0.5})()
+
+        def position(self) -> float:
+            return 100.0
+
+    heating = "binary_sensor.buffer_tank_hot_water_heating"
+    assert hass.states.get(heating).state == "off"  # 44 is close to the tank's 45.5
+    hass.states.async_set("sensor.hp_out", "55.0")  # all the heat goes to the hot water
+    await hass.async_block_till_done()
+    assert hass.states.get(heating).state == "on"
+    assert any("heats hot water" in e.data["message"] for e in events)
+
+    circuit.mixer = Mixer()
+    house.evaluate()
+    await hass.async_block_till_done()
+    assert source.margin == 8.0  # short of water because of the hot water, not raised
+
+    hass.states.async_set("sensor.hp_out", "46.0")
+    await hass.async_block_till_done()
+    assert hass.states.get(heating).state == "off"
+    house.evaluate()
+    assert source.margin == 8.0  # the tank still recovers
+    now = house.now()
+    house.now = lambda: now + 1801
+    house.evaluate()
+    assert source.margin == 9.0

@@ -9,7 +9,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import ClimateCircuitsConfigEntry
-from .entity import CircuitEntity
+from .entity import CircuitEntity, SourceEntity
 
 
 async def async_setup_entry(
@@ -24,6 +24,12 @@ async def async_setup_entry(
         if circuit.mixer:
             entities.append(SourceNotEnoughSensor(circuit, "source_not_enough"))
         async_add_entities(entities, config_subentry_id=circuit.id)
+    for source in entry.runtime_data.sources.values():
+        s = source.settings
+        if s.hot_water_entity or s.heater_supply:
+            async_add_entities(
+                [HotWaterHeatingSensor(source, "hot_water_heating")], config_subentry_id=source.id
+            )
 
 
 class DemandSensor(CircuitEntity, BinarySensorEntity):
@@ -67,3 +73,14 @@ class SourceNotEnoughSensor(CircuitEntity, BinarySensorEntity):
     @property
     def is_on(self) -> bool:
         return bool(self.circuit.mixer and self.circuit.mixer.starved)
+
+
+class HotWaterHeatingSensor(SourceEntity, BinarySensorEntity):
+    """The heat generator heats hot water: from the chosen entity, or its supply far above the
+    tank. The circuits may be short of water meanwhile."""
+
+    _attr_icon = "mdi:water-boiler"
+
+    @property
+    def is_on(self) -> bool | None:
+        return self.source.hot_water_heating

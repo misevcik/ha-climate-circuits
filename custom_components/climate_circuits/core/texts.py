@@ -125,6 +125,9 @@ _SK = {
     "sp_manual": "{source}: nastavenie zmenené ručne na {value} – automatika pozastavená "
     "do {until}",
     "sp_resumed": "{source}: pauza po ručnej zmene skončila, nastavujem opäť podľa okruhov",
+    "sp_hot_water_on": "{source}: tepelko ohrieva TÚV – voda pre okruhy môže chvíľu chýbať, "
+    "rezerva sa vtedy nezvyšuje",
+    "sp_hot_water_off": "{source}: ohrev TÚV skončil",
     "mx_starved": "Zmiešavač {name}: zdroj nestačí – zmiešavač je naplno už {minutes} min a "
     "prívod {supply} je pod cieľom {target}{tail}",
     "mx_starved_tail": "; {source} má {temperature}",
@@ -248,6 +251,9 @@ _EN = {
     "{until}",
     "sp_resumed": "{source}: the pause after a change by hand is over, setting it from the "
     "circuits again",
+    "sp_hot_water_on": "{source}: the heat pump heats hot water – the circuits may be short of "
+    "water for a while, the margin is not raised meanwhile",
+    "sp_hot_water_off": "{source}: hot water heating ended",
     "mx_starved": "Mixer {name}: the heat source is not enough – fully open for {minutes} min and "
     "the supply {supply} is below the target {target}{tail}",
     "mx_starved_tail": "; {source} is at {temperature}",

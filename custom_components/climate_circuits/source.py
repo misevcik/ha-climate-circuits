@@ -19,6 +19,7 @@ from homeassistant.core import callback
 from .const import (
     COMFORTABLE_OPENING,
     CONTROLLABLE_SETPOINTS,
+    HOT_WATER_RECOVERY,
     SETPOINT_INTERVAL,
 )
 from .core.mode import Mode
@@ -59,6 +60,8 @@ class Source(Listeners):
         self._margin_changed_at: float | None = None
         self._comfortable_since: float | None = None  # all heating mixers well below open
         self._was_paused = False
+        self.hot_water_heating: bool | None = None  # None: cannot tell
+        self._hot_water_ended: float | None = None
 
     @property
     def name(self) -> str:
@@ -197,14 +200,48 @@ class Source(Listeners):
             self._log_event("resumed")
         self._was_paused = paused
 
+    def _heats_hot_water(self) -> bool | None:
+        """From the entity chosen for it, else the heat pump's supply far above the tank."""
+        s = self.settings
+        if s.hot_water_entity:
+            state = state_of(self.house.hass, s.hot_water_entity)
+            return state.state == "on" if state else None
+        supply, tank = float_of(self.house.hass, s.heater_supply), self.temperature()
+        if supply is None or tank is None:
+            return None
+        return supply - tank >= tuned(self, "hot_water_gap")
+
+    def _watch_hot_water(self) -> None:
+        """Activity when the heat generator starts and stops heating hot water."""
+        heating = self._heats_hot_water()
+        was, self.hot_water_heating = self.hot_water_heating, heating
+        if heating is None or was is None or heating == was:
+            return
+        if not heating:
+            self._hot_water_ended = self.house.now()
+        self._log_event("hot_water_on" if heating else "hot_water_off")
+
+    def _recovering_from_hot_water(self) -> bool:
+        """Heating hot water, or the tank still recovering from it: water short for that."""
+        if self.hot_water_heating:
+            return True
+        ended = self._hot_water_ended
+        return ended is not None and self.house.now() - ended < HOT_WATER_RECOVERY
+
     def _learn_margin(self, heating: list[Circuit]) -> None:
-        """Up when a mixer is short of water, down after an hour of water warmer than needed."""
+        """Up when a mixer is short of water, down after an hour of water warmer than needed.
+
+        Not up while the heat generator heats hot water or the tank recovers from it: the
+        water is short for that, not for a setting too low.
+        """
         mixers = [c for c in heating if c.mixer is not None]
         if not mixers:
             self._comfortable_since = None
             return
         now = self.house.now()
         starved = [c.name for c in mixers if c.mixer.starved]
+        if self._recovering_from_hot_water():
+            starved = []
         if all(self._comfortable(c) for c in mixers):
             self._comfortable_since = self._comfortable_since or now
         else:
@@ -280,10 +317,17 @@ class Source(Listeners):
             "setpoint_entity": s.setpoint_entity,
             "heater_supply": s.heater_supply,
             "heater_return": s.heater_return,
+            "hot_water_entity": s.hot_water_entity,
         }
 
     def inputs(self) -> set[str]:
-        return set(filter(None, [self.settings.temperature_sensor, self.settings.setpoint_entity]))
+        s = self.settings
+        return set(
+            filter(
+                None,
+                [s.temperature_sensor, s.setpoint_entity, s.heater_supply, s.hot_water_entity],
+            )
+        )
 
     def temperature(self) -> float | None:
         return float_of(self.house.hass, self.settings.temperature_sensor)
@@ -298,4 +342,5 @@ class Source(Listeners):
 
     @callback
     def refresh(self) -> None:
+        self._watch_hot_water()
         self._notify()

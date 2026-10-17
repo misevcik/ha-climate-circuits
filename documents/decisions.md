@@ -3,6 +3,13 @@
 Architektúra: [architecture.md](architecture.md) (pôvodný Claude Docs dokument z 1. 10. je zastaraný)
 Názov: **Climate Circuits**, doména `climate_circuits`, repozitár `ha-climate-circuits`.
 
+## 2026-10-17 – správanie tepelka večer 16:00–22:30 (rozbor, bez zmeny kódu)
+- Vonku ~8 °C, ciele vody rástli 29,8 → 37,6 °C. Nastavenie TČ 45 °C (ručne o 16:27), od 22:06 riadi integrácia (22:13 → 46 °C = GF 37,6 + rezerva 8, zaokrúhlené).
+- Cyklovanie: 6 štartov za 6,5 h, chod 15–100 min, pauzy 10–60 min (nie krátke cykly). Každý štart má ~10 min špičku 2–3,4 kW, potom ustálene ~1,35–1,4 kW; výstup − spiatočka TČ 4–6 °C.
+- TČ vypína pri vrchu nádrže ~46–47 °C a zapína pri ~41–42 °C (pri nastavení 45): hysteréza ~5 °C. Výstup k zmiešavačom je ~4 °C pod vrchom → kolíše 38–42 °C. Potrebná rezerva nad cieľ ≈ 4 (potrubie) + ~4 (spodok cyklu TČ) + 1–2 → ~9–10 °C; rezerva 8 bude rásť učením.
+- Ohrev TÚV (17:30–18:00, 22:10–): 4,4–5,3 kW, akumulačka medzitým klesne o 4–7 °C (vrch 34,6 °C o 17:50, výstup 34,1 °C o 22:30) → zmiešavače naplno pod cieľom.
+- Rozhodnutie používateľa (0.1.25): počas ohrevu TÚV sa rezerva **nezvyšuje** (ani 30 min po ňom, kým sa nádrž zotaví). Ohrev TÚV: z voliteľnej entity zdroja (napr. stav trojcestného ventilu cez Modbus – používateľ zváži), inak odhad: výstup zdroja tepla ≥ voda z nádrže + 8 °C (number na zdroji). `binary_sensor.<zdroj>_hot_water_heating`, Aktivita pri začiatku a konci, karta ukazuje smer ventilu. Integrácia TÚV naďalej neriadi.
+
 ## 2026-10-17 – pripojené entity jednotlivo (0.1.23)
 - Používateľ: senzor s počtom je zbytočný, v jeho okne nevidno nič (HA atribúty neukazuje); chce vidieť samotné entity.
 - 0.1.24: pri zozname (napr. 8 termostatov) sa názov riadku nezmestil → stav je prvá entita + počet ďalších („Entry +7“), celý zoznam v atribútoch (názov → entity_id). → Pre každú rolu vlastný diagnostický senzor s názvom pripojenej entity (napr. *Relé otvor zmiešavača: GF Okruh Open*), `entity_id` v atribútoch; starý senzor s počtom sa z registra odstráni.

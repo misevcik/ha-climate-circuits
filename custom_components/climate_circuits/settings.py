@@ -12,6 +12,7 @@ from .const import (
     DEFAULT_EXERCISE_DAYS,
     DEFAULT_GAIN,
     DEFAULT_HEAT_CURVE,
+    DEFAULT_HOT_WATER_GAP,
     DEFAULT_HYSTERESIS,
     DEFAULT_MANUAL_PAUSE,
     DEFAULT_MAX_STEP,
@@ -185,11 +186,13 @@ class SourceSettings:
     heater_name: str | None = None
     heater_supply: str | None = None
     heater_return: str | None = None
+    hot_water_entity: str | None = None  # on while the heat generator heats hot water
     # Setting the source from the circuits (with its switch on): warmest target + margin.
     setpoint_margin: float = DEFAULT_SETPOINT_MARGIN
     setpoint_min: float = DEFAULT_SETPOINT_MIN
     setpoint_max: float = DEFAULT_SETPOINT_MAX
     manual_pause: float = DEFAULT_MANUAL_PAUSE  # min
+    hot_water_gap: float = DEFAULT_HOT_WATER_GAP
 
     @classmethod
     def from_data(cls, data: Mapping[str, Any]) -> SourceSettings:
@@ -200,6 +203,7 @@ class SourceSettings:
             heater_name=data.get("heater_name"),
             heater_supply=data.get("heater_supply"),
             heater_return=data.get("heater_return"),
+            hot_water_entity=data.get("hot_water_entity"),
             setpoint_margin=float(data.get("setpoint_margin", DEFAULT_SETPOINT_MARGIN)),
             setpoint_min=float(data.get("setpoint_min", DEFAULT_SETPOINT_MIN)),
             setpoint_max=float(data.get("setpoint_max", DEFAULT_SETPOINT_MAX)),

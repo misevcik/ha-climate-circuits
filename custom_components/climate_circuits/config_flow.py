@@ -172,6 +172,9 @@ SOURCE_SCHEMA = vol.Schema(
         vol.Optional("heater_name"): sel.TextSelector(),
         vol.Optional("heater_supply"): TEMPERATURE_SENSOR,
         vol.Optional("heater_return"): TEMPERATURE_SENSOR,
+        vol.Optional("hot_water_entity"): sel.EntitySelector(
+            sel.EntitySelectorConfig(domain=["binary_sensor", "switch", "input_boolean"])
+        ),
     }
 )
 
