@@ -511,7 +511,7 @@ sequenceDiagram
 | Zdroj | najnižšie / najvyššie nastavenie, pauza po ručnej zmene (1 min), rezerva + režim rezervy |
 | Hot water | prah a delta cirkulácie |
 
-Každé zariadenie má diagnostický senzor **Pripojené entity** (počet; v atribútoch entity podľa roly). Zdroj s climate entitou ako nastavenou teplotou má zrkadlovú climate entitu **Zdroj tepla** (zmena v nej = ručná zmena).
+Každé zariadenie má pre každú pripojenú entitu diagnostický senzor (0.1.23): napr. *Relé otvor zmiešavača* = názov pripojenej entity, `entity_id` v atribútoch; zobrazujú sa priamo na stránke zariadenia. Zdroj s climate entitou ako nastavenou teplotou má zrkadlovú climate entitu **Zdroj tepla** (zmena v nej = ručná zmena).
 
 ```mermaid
 flowchart TB

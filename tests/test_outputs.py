@@ -661,6 +661,8 @@ async def test_regulation_values_are_numbers_on_the_circuit(hass, house, clock) 
     assert circuit.mixer.params.settle == 240
     assert circuit.mixer.params.compensate is False
     assert circuit.pump.timer.delay == 60
-    linked = hass.states.get("sensor.f1_linked_entities")
-    assert linked.attributes["mixer_open"] == OPEN and linked.attributes["pump"] == PUMP
-    assert int(linked.state) == 5  # zone, pump, two mixer relays, supply sensor
+    relay = hass.states.get("sensor.f1_mixer_open_relay")
+    assert relay.attributes["entity_id"] == OPEN and relay.state == "f1 open"
+    assert hass.states.get("sensor.f1_pump_relay").attributes["entity_id"] == PUMP
+    assert hass.states.get("sensor.f1_heating_thermostats").attributes["entity_id"] == ZONE
+    assert hass.states.get("sensor.f1_cooling_thermostats") is None  # none linked

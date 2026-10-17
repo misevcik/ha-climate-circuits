@@ -144,7 +144,6 @@ class House(Listeners):
             "mode_entity": s.mode_entity,
             "fallback_sensor": s.fallback_sensor,
             "outdoor_sensor": s.outdoor_sensor,
-            "info_sensors": list(s.info_sensors),
         }
 
     @property

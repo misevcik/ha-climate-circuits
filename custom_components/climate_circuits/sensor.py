@@ -44,7 +44,7 @@ from .entity import (
 )
 from .house import House
 from .schema_layout import schema_layout
-from .states import number, state_of
+from .states import name_of, number, state_of
 
 _TEMP = vol.All(vol.Coerce(float), vol.Range(min=-40, max=90))
 SET_CURVE_SCHEMA = {
@@ -71,12 +71,20 @@ async def async_setup_entry(
     )
     house = entry.runtime_data
     async_add_entities([ModeSensor(house, "mode"), StatusSensor(house, "status")])
+    registry = er.async_get(hass)
     for owner in (house, *house.circuits.values(), *house.sources.values(), house.hot_water):
-        if owner is not None:
-            async_add_entities(
-                [owner_entity(owner, LinkedEntitiesSensor, "linked_entities")],
-                config_subentry_id=subentry_of(owner),
-            )
+        if owner is None:
+            continue
+        # 0.1.21 had one sensor with the count; the linked entities are now one each.
+        if old := registry.async_get_entity_id("sensor", DOMAIN, f"{owner.id}_linked_entities"):
+            registry.async_remove(old)
+        linked = []
+        for role, value in owner.linked_entities().items():
+            if value:
+                entity = owner_entity(owner, LinkedEntitySensor, f"linked_{role}")
+                entity.link(role)
+                linked.append(entity)
+        async_add_entities(linked, config_subentry_id=subentry_of(owner))
     async_add_entities([InfoSensor(house, entity_id) for entity_id in house.settings.info_sensors])
     if house.hot_water:
         async_add_entities(
@@ -388,25 +396,25 @@ class MixerStateSensor(CircuitEntity, SensorEntity):
         return self.circuit.mixer.status() if self.circuit.mixer else None
 
 
-class LinkedEntitiesSensor(SensorEntity):
-    """How many entities the device reads or switches; which ones, by role, in the attributes."""
+class LinkedEntitySensor(SensorEntity):
+    """An entity the device reads or switches, by role: its name, the id in the attributes."""
 
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_icon = "mdi:link-variant"
 
-    def _linked(self) -> dict[str, Any]:
-        return self._source.linked_entities()
+    def link(self, role: str) -> None:
+        self._role = role
+
+    def _entities(self) -> list[str]:
+        value = self._source.linked_entities().get(self._role)
+        return list(value) if isinstance(value, (list, tuple)) else [value] if value else []
 
     @property
-    def native_value(self) -> int:
-        count = 0
-        for value in self._linked().values():
-            if isinstance(value, list):
-                count += len(value)
-            elif value and "." in value:
-                count += 1
-        return count
+    def native_value(self) -> str | None:
+        names = [name_of(self.hass, e) or e for e in self._entities()]
+        return ", ".join(names)[:255] or None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        return {k: v for k, v in self._linked().items() if v}
+        entities = self._entities()
+        return {"entity_id": entities[0] if len(entities) == 1 else entities}

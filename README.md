@@ -37,7 +37,7 @@ Copy `custom_components/climate_circuits` into the `custom_components` folder of
 ## Setup
 
 1. **Settings → Devices & services → Add integration → Climate Circuits.** Set up the house: where the mode comes from, the fallback, the outdoor temperature sensor and, if you have one, the hot water circulation.
-2. **Add a circuit** (*Add circuit* on the integration's page) for every pump or mixing valve: its heating and cooling thermostats, humidity sensors for cooling, both curves and the outputs (heat source, pump, mixer relays, supply sensor). The forms only choose entities: every threshold and constant (mixer travel time and regulation, pump delays, limits, pauses) is a number or switch on the device it belongs to, under *Configuration*, and applies at once. Each device also has a diagnostic *Linked entities* sensor listing what it reads and switches.
+2. **Add a circuit** (*Add circuit* on the integration's page) for every pump or mixing valve: its heating and cooling thermostats, humidity sensors for cooling, both curves and the outputs (heat source, pump, mixer relays, supply sensor). The forms only choose entities: every threshold and constant (mixer travel time and regulation, pump delays, limits, pauses) is a number or switch on the device it belongs to, under *Configuration*, and applies at once. Each device also lists what it reads and switches as diagnostic sensors, one per role (e.g. *Mixer open relay* showing the relay's name).
 3. Watch the **Activity** log and the entities in **dry run**: the integration says what it would switch and why.
 4. When it matches what you expect, turn on **Control equipment** and then each circuit's **Control pump and mixer** switch.
 

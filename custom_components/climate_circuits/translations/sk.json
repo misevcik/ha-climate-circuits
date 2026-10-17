@@ -556,8 +556,62 @@
       "source_setpoint": {
         "name": "Nastavená teplota"
       },
-      "linked_entities": {
-        "name": "Pripojené entity"
+      "linked_mode_entity": {
+        "name": "Režim z"
+      },
+      "linked_fallback_sensor": {
+        "name": "Záložný senzor"
+      },
+      "linked_outdoor_sensor": {
+        "name": "Vonkajší senzor"
+      },
+      "linked_heating_zones": {
+        "name": "Termostaty na kúrenie"
+      },
+      "linked_cooling_zones": {
+        "name": "Termostaty na chladenie"
+      },
+      "linked_humidity_sensors": {
+        "name": "Senzory vlhkosti"
+      },
+      "linked_pump": {
+        "name": "Relé čerpadla"
+      },
+      "linked_mixer_open": {
+        "name": "Relé otvor zmiešavača"
+      },
+      "linked_mixer_close": {
+        "name": "Relé zatvor zmiešavača"
+      },
+      "linked_supply_sensor": {
+        "name": "Senzor za zmiešavačom"
+      },
+      "linked_mixer_position": {
+        "name": "Starý cover zmiešavača"
+      },
+      "linked_temperature_sensor": {
+        "name": "Senzor teploty"
+      },
+      "linked_setpoint_entity": {
+        "name": "Nastavená teplota z"
+      },
+      "linked_heater_supply": {
+        "name": "Senzor výstupu zo zdroja tepla"
+      },
+      "linked_heater_return": {
+        "name": "Senzor spiatočky do zdroja tepla"
+      },
+      "linked_circulation_sensor": {
+        "name": "Senzor cirkulácie"
+      },
+      "linked_circulation_pump": {
+        "name": "Cirkulačné čerpadlo"
+      },
+      "linked_tank_sensor": {
+        "name": "Senzor nádrže"
+      },
+      "linked_tank_setpoint": {
+        "name": "Nastavená teplota nádrže z"
       }
     },
     "binary_sensor": {

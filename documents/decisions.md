@@ -3,6 +3,9 @@
 Architektúra: [architecture.md](architecture.md) (pôvodný Claude Docs dokument z 1. 10. je zastaraný)
 Názov: **Climate Circuits**, doména `climate_circuits`, repozitár `ha-climate-circuits`.
 
+## 2026-10-17 – pripojené entity jednotlivo (0.1.23)
+- Používateľ: senzor s počtom je zbytočný, v jeho okne nevidno nič (HA atribúty neukazuje); chce vidieť samotné entity. → Pre každú rolu vlastný diagnostický senzor s názvom pripojenej entity (napr. *Relé otvor zmiešavača: GF Okruh Open*), `entity_id` v atribútoch; starý senzor s počtom sa z registra odstráni.
+
 ## 2026-10-17 – prahy a konštanty ako entity na zariadeniach, pripojené entity (0.1.21)
 - Používateľ: pauza po ručnej zmene tepelka nie 4 h, stačí **1 minúta**, nastaviteľná v integrácii (nie vo formulári); **všetky prahy a konštanty** majú byť na správnych miestach v integrácii, nie v konfigurácii; pri zariadení vidieť **pripojené entity** (aj tepelko ako climate).
 - Rozhodnutia:

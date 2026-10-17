@@ -556,8 +556,62 @@
       "source_setpoint": {
         "name": "Set temperature"
       },
-      "linked_entities": {
-        "name": "Linked entities"
+      "linked_mode_entity": {
+        "name": "Mode from"
+      },
+      "linked_fallback_sensor": {
+        "name": "Fallback sensor"
+      },
+      "linked_outdoor_sensor": {
+        "name": "Outdoor sensor"
+      },
+      "linked_heating_zones": {
+        "name": "Heating thermostats"
+      },
+      "linked_cooling_zones": {
+        "name": "Cooling thermostats"
+      },
+      "linked_humidity_sensors": {
+        "name": "Humidity sensors"
+      },
+      "linked_pump": {
+        "name": "Pump relay"
+      },
+      "linked_mixer_open": {
+        "name": "Mixer open relay"
+      },
+      "linked_mixer_close": {
+        "name": "Mixer close relay"
+      },
+      "linked_supply_sensor": {
+        "name": "Supply sensor"
+      },
+      "linked_mixer_position": {
+        "name": "Old mixer cover"
+      },
+      "linked_temperature_sensor": {
+        "name": "Temperature sensor"
+      },
+      "linked_setpoint_entity": {
+        "name": "Set temperature from"
+      },
+      "linked_heater_supply": {
+        "name": "Heat generator supply sensor"
+      },
+      "linked_heater_return": {
+        "name": "Heat generator return sensor"
+      },
+      "linked_circulation_sensor": {
+        "name": "Circulation sensor"
+      },
+      "linked_circulation_pump": {
+        "name": "Circulation pump"
+      },
+      "linked_tank_sensor": {
+        "name": "Tank sensor"
+      },
+      "linked_tank_setpoint": {
+        "name": "Tank set temperature from"
       }
     },
     "binary_sensor": {

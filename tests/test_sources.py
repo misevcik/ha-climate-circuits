@@ -305,5 +305,5 @@ async def test_limits_are_numbers_on_the_source_and_keep_their_order(
     assert next(iter(house.sources.values())).setpoint_decision.wanted <= 40
     pause = "number.buffer_tank_pause_after_a_change_by_hand"
     assert hass.states.get(pause).state == "1.0"
-    linked = hass.states.get("sensor.buffer_tank_linked_entities")
-    assert linked.attributes["setpoint_entity"] == HEAT_PUMP_TARGET
+    linked = hass.states.get("sensor.buffer_tank_set_temperature_from")
+    assert linked.attributes["entity_id"] == HEAT_PUMP_TARGET

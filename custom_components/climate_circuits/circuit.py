@@ -105,7 +105,7 @@ class Circuit(Listeners):
 
     def linked_entities(self) -> dict[str, Any]:
         """What the circuit reads and switches, by role: shown on its device."""
-        s, source = self.settings, self.source()
+        s = self.settings
         return {
             "heating_zones": list(s.heating_zones),
             "cooling_zones": list(s.cooling_zones),
@@ -115,7 +115,6 @@ class Circuit(Listeners):
             "mixer_close": s.mixer_close,
             "supply_sensor": s.supply_sensor,
             "mixer_position": s.mixer_position,
-            "heat_source": source.name if source else None,
         }
 
     def retune(self) -> None:
