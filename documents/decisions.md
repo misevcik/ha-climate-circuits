@@ -3,6 +3,11 @@
 Architektúra: [architecture.md](architecture.md) (pôvodný Claude Docs dokument z 1. 10. je zastaraný)
 Názov: **Climate Circuits**, doména `climate_circuits`, repozitár `ha-climate-circuits`.
 
+## 2026-10-17 – karta: tok podľa polohy zmiešavača, drobné opravy (0.1.26)
+- Používateľ: pri zatvorenom zmiešavači nemá byť animovaný prívod z akumulačky. Karta teraz: prívod z nádrže a spiatočka do nádrže tečú len pri otvorení > 0 %, obtok len pod 100 %, farba vody za zmiešavačom podľa otvorenia (modrá → oranžová).
+- Homing oboch zmiešavačov po reštarte 22:39 nebol chyba: používateľ o 22:25 zapol *Home mixers when Home Assistant starts*.
+- Opravy: čas posledného dotlaku zatvoreného ventilu sa ukladá (pred tým dotlak po každom reštarte, 3× za 20 min); poslucháč zastavenia HA bez chyby v logu pri odhlásení.
+
 ## 2026-10-17 – správanie tepelka večer 16:00–22:30 (rozbor, bez zmeny kódu)
 - Vonku ~8 °C, ciele vody rástli 29,8 → 37,6 °C. Nastavenie TČ 45 °C (ručne o 16:27), od 22:06 riadi integrácia (22:13 → 46 °C = GF 37,6 + rezerva 8, zaokrúhlené).
 - Cyklovanie: 6 štartov za 6,5 h, chod 15–100 min, pauzy 10–60 min (nie krátke cykly). Každý štart má ~10 min špičku 2–3,4 kW, potom ustálene ~1,35–1,4 kW; výstup − spiatočka TČ 4–6 °C.

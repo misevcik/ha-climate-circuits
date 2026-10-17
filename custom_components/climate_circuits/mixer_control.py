@@ -112,6 +112,8 @@ class MixerController:
         """Last known position; otherwise the one of the old cover, until the valve is homed."""
         house, s = self.circuit.house, self.circuit.settings
         stored = house.persisted["mixers"].get(self.circuit.id, {})
+        if (pulse := stored.get("end_pulse")) is not None:
+            self._last_end_pulse = house.now() - (house.wall() - pulse)
         if stored.get("position") is not None and not stored.get("moving"):
             self.tracker.set(stored["position"])
         elif cover := state_of(house.hass, s.mixer_position):
@@ -132,7 +134,8 @@ class MixerController:
                 hass, [self.open.entity_id, self.close.entity_id], self._on_relay
             ),
             async_track_time_interval(hass, self._tick, timedelta(seconds=EVALUATE_INTERVAL)),
-            hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self._on_ha_stop),
+            # Not listen_once: unsubscribing a fired one-time listener logs an error.
+            hass.bus.async_listen(EVENT_HOMEASSISTANT_STOP, self._on_ha_stop),
         ]
         for direction, relay in self._relays():
             if relay.is_on():  # running at the start: how far is unknown
@@ -178,6 +181,8 @@ class MixerController:
         pos = self.position()
         stored = house.persisted["mixers"].setdefault(self.circuit.id, {})
         stored["position"], stored["moving"] = pos, self.tracker.moving
+        if self._last_end_pulse is not None:  # wall time: the 6 h between pulses outlive a restart
+            stored["end_pulse"] = house.wall() - (house.now() - self._last_end_pulse)
         house.save()
 
     @property

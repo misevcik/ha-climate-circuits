@@ -666,3 +666,14 @@ async def test_regulation_values_are_numbers_on_the_circuit(hass, house, clock) 
     assert hass.states.get("sensor.f1_pump_relay").attributes["entity_id"] == PUMP
     assert hass.states.get("sensor.f1_heating_thermostats").attributes["entity_id"] == ZONE
     assert hass.states.get("sensor.f1_cooling_thermostats") is None  # none linked
+
+
+async def test_end_pulse_time_outlives_a_restart(hass, house, clock) -> None:
+    mixer = next(iter(house.circuits.values())).mixer
+    mixer._last_end_pulse = clock.now - 600
+    mixer._persist()
+    mixer._last_end_pulse = None
+    clock.now += 100  # monotonic time starts anew after a restart, wall time goes on
+    clock.wall += 100
+    mixer._seed()
+    assert mixer._last_end_pulse == pytest.approx(clock.now - 700)

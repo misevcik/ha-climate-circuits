@@ -187,7 +187,9 @@ Kód hotový lokálne (151 testov, ruff OK): čerpadlá okruhov, vlastná poloha
 - [x] Zoznam pripojených entít skrátený na „prvá +N“ (0.1.24), tag pushnutý
 - [x] `v0.1.24` nainštalovaná, prepínač zapnutý (22:06)
 - [x] Ohrev TÚV: rozpoznanie, učenie rezervy počas neho stojí (0.1.25), tag pushnutý
-- [ ] Release `v0.1.25`, update, reštart
+- [x] `v0.1.25` nainštalovaná
+- [x] Karta: tok podľa polohy zmiešavača; dotlak po reštarte; log pri vypínaní (0.1.26), tag pushnutý
+- [ ] Release `v0.1.26`, update, reštart
 - [ ] Senzor trojcestného ventilu cez Modbus (používateľ zváži) → pole *Ohrev TÚV* pri zdroji
 - [ ] Typ a výkon TČ od používateľa (dimenzovanie)
 - [ ] Štart okruhu so studenou vodou – overiť pri najbližšom štarte

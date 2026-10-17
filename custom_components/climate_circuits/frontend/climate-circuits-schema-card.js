@@ -54,6 +54,12 @@ const TEXTS = {
   },
 };
 
+// A colour between a (t = 0) and b (t = 1): the water after a mixer open by t.
+const blend = (a, b, t) => {
+  const c = (hex, i) => parseInt(hex.slice(1 + 2 * i, 3 + 2 * i), 16);
+  const mix = [0, 1, 2].map((i) => Math.round(c(a, i) + (c(b, i) - c(a, i)) * t));
+  return `#${mix.map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+};
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const num = (v) => (v === null || v === undefined || v === "" || isNaN(Number(v)) ? null : Number(v));
 let LANG = "en";
@@ -237,18 +243,24 @@ class ClimateCircuitsSchemaCard extends HTMLElement {
     const color = diff === null ? OFF : Math.abs(diff) <= 0.5 ? "#2f9e44" : Math.abs(diff) <= 2 ? "#f08c00" : "#e03131";
     let out = "";
 
-    // Pipes: header -> mixer -> radiators, and the return.
-    out += `<line x1="${G.header}" y1="${pipeY}" x2="${G.mixer - 20}" y2="${pipeY}" class="pipe${flow}" stroke="${hot}"/>`;
-    out += `<line x1="${G.mixer + 20}" y1="${pipeY}" x2="${G.radX}" y2="${pipeY}" class="pipe${flow}" stroke="${pumpOn ? hot : OFF}"/>`;
+    // Pipes. The pump drives the radiators; the mixer decides how much of it comes from the
+    // tank (and goes back to it) and how much is return water through its bypass.
+    const open = c.mixer ? Math.max(0, Math.min(100, num(this._val(c.mixer)) ?? 0)) / 100 : 1;
+    const fromTank = pumpOn && open > 0.005 ? " flow" : "";
+    const bypass = pumpOn && open < 0.995 ? " flow" : "";
+    const mixed = pumpOn ? blend(COLD, hot, open) : OFF;
     const radMid = G.radX + G.radW / 2;
-    out += `<polyline points="${radMid},${y + 100} ${radMid},${retY} ${G.tankX + G.tankW},${retY}" fill="none" class="pipe thin${flow}" stroke="${pumpOn ? COLD : OFF}"/>`;
+    out += `<line x1="${G.header}" y1="${pipeY}" x2="${G.mixer - 20}" y2="${pipeY}" class="pipe${fromTank}" stroke="${hot}"/>`;
+    out += `<line x1="${G.mixer + 20}" y1="${pipeY}" x2="${G.radX}" y2="${pipeY}" class="pipe${flow}" stroke="${mixed}"/>`;
+    out += `<polyline points="${radMid},${y + 100} ${radMid},${retY} ${G.mixer},${retY}" fill="none" class="pipe thin${flow}" stroke="${pumpOn ? COLD : OFF}"/>`;
+    out += `<line x1="${G.mixer}" y1="${retY}" x2="${G.tankX + G.tankW}" y2="${retY}" class="pipe thin${fromTank}" stroke="${fromTank ? COLD : OFF}"/>`;
 
     // Mixer.
     if (c.mixer) {
       const position = num(this._val(c.mixer));
       const movement = this._attr(c.mixer, "movement") || "idle";
       const state = this._val(c.mixer_state) || movement;
-      out += `<line x1="${G.mixer}" y1="${retY}" x2="${G.mixer}" y2="${pipeY + 20}" class="pipe thin${flow}" stroke="${pumpOn ? COLD : OFF}"/>`;
+      out += `<line x1="${G.mixer}" y1="${retY}" x2="${G.mixer}" y2="${pipeY + 20}" class="pipe thin${bypass}" stroke="${bypass ? COLD : OFF}"/>`;
       out += `<g class="click" data-entity="${esc(c.mixer)}">
         <rect x="${G.mixer - 34}" y="${y}" width="68" height="${pipeY - y + 24}" fill="transparent"/>
         <text x="${G.mixer - 20}" y="${y + 20}" text-anchor="end" class="big">${position === null ? "?" : Math.round(position)} %${movement === "opening" ? " ▲" : movement === "closing" || movement === "homing" ? " ▼" : ""}</text>
