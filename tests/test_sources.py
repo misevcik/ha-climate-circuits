@@ -149,7 +149,7 @@ async def test_source_is_set_from_the_circuits_only_when_switched_on(
     assert attrs["wanted"] == wanted and attrs["controlled"] is False
     assert calls == []  # the switch is off
 
-    switch = "switch.buffer_tank_set_from_the_circuits"
+    switch = "switch.buffer_tank_heat_pump_controlled_by_integration"
     await hass.services.async_call("switch", "turn_on", {"entity_id": switch}, blocking=True)
     await hass.async_block_till_done()
     assert calls == []  # Control equipment is off: only said in Activity
@@ -186,7 +186,7 @@ async def _heat_pump_house(hass: HomeAssistant, make_entry, calls: list[dict]):
     hass.services.async_register("climate", "set_temperature", set_temperature)
     house = entry.runtime_data
     house.set_control_equipment(True)
-    switch = "switch.buffer_tank_set_from_the_circuits"
+    switch = "switch.buffer_tank_heat_pump_controlled_by_integration"
     await hass.services.async_call("switch", "turn_on", {"entity_id": switch}, blocking=True)
     await hass.async_block_till_done()
     return house
@@ -261,7 +261,7 @@ async def test_margin_learns_and_can_be_set_by_hand(hass: HomeAssistant, make_en
     await hass.async_block_till_done()
     assert source.margin == 7.0  # auto again: learns on from the value set by hand
     (card,) = hass.states.get("sensor.climate_circuits_mode").attributes["layout"]["sources"]
-    assert card["setpoint_control"] == "switch.buffer_tank_set_from_the_circuits"
+    assert card["setpoint_control"] == "switch.buffer_tank_heat_pump_controlled_by_integration"
     assert card["margin"] == margin
     assert card["margin_mode"] == mode
 

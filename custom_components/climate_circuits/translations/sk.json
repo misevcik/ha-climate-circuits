@@ -614,7 +614,7 @@
         "name": "Ovládať čerpadlo a zmiešavač"
       },
       "setpoint_control": {
-        "name": "Nastavovať podľa okruhov"
+        "name": "Tepelné čerpadlo riadi integrácia"
       },
       "source_compensation": {
         "name": "Zmiešavač sleduje zdroj tepla"

@@ -614,7 +614,7 @@
         "name": "Control pump and mixer"
       },
       "setpoint_control": {
-        "name": "Set from the circuits"
+        "name": "Heat pump controlled by integration"
       },
       "source_compensation": {
         "name": "Mixer follows the heat source"

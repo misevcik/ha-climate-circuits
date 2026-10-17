@@ -110,7 +110,7 @@ class HeatGenerator(SourceEntity, ClimateEntity):
         source = self.source
         return {
             "entity": source.settings.setpoint_entity,
-            "set_from_the_circuits": source.control_enabled,
+            "controlled_by_integration": source.control_enabled,
             "paused_until": source.paused_until,
         }
 
