@@ -37,9 +37,10 @@ async def _set_curve(hass: HomeAssistant, mode: str, **values: Any) -> None:
     await hass.async_block_till_done()
 
 
-async def test_no_number_entities(hass: HomeAssistant, entry) -> None:
+async def test_no_curve_number_entities(hass: HomeAssistant, entry) -> None:
     registry = er.async_get(hass)
-    assert not [e for e in registry.entities.values() if e.domain == "number"]
+    numbers = [e.translation_key for e in registry.entities.values() if e.domain == "number"]
+    assert numbers and not [key for key in numbers if "curve" in (key or "")]
 
 
 async def test_set_curve_updates_target_without_reload(hass: HomeAssistant, entry) -> None:

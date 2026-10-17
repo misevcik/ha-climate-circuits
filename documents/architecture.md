@@ -487,10 +487,10 @@ sequenceDiagram
 | Sekcia | Polia |
 |---|---|
 | Režim | schopnosti zdroja, entita zdroja režimu, hodnoty pre heat / cool / off |
-| Záloha | druh (žiadna / nádrž / vonkajšia teplota), senzor, prahy kúrenia a chladenia |
+| Záloha | druh (žiadna / nádrž / vonkajšia teplota), senzor (prahy sú čísla na zariadení domu) |
 | Počasie | senzor vonkajšej teploty |
 | Termostaty zón | prepínať termostaty s režimom (predvolene áno) |
-| Cirkulácia TUV | senzor teploty spiatočky cirkulácie, cirkulačné čerpadlo, prah, delta (voliteľné; bez senzora a čerpadla modul nevznikne) |
+| Cirkulácia TUV | senzor teploty spiatočky cirkulácie, cirkulačné čerpadlo, názov a senzory nádrže (prah a delta sú čísla na zariadení Hot water) |
 | Zobrazované senzory | senzory zobrazené v atribútoch režimu |
 
 **Okruh (subentry):**
@@ -500,8 +500,18 @@ sequenceDiagram
 | Zóny | termostaty na kúrenie, termostaty na chladenie, vlhkomery |
 | Krivka kúrenia | izba, návrhová vonkajšia teplota, návrhová teplota vody, exponent, min, max, korekcia |
 | Krivka chladenia | izba, strmosť, min, max, korekcia |
-| Výstupy | zdroj tepla, čerpadlo, relé zmiešavača otvor / zatvor, senzor za zmiešavačom, poloha zmiešavača (cover, len prvý odhad), oneskorenie a dobeh čerpadla |
-| Regulácia zmiešavača | dráha, hysteréza, čas ustálenia, krok na 1 °C, najmenší / najväčší krok, okno trendu, sledovať zdroj, najmenší rozdiel zdroj – výstup |
+| Výstupy | zdroj tepla, čerpadlo, relé zmiešavača otvor / zatvor, senzor za zmiešavačom, poloha zmiešavača (cover, len prvý odhad) |
+
+**Prahy a konštanty (0.1.21) – entity na zariadeniach, nie vo formulároch** (`tuning.py`; formuláre len vyberajú entity). Hodnota platí hneď, ukladá sa so stavom integrácie; pri prvom štarte sa prevezmú hodnoty zo starších formulárov.
+
+| Zariadenie | Čísla / prepínače |
+|---|---|
+| Dom | pauza medzi kúrením a chladením, protáčanie po dňoch, homovať zmiešavače pri štarte, záložné prahy kúrenia a chladenia (len so záložným senzorom) |
+| Okruh | čas dráhy, hysteréza, čas ustálenia, krok na 1 °C, najmenší / najväčší krok, okno trendu, najmenší rozdiel zdroj – výstup, zmiešavač sleduje zdroj; oneskorenie štartu a dobeh čerpadla |
+| Zdroj | najnižšie / najvyššie nastavenie, pauza po ručnej zmene (1 min), rezerva + režim rezervy |
+| Hot water | prah a delta cirkulácie |
+
+Každé zariadenie má diagnostický senzor **Pripojené entity** (počet; v atribútoch entity podľa roly). Zdroj s climate entitou ako nastavenou teplotou má zrkadlovú climate entitu **Zdroj tepla** (zmena v nej = ručná zmena).
 
 ```mermaid
 flowchart TB

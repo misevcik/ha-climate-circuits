@@ -148,12 +148,14 @@ async def test_threshold_change_without_reload(hass: HomeAssistant, entry) -> No
         )
         await hass.async_block_till_done()
     reload.assert_not_called()
-    assert entry.options["hot_water"]["threshold"] == 40.0
+    assert entry.runtime_data.persisted["tuning"][f"{entry.entry_id}_hot_water"] == {
+        "circulation_threshold": 40.0,
+        "circulation_delta": 1.0,
+    }
     assert hass.states.get(STATE).attributes["stops_at"] == 40.0
     # 36.5 °C is now below 40 − 1: the pump starts.
     assert hass.states.get(STATE).state == "running"
     messages = [e.data["message"] for e in events]
-    assert "Hot water circulation – threshold: 37 → 40" in messages
     assert any(m.startswith("On – circulation 36.5 °C is below 39.0 °C") for m in messages)
 
 

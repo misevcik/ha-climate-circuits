@@ -8,6 +8,7 @@ relay off, and an unknown position is homed against the end stop before regulati
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import timedelta
 from functools import partial
 from typing import TYPE_CHECKING, Any, NamedTuple
@@ -35,6 +36,7 @@ from .core.texts import mixer_hold_text, mixer_text, out_message, starved_text
 from .core.travel import TravelTracker
 from .relay import Relay
 from .states import call_service, number, state_of
+from .tuning import tuned
 
 if TYPE_CHECKING:
     from .circuit import Circuit
@@ -67,8 +69,8 @@ class MixerController:
         log_to = (f"{circuit.id}_mixer_position", "sensor")
         self.open = Relay(house, s.mixer_open, f"{circuit.name} mixer open", log_to)
         self.close = Relay(house, s.mixer_close, f"{circuit.name} mixer close", log_to)
-        self.params = s.mixer
         self.tracker = TravelTracker(s.mixer.travel, s.mixer.travel)
+        self.retune()
         self.state = "idle"  # idle, opening, closing, homing
         self.proposal: MixerAction | None = None
         self._finish: CALLBACK_TYPE | None = None
@@ -84,6 +86,23 @@ class MixerController:
         self.starved = False  # reported: the heat source is not enough
         self._unsubs: list[CALLBACK_TYPE] = []
         self._seed()
+
+    def retune(self) -> None:
+        """The regulation as set on the circuit's device."""
+        c = self.circuit
+        self.params = replace(
+            c.settings.mixer,
+            travel=tuned(c, "travel"),
+            hysteresis=tuned(c, "hysteresis"),
+            settle=tuned(c, "settle"),
+            gain=tuned(c, "gain"),
+            min_step=int(tuned(c, "min_step")),
+            max_step=int(tuned(c, "max_step")),
+            trend_window=tuned(c, "trend_window"),
+            compensate=bool(tuned(c, "source_compensation")),
+            min_source_gap=tuned(c, "min_source_gap"),
+        )
+        self.tracker.travel_open = self.tracker.travel_close = self.params.travel
 
     @property
     def _max_run(self) -> float:
@@ -120,7 +139,7 @@ class MixerController:
                 self.tracker.start(direction, self.circuit.house.now())
                 self.tracker.clear()
         house = self.circuit.house
-        if house.booting and house.settings.home_mixers_on_start and self.circuit.controlling:
+        if house.booting and tuned(house, "home_mixers_on_start") and self.circuit.controlling:
             self.tracker.clear()  # the valve may have been moved while Home Assistant was down
 
     @callback
@@ -312,7 +331,7 @@ class MixerController:
         circuit, house = self.circuit, self.circuit.house
         last_move = house.persisted["mixers"].get(circuit.id, {}).get("last_move")
         if not circuit.output_demand and exercise_due(
-            last_move, house.wall(), house.settings.exercise_days
+            last_move, house.wall(), tuned(house, "exercise_days")
         ):
             self.tracker.clear()
 

@@ -19,7 +19,6 @@ from homeassistant.core import callback
 from .const import (
     COMFORTABLE_OPENING,
     CONTROLLABLE_SETPOINTS,
-    MANUAL_SETPOINT_PAUSE,
     SETPOINT_INTERVAL,
 )
 from .core.mode import Mode
@@ -34,6 +33,7 @@ from .core.texts import setpoint_event_text, setpoint_text
 from .listeners import Listeners
 from .settings import SourceSettings
 from .states import call_service, float_of, number, state_of
+from .tuning import tuned
 
 if TYPE_CHECKING:
     from .circuit import Circuit
@@ -130,10 +130,11 @@ class Source(Listeners):
         else:
             low, high = number(attrs.get("min")), number(attrs.get("max"))
             step = number(attrs.get("step")) or 1.0
+        lowest, highest = tuned(self, "setpoint_min"), tuned(self, "setpoint_max")
         return SetpointSettings(
             margin=self.margin,
-            minimum=max(s.setpoint_min, low) if low is not None else s.setpoint_min,
-            maximum=min(s.setpoint_max, high) if high is not None else s.setpoint_max,
+            minimum=max(lowest, low) if low is not None else lowest,
+            maximum=min(highest, high) if high is not None else highest,
             step=step,
             threshold=max(1.0, step),
             interval=SETPOINT_INTERVAL,
@@ -185,7 +186,7 @@ class Source(Listeners):
         if self._written is not None and abs(current - self._written) < 0.1:
             return  # our own change arriving
         house = self.house
-        until = house.wall() + MANUAL_SETPOINT_PAUSE
+        until = house.wall() + 60 * tuned(self, "manual_pause")
         self._stored["paused_until"] = until
         self._was_paused = True
         house.save()
@@ -270,6 +271,16 @@ class Source(Listeners):
             )
         else:
             call_service(self.house.hass, domain, "set_value", entity_id=entity, value=value)
+
+    def linked_entities(self) -> dict[str, Any]:
+        """What the source reads and sets, by role: shown on its device."""
+        s = self.settings
+        return {
+            "temperature_sensor": s.temperature_sensor,
+            "setpoint_entity": s.setpoint_entity,
+            "heater_supply": s.heater_supply,
+            "heater_return": s.heater_return,
+        }
 
     def inputs(self) -> set[str]:
         return set(filter(None, [self.settings.temperature_sensor, self.settings.setpoint_entity]))

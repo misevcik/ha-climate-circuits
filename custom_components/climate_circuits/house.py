@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import time
 from collections.abc import Callable
+from dataclasses import replace
 from datetime import timedelta
 from typing import Any
 
@@ -19,7 +20,15 @@ from homeassistant.helpers.storage import Store
 from .activity import entity_id_for, log_activity
 from .circuit import Circuit
 from .const import CURVE_SECTIONS, EVALUATE_INTERVAL, HOT_WATER_TUNING, STORAGE_KEY, STORAGE_VERSION
-from .core.mode import Mode, ModeDecision, ModeSource, Override, mode_from_entity, resolve_mode
+from .core.mode import (
+    Mode,
+    ModeDecision,
+    ModeSettings,
+    ModeSource,
+    Override,
+    mode_from_entity,
+    resolve_mode,
+)
 from .core.protect import ModePause
 from .core.texts import mode_message
 from .hot_water import HotWater
@@ -27,6 +36,7 @@ from .listeners import Listeners
 from .settings import CircuitSettings, HouseSettings
 from .source import Source
 from .states import float_of, name_of
+from .tuning import tuned
 from .zone_switcher import ZoneSwitcher
 
 
@@ -53,7 +63,13 @@ class House(Listeners):
         self.booting = not hass.is_running  # set up while Home Assistant starts, not a reload
         self.pause = ModePause(self.settings.mode_pause)
         self.pause_remaining = 0.0
-        self.persisted: dict[str, Any] = {"pumps": {}, "mixers": {}, "circuits": {}, "sources": {}}
+        self.persisted: dict[str, Any] = {
+            "pumps": {},
+            "mixers": {},
+            "circuits": {},
+            "sources": {},
+            "tuning": {},  # values set on the devices, by owner id
+        }
         self._store: Store[dict[str, Any]] = Store(
             hass, STORAGE_VERSION, f"{STORAGE_KEY}.{entry.entry_id}"
         )
@@ -96,6 +112,40 @@ class House(Listeners):
         self._snapshot = (options, circuits)
         self.evaluate()
         return True
+
+    @property
+    def house(self) -> House:
+        """The house tunes its own values like a circuit or a source (see tuning.py)."""
+        return self
+
+    @property
+    def id(self) -> str:
+        return self.entry.entry_id
+
+    def _mode_settings(self) -> ModeSettings:
+        """The fallback thresholds as set on the house device."""
+        return replace(
+            self.settings.mode,
+            heat_threshold=tuned(self, "heat_threshold"),
+            cool_threshold=tuned(self, "cool_threshold"),
+        )
+
+    @callback
+    def retune(self) -> None:
+        """Apply the values set on the devices to what holds them."""
+        self.pause.seconds = 60 * tuned(self, "mode_pause")
+        for circuit in self.circuits.values():
+            circuit.retune()
+
+    def linked_entities(self) -> dict[str, Any]:
+        """What the house reads, by role: shown on its device."""
+        s = self.settings
+        return {
+            "mode_entity": s.mode_entity,
+            "fallback_sensor": s.fallback_sensor,
+            "outdoor_sensor": s.outdoor_sensor,
+            "info_sensors": list(s.info_sensors),
+        }
 
     @property
     def mode(self) -> Mode:
@@ -197,7 +247,7 @@ class House(Listeners):
             entity_mode = mode_from_entity(s.mode_entity.split(".")[0], state.state, s.mapping)
         fallback = float_of(self.hass, s.fallback_sensor)
         self.decision = decision = resolve_mode(
-            s.mode, self.override, entity_mode, fallback, self.last_mode
+            self._mode_settings(), self.override, entity_mode, fallback, self.last_mode
         )
         self._log_mode()
         self.zones.evaluate(decision)
@@ -272,8 +322,8 @@ class House(Listeners):
             details |= {
                 "fallback_sensor": s.fallback_sensor,
                 "fallback_temperature": round(fallback, 1) if fallback is not None else None,
-                "heat_threshold": s.mode.heat_threshold,
-                "cool_threshold": s.mode.cool_threshold,
+                "heat_threshold": tuned(self, "heat_threshold"),
+                "cool_threshold": tuned(self, "cool_threshold"),
             }
         details["outdoor_temperature"] = self.outdoor
         return details | self.zones.details()

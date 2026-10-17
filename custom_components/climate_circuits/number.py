@@ -1,19 +1,19 @@
-"""Hot water circulation threshold and delta (house options); a heat source's margin."""
+"""Numbers on the devices: thresholds and constants (tuning.py), a heat source's margin."""
 
 from __future__ import annotations
 
-from homeassistant.components.number import NumberDeviceClass, NumberEntity, NumberMode
+from typing import Any
+
+from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.const import UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import ClimateCircuitsConfigEntry
-from .activity import log_activity
-from .core.texts import change_message, curve_parameter_label
-from .entity import HotWaterEntity, SourceEntity
-from .hot_water import HotWater
+from .entity import SourceEntity, owner_entity, subentry_of
 from .source import Source
+from .tuning import Tunable, set_tuned, tunables, tuned
 
 
 async def async_setup_entry(
@@ -21,49 +21,41 @@ async def async_setup_entry(
     entry: ClimateCircuitsConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    for source in entry.runtime_data.sources.values():
+    house = entry.runtime_data
+    for owner, values in tunables(house):
+        entities = []
+        for tunable in values:
+            if isinstance(tunable, Tunable):
+                entity = owner_entity(owner, TunedNumber, tunable.key)
+                entity.tune(owner, tunable)
+                entities.append(entity)
+        async_add_entities(entities, config_subentry_id=subentry_of(owner))
+    for source in house.sources.values():
         if source.controllable:
             async_add_entities(
                 [SourceMargin(source, "setpoint_margin")], config_subentry_id=source.id
             )
-    if hot_water := entry.runtime_data.hot_water:
-        async_add_entities(
-            [
-                CirculationNumber(hot_water, "threshold", 20, 60),
-                CirculationNumber(hot_water, "delta", 0.5, 10),
-            ]
-        )
 
 
-class CirculationNumber(HotWaterEntity, NumberEntity):
+class TunedNumber(NumberEntity):
+    """A threshold or constant set on the device; applies at once."""
+
     _attr_entity_category = EntityCategory.CONFIG
-    _attr_device_class = NumberDeviceClass.TEMPERATURE
-    _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
-    _attr_native_step = 0.5
     _attr_mode = NumberMode.BOX
 
-    def __init__(self, hot_water: HotWater, key: str, minimum: float, maximum: float) -> None:
-        super().__init__(hot_water, f"circulation_{key}")
-        self._key = key
-        self._attr_native_min_value, self._attr_native_max_value = minimum, maximum
-        if key == "delta":  # a difference: no device class, so it is never unit-converted
-            self._attr_device_class = None
+    def tune(self, owner: Any, tunable: Tunable) -> None:
+        self._owner, self._key = owner, tunable.key
+        self._attr_native_min_value = tunable.minimum
+        self._attr_native_max_value = tunable.maximum
+        self._attr_native_step = tunable.step
+        self._attr_native_unit_of_measurement = tunable.unit  # differences too: no device class
 
     @property
-    def native_value(self) -> float:
-        return getattr(self.hot_water.settings, self._key)
+    def native_value(self) -> float | None:
+        return tuned(self._owner, self._key)
 
     async def async_set_native_value(self, value: float) -> None:
-        """Applied without reload by the update listener."""
-        if (old := self.native_value) == value:
-            return
-        entry = self.hot_water.house.entry
-        section = {**entry.options.get("hot_water", {}), self._key: value}
-        self.hass.config_entries.async_update_entry(
-            entry, options={**entry.options, "hot_water": section}
-        )
-        label = curve_parameter_label("circulation", self._key, self.hass.config.language)
-        log_activity(self.hass, "Hot water", change_message(label, old, value), self.entity_id)
+        set_tuned(self._owner, self._key, value)
 
 
 class SourceMargin(SourceEntity, NumberEntity):

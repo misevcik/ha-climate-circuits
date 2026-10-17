@@ -14,9 +14,11 @@ from .const import DOMAIN, SUBENTRY_TYPE_CIRCUIT, SUBENTRY_TYPE_SOURCE
 from .entity import device_info
 from .house import House
 from .source import Source
+from .tuning import seed
 
 PLATFORMS = [
     Platform.BINARY_SENSOR,
+    Platform.CLIMATE,
     Platform.NUMBER,
     Platform.SELECT,
     Platform.SENSOR,
@@ -47,6 +49,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ClimateCircuitsConfigEnt
         house.sources[subentry.subentry_id] = Source(house, subentry)
     for subentry in entry.get_subentries_of_type(SUBENTRY_TYPE_CIRCUIT):
         house.circuits[subentry.subentry_id] = Circuit(house, subentry)
+    seed(house)
+    house.retune()
     house.evaluate()  # before the entities exist, so none starts with a wrong state
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     house.async_start()

@@ -13,6 +13,7 @@ from .listeners import Listeners
 from .relay import Relay
 from .settings import HotWaterSettings
 from .states import float_of, state_of
+from .tuning import tuned
 
 if TYPE_CHECKING:
     from .house import House
@@ -31,6 +32,16 @@ class HotWater(Listeners):
     @property
     def id(self) -> str:
         return f"{self.house.entry.entry_id}_hot_water"
+
+    def linked_entities(self) -> dict[str, Any]:
+        """What the circulation reads and switches, by role: shown on its device."""
+        s = self.settings
+        return {
+            "circulation_sensor": s.sensor,
+            "circulation_pump": s.pump,
+            "tank_sensor": s.tank_sensor,
+            "tank_setpoint": s.tank_setpoint,
+        }
 
     def inputs(self) -> set[str]:
         return {self.settings.sensor, self.settings.pump}
@@ -52,7 +63,11 @@ class HotWater(Listeners):
         if temperature is None and self.house.now() - self.house.started < HOT_WATER_GRACE:
             return  # sensors of boards that start with Home Assistant are not there yet
         self.decision = circulation_decision(
-            temperature, s.threshold, s.delta, running, self.enabled
+            temperature,
+            tuned(self, "circulation_threshold"),
+            tuned(self, "circulation_delta"),
+            running,
+            self.enabled,
         )
         self._log_change()
         if self.house.control_equipment and self.decision is not None:

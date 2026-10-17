@@ -62,3 +62,21 @@ class SourceEntity(_Entity):
         self.source = source
         device = device_info(source.id, source.name, source.house.device_id)
         super().__init__(source, source.id, key, device)
+
+
+def owner_entity(owner: Listeners, mixin: type, key: str) -> _Entity:
+    """An entity of mixin's kind on the device of a house, circuit, heat source or hot water."""
+    for kind, base in (
+        (House, HouseEntity),
+        (Circuit, CircuitEntity),
+        (Source, SourceEntity),
+        (HotWater, HotWaterEntity),
+    ):
+        if isinstance(owner, kind):
+            return type(f"{base.__name__}{mixin.__name__}", (base, mixin), {})(owner, key)
+    raise TypeError(owner)
+
+
+def subentry_of(owner: Listeners) -> str | None:
+    """Circuits and sources are subentries; their entities belong to them."""
+    return owner.id if isinstance(owner, (Circuit, Source)) else None

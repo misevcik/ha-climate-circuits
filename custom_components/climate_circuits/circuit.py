@@ -103,6 +103,27 @@ class Circuit(Listeners):
         state = state_of(self.house.hass, self.settings.mixer_position)
         return number(state.attributes.get("current_position")) if state else None
 
+    def linked_entities(self) -> dict[str, Any]:
+        """What the circuit reads and switches, by role: shown on its device."""
+        s, source = self.settings, self.source()
+        return {
+            "heating_zones": list(s.heating_zones),
+            "cooling_zones": list(s.cooling_zones),
+            "humidity_sensors": list(s.humidity_sensors),
+            "pump": s.pump,
+            "mixer_open": s.mixer_open,
+            "mixer_close": s.mixer_close,
+            "supply_sensor": s.supply_sensor,
+            "mixer_position": s.mixer_position,
+            "heat_source": source.name if source else None,
+        }
+
+    def retune(self) -> None:
+        if self.pump:
+            self.pump.retune()
+        if self.mixer:
+            self.mixer.retune()
+
     @callback
     def async_start(self) -> None:
         if self.mixer:

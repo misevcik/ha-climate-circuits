@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from custom_components.climate_circuits.config_flow import _form_data
 from custom_components.climate_circuits.settings import CircuitSettings
 
 
@@ -11,9 +10,6 @@ def test_mixer_values_from_before_the_mixer_section() -> None:
     mixer = CircuitSettings.from_data(data).mixer
     assert (mixer.travel, mixer.settle, mixer.hysteresis) == (90, 120, 0.5)
     assert mixer.compensate and mixer.min_source_gap == 3.0
-    form = _form_data(data)
-    assert form["outputs"] == {"pump": "switch.p"}
-    assert form["mixer"] == {"travel": 90, "settle": 120}
 
 
 def test_mixer_section_wins() -> None:

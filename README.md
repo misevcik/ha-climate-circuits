@@ -37,7 +37,7 @@ Copy `custom_components/climate_circuits` into the `custom_components` folder of
 ## Setup
 
 1. **Settings → Devices & services → Add integration → Climate Circuits.** Set up the house: where the mode comes from, the fallback, the outdoor temperature sensor and, if you have one, the hot water circulation.
-2. **Add a circuit** (*Add circuit* on the integration's page) for every pump or mixing valve: its heating and cooling thermostats, humidity sensors for cooling, both curves, the outputs (heat source, pump, mixer relays, supply sensor) and the *Mixer regulation* (valve travel time and the regulation parameters).
+2. **Add a circuit** (*Add circuit* on the integration's page) for every pump or mixing valve: its heating and cooling thermostats, humidity sensors for cooling, both curves and the outputs (heat source, pump, mixer relays, supply sensor). The forms only choose entities: every threshold and constant (mixer travel time and regulation, pump delays, limits, pauses) is a number or switch on the device it belongs to, under *Configuration*, and applies at once. Each device also has a diagnostic *Linked entities* sensor listing what it reads and switches.
 3. Watch the **Activity** log and the entities in **dry run**: the integration says what it would switch and why.
 4. When it matches what you expect, turn on **Control equipment** and then each circuit's **Control pump and mixer** switch.
 
@@ -92,7 +92,7 @@ The same change is available as an action, `climate_circuits.set_curve`, targeti
 A heat source whose *set temperature* is a climate or a number (a heat pump's target) gets the switch **Set from the circuits** (off by default). With it and *Control equipment* on, the source is set to the warmest water a heating circuit wants plus a margin, at most every 15 minutes and by whole steps; without heating demand it is left alone.
 
 - The margin learns: it rises by 1 °C when a circuit reports *Source not enough* (`binary_sensor.<circuit>_source_not_enough`: the mixer is fully open and the supply stays below its target), and falls by 1 °C after an hour with every heating mixer below 70 % and at its target. It can also be set by hand (`number.<source>_margin_above_the_warmest_circuit`); `select.<source>_margin` switches between *Learned* and *Manual* (the value set by hand holds).
-- A change of the setting made elsewhere (e.g. the heat pump's app) pauses the automatic setting for 4 hours.
+- A change of the setting made elsewhere (e.g. the heat pump's app, or the *Heat generator* climate entity on the source's device that mirrors it) pauses the automatic setting – 1 minute by default, set on the source's device.
 - Every change and its reason is written to Activity.
 
 ## Schema card
@@ -108,7 +108,7 @@ Optional, only for the card: a heat source can name what heats it (heat pump, bo
 
 ## How the mixing valve is driven
 
-The valve has no position feedback, so the integration counts how long each relay runs, whoever switches it. Every 30 s it compares the supply temperature with the target. Outside the hysteresis it moves the valve by a step proportional to the difference (4 % per °C, 2–20 %), then waits for the settle time until the water reaches the sensor, and skips a move while the temperature is already heading for the target. When the heat source temperature changes, the valve is moved at once so the supply stays the same. All of this is set per circuit under *Mixer regulation*; without demand the valve closes. At an end stop it adds a short pulse at most every 10 minutes. The position is saved across restarts. The valve is homed (closed for one full travel) when the position is unknown: on the first start, when a move was cut off, after a relay was unavailable for more than 5 s during a move, and after 7 days without moving. A relay unavailable for longer stops the mixer and is logged in Activity, as is its return. Homing on every Home Assistant start is an option under *Protections*.
+The valve has no position feedback, so the integration counts how long each relay runs, whoever switches it. Every 30 s it compares the supply temperature with the target. Outside the hysteresis it moves the valve by a step proportional to the difference (4 % per °C, 2–20 %), then waits for the settle time until the water reaches the sensor, and skips a move while the temperature is already heading for the target. When the heat source temperature changes, the valve is moved at once so the supply stays the same. All of this is set per circuit with numbers on the circuit's device; without demand the valve closes. At an end stop it adds a short pulse at most every 10 minutes. The position is saved across restarts. The valve is homed (closed for one full travel) when the position is unknown: on the first start, when a move was cut off, after a relay was unavailable for more than 5 s during a move, and after 7 days without moving. A relay unavailable for longer stops the mixer and is logged in Activity, as is its return. Homing on every Home Assistant start is a switch on the house device.
 
 ## Documentation
 

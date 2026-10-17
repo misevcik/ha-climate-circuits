@@ -8,6 +8,7 @@ from typing import Any
 import pytest
 from homeassistant.config_entries import ConfigSubentryData
 from homeassistant.core import HomeAssistant
+from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.climate_circuits.const import (
@@ -31,6 +32,12 @@ HOUSE_OPTIONS: dict[str, Any] = {
 @pytest.fixture(autouse=True)
 def auto_enable_custom_integrations(enable_custom_integrations: None) -> None:
     """Load the custom integration in every test."""
+
+
+@pytest.fixture(autouse=True)
+async def climate_component(hass: HomeAssistant, auto_enable_custom_integrations) -> None:
+    """Load climate first: its services must not replace the ones a test registers later."""
+    assert await async_setup_component(hass, "climate", {})
 
 
 def set_thermostat(

@@ -10,6 +10,7 @@ from homeassistant.const import PERCENTAGE, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import entity_platform, entity_registry as er
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import ClimateCircuitsConfigEntry
@@ -33,7 +34,14 @@ from .core.texts import (
     curve_parameter_label,
     zone_text,
 )
-from .entity import CircuitEntity, HotWaterEntity, HouseEntity, SourceEntity
+from .entity import (
+    CircuitEntity,
+    HotWaterEntity,
+    HouseEntity,
+    SourceEntity,
+    owner_entity,
+    subentry_of,
+)
 from .house import House
 from .schema_layout import schema_layout
 from .states import number, state_of
@@ -63,6 +71,12 @@ async def async_setup_entry(
     )
     house = entry.runtime_data
     async_add_entities([ModeSensor(house, "mode"), StatusSensor(house, "status")])
+    for owner in (house, *house.circuits.values(), *house.sources.values(), house.hot_water):
+        if owner is not None:
+            async_add_entities(
+                [owner_entity(owner, LinkedEntitiesSensor, "linked_entities")],
+                config_subentry_id=subentry_of(owner),
+            )
     async_add_entities([InfoSensor(house, entity_id) for entity_id in house.settings.info_sensors])
     if house.hot_water:
         async_add_entities(
@@ -372,3 +386,27 @@ class MixerStateSensor(CircuitEntity, SensorEntity):
     @property
     def native_value(self) -> str | None:
         return self.circuit.mixer.status() if self.circuit.mixer else None
+
+
+class LinkedEntitiesSensor(SensorEntity):
+    """How many entities the device reads or switches; which ones, by role, in the attributes."""
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_icon = "mdi:link-variant"
+
+    def _linked(self) -> dict[str, Any]:
+        return self._source.linked_entities()
+
+    @property
+    def native_value(self) -> int:
+        count = 0
+        for value in self._linked().values():
+            if isinstance(value, list):
+                count += len(value)
+            elif value and "." in value:
+                count += 1
+        return count
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        return {k: v for k, v in self._linked().items() if v}

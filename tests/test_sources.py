@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import pytest
 from homeassistant.config_entries import SOURCE_USER
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant_custom_component.common import async_capture_events
 
 from custom_components.climate_circuits.const import (
@@ -126,7 +128,6 @@ async def test_source_is_set_from_the_circuits_only_when_switched_on(
     async def set_temperature(call) -> None:
         calls.append(dict(call.data))
 
-    hass.services.async_register("climate", "set_temperature", set_temperature)
     hass.states.async_set(HEAT_PUMP, "heat")
     hass.states.async_set(OUTDOOR, "0.0")
     hass.states.async_set(
@@ -139,6 +140,8 @@ async def test_source_is_set_from_the_circuits_only_when_switched_on(
     entry = await _setup(
         hass, make_entry, source, circuit_data("F1", zones={"heating_zones": ["climate.room"]})
     )
+    # After the setup: the climate platform brings the real climate services.
+    hass.services.async_register("climate", "set_temperature", set_temperature)
     house = entry.runtime_data
     target = float(hass.states.get("sensor.f1_target_water_temperature").state)
     wanted = float(int(target + 5.0) + (0 if (target + 5.0).is_integer() else 1))
@@ -168,7 +171,6 @@ async def _heat_pump_house(hass: HomeAssistant, make_entry, calls: list[dict]):
             {"temperature": call.data["temperature"], "min_temp": 20, "max_temp": 60},
         )
 
-    hass.services.async_register("climate", "set_temperature", set_temperature)
     hass.states.async_set(HEAT_PUMP, "heat")
     hass.states.async_set(OUTDOOR, "0.0")
     hass.states.async_set(
@@ -180,6 +182,8 @@ async def _heat_pump_house(hass: HomeAssistant, make_entry, calls: list[dict]):
     entry = await _setup(
         hass, make_entry, source, circuit_data("F1", zones={"heating_zones": ["climate.room"]})
     )
+    # After the setup: the climate platform brings the real climate services.
+    hass.services.async_register("climate", "set_temperature", set_temperature)
     house = entry.runtime_data
     house.set_control_equipment(True)
     switch = "switch.buffer_tank_set_from_the_circuits"
@@ -210,7 +214,7 @@ async def test_a_change_by_hand_pauses_the_automatic_setting(
     assert len(calls) == 1  # paused
 
     wall = house.wall()
-    house.wall = lambda: wall + 4 * 3600 + 1
+    house.wall = lambda: wall + 61  # the pause after a change by hand is 1 min by default
     house.evaluate()
     await hass.async_block_till_done()
     assert len(calls) == 2  # set again after the pause
@@ -260,3 +264,46 @@ async def test_margin_learns_and_can_be_set_by_hand(hass: HomeAssistant, make_en
     assert card["setpoint_control"] == "switch.buffer_tank_set_from_the_circuits"
     assert card["margin"] == margin
     assert card["margin_mode"] == mode
+
+
+async def test_the_heat_pump_shows_on_the_source_and_a_change_there_counts_as_by_hand(
+    hass: HomeAssistant, make_entry
+) -> None:
+    calls: list[dict] = []
+    house = await _heat_pump_house(hass, make_entry, calls)
+    source = next(iter(house.sources.values()))
+    mirror = "climate.buffer_tank_heat_generator"
+    state = hass.states.get(mirror)
+    assert state.state == "heat"
+    assert state.attributes["temperature"] == calls[-1]["temperature"]
+    assert state.attributes["entity"] == HEAT_PUMP_TARGET
+
+    # The climate service is replaced by the test's heat pump, so the entity is called directly.
+    entity = hass.data["entity_components"]["climate"].get_entity(mirror)
+    await entity.async_set_temperature(temperature=52)
+    await hass.async_block_till_done()
+    assert calls[-1] == {"entity_id": HEAT_PUMP_TARGET, "temperature": 52}
+    assert hass.states.get(mirror).attributes["temperature"] == 52
+    assert source.paused_until is not None  # a change by hand
+
+
+async def test_limits_are_numbers_on_the_source_and_keep_their_order(
+    hass: HomeAssistant, make_entry
+) -> None:
+    calls: list[dict] = []
+    house = await _heat_pump_house(hass, make_entry, calls)
+    lowest, highest = "number.buffer_tank_lowest_setting", "number.buffer_tank_highest_setting"
+    assert hass.states.get(lowest).state == "30.0" and hass.states.get(highest).state == "55.0"
+    with pytest.raises(ServiceValidationError):
+        await hass.services.async_call(
+            "number", "set_value", {"entity_id": lowest, "value": 60}, blocking=True
+        )
+    await hass.services.async_call(
+        "number", "set_value", {"entity_id": highest, "value": 40}, blocking=True
+    )
+    await hass.async_block_till_done()
+    assert next(iter(house.sources.values())).setpoint_decision.wanted <= 40
+    pause = "number.buffer_tank_pause_after_a_change_by_hand"
+    assert hass.states.get(pause).state == "1.0"
+    linked = hass.states.get("sensor.buffer_tank_linked_entities")
+    assert linked.attributes["setpoint_entity"] == HEAT_PUMP_TARGET

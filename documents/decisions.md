@@ -3,6 +3,15 @@
 Architektúra: [architecture.md](architecture.md) (pôvodný Claude Docs dokument z 1. 10. je zastaraný)
 Názov: **Climate Circuits**, doména `climate_circuits`, repozitár `ha-climate-circuits`.
 
+## 2026-10-17 – prahy a konštanty ako entity na zariadeniach, pripojené entity (0.1.21)
+- Používateľ: pauza po ručnej zmene tepelka nie 4 h, stačí **1 minúta**, nastaviteľná v integrácii (nie vo formulári); **všetky prahy a konštanty** majú byť na správnych miestach v integrácii, nie v konfigurácii; pri zariadení vidieť **pripojené entity** (aj tepelko ako climate).
+- Rozhodnutia:
+  - `tuning.py`: zoznam nastaviteľných hodnôt podľa zariadenia (dom, okruh, zdroj, Hot water) → number / switch entity (kategória Konfigurácia). Uložené v stave integrácie (Store), platia hneď bez reloadu; pri prvom štarte sa prevezmú hodnoty zo starších formulárov (seed). Kontrola poradia min ≤ max pri nastavení.
+  - Z formulárov odstránené: záložné prahy, prah a delta cirkulácie, sekcia Ochrany, sekcia Regulácia zmiešavača, oneskorenie a dobeh čerpadla, najnižšie/najvyššie nastavenie zdroja. Formuláre len vyberajú entity. Krivky ostávajú vo formulári okruhu a v karte.
+  - Pauza po ručnej zmene: 1 min (number na zdroji).
+  - Diagnostický senzor **Pripojené entity** pri každom zariadení; climate entita **Zdroj tepla** pri zdroji zrkadlí tepelko (zmena v nej sa pošle do tepelka a ráta sa ako ručná).
+  - Testy: komponent climate sa v testoch načíta vopred (jeho služby inak prepíšu testovacie). Testy: 215.
+
 ## 2026-10-17 – rezerva: prepínač Učí sa / Ručne (0.1.20)
 - Používateľ chce rezervu prepínať medzi auto a manuál; v manuáli platí zadaná hodnota. Miesto: v Climate Circuits pri zariadení zdroja (vedľa entity rezervy), `select.<zdroj>_margin` – Učí sa / Ručne; karta ukazuje režim pri rezerve. Návrat na Učí sa pokračuje od aktuálnej hodnoty.
 

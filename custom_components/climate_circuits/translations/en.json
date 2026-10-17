@@ -24,14 +24,10 @@
             "name": "Fallback when the source is unavailable",
             "data": {
               "kind": "Fallback",
-              "sensor": "Temperature sensor",
-              "heat_threshold": "Heating threshold",
-              "cool_threshold": "Cooling threshold"
+              "sensor": "Temperature sensor"
             },
             "data_description": {
-              "kind": "Tank: warm water means heating. Outdoor: cold outside means heating.",
-              "heat_threshold": "Tank: heat at or above. Outdoor: heat at or below.",
-              "cool_threshold": "Tank: cool at or below. Outdoor: cool at or above."
+              "kind": "Tank: warm water means heating. Outdoor: cold outside means heating."
             }
           },
           "weather": {
@@ -53,15 +49,12 @@
             "data": {
               "circulation_sensor": "Circulation return temperature",
               "circulation_pump": "Circulation pump",
-              "threshold": "Threshold (pump stops)",
-              "delta": "Delta (pump starts below threshold − delta)",
               "tank_sensor": "Hot water tank temperature",
               "tank_setpoint": "Hot water tank set temperature",
               "tank_name": "Hot water tank name"
             },
             "data_description": {
               "circulation_sensor": "Temperature at the end of the circulation loop.",
-              "threshold": "Can also be changed on the Hot water device.",
               "tank_sensor": "Only shown in the schema card.",
               "tank_setpoint": "What the tank is heated to, e.g. the heat pump's hot water target. Only shown in the schema card.",
               "tank_name": "Shown on the schema card; empty = Hot water tank."
@@ -74,20 +67,6 @@
             },
             "data_description": {
               "info_sensors": "Their values appear in the attributes of the mode sensor, e.g. hot water, tank or heat pump supply."
-            }
-          },
-          "protection": {
-            "name": "Protections",
-            "description": "Pause between heating and cooling, periodic exercise of idle pumps and valves, and homing the valves at the start. Only while Control equipment is on.",
-            "data": {
-              "mode_pause": "Pause when switching between heating and cooling",
-              "exercise_days": "Exercise idle pumps and valves after",
-              "home_mixers_on_start": "Home mixing valves when Home Assistant starts"
-            },
-            "data_description": {
-              "mode_pause": "Minutes the new mode waits after the other one stopped. Going back to the previous mode needs no pause.",
-              "exercise_days": "Days without running; 0 turns exercising off.",
-              "home_mixers_on_start": "Close every valve against its end stop about 30 s after Home Assistant starts, as the position may have changed while it was down. Takes one full travel; off keeps the saved position. Not on a reload of the integration."
             }
           }
         }
@@ -127,14 +106,10 @@
             "name": "Fallback when the source is unavailable",
             "data": {
               "kind": "Fallback",
-              "sensor": "Temperature sensor",
-              "heat_threshold": "Heating threshold",
-              "cool_threshold": "Cooling threshold"
+              "sensor": "Temperature sensor"
             },
             "data_description": {
-              "kind": "Tank: warm water means heating. Outdoor: cold outside means heating.",
-              "heat_threshold": "Tank: heat at or above. Outdoor: heat at or below.",
-              "cool_threshold": "Tank: cool at or below. Outdoor: cool at or above."
+              "kind": "Tank: warm water means heating. Outdoor: cold outside means heating."
             }
           },
           "weather": {
@@ -156,15 +131,12 @@
             "data": {
               "circulation_sensor": "Circulation return temperature",
               "circulation_pump": "Circulation pump",
-              "threshold": "Threshold (pump stops)",
-              "delta": "Delta (pump starts below threshold − delta)",
               "tank_sensor": "Hot water tank temperature",
               "tank_setpoint": "Hot water tank set temperature",
               "tank_name": "Hot water tank name"
             },
             "data_description": {
               "circulation_sensor": "Temperature at the end of the circulation loop.",
-              "threshold": "Can also be changed on the Hot water device.",
               "tank_sensor": "Only shown in the schema card.",
               "tank_setpoint": "What the tank is heated to, e.g. the heat pump's hot water target. Only shown in the schema card.",
               "tank_name": "Shown on the schema card; empty = Hot water tank."
@@ -177,20 +149,6 @@
             },
             "data_description": {
               "info_sensors": "Their values appear in the attributes of the mode sensor, e.g. hot water, tank or heat pump supply."
-            }
-          },
-          "protection": {
-            "name": "Protections",
-            "description": "Pause between heating and cooling, periodic exercise of idle pumps and valves, and homing the valves at the start. Only while Control equipment is on.",
-            "data": {
-              "mode_pause": "Pause when switching between heating and cooling",
-              "exercise_days": "Exercise idle pumps and valves after",
-              "home_mixers_on_start": "Home mixing valves when Home Assistant starts"
-            },
-            "data_description": {
-              "mode_pause": "Minutes the new mode waits after the other one stopped. Going back to the previous mode needs no pause.",
-              "exercise_days": "Days without running; 0 turns exercising off.",
-              "home_mixers_on_start": "Close every valve against its end stop about 30 s after Home Assistant starts, as the position may have changed while it was down. Takes one full travel; off keeps the saved position. Not on a reload of the integration."
             }
           }
         }
@@ -260,41 +218,11 @@
                 "mixer_close": "Mixer close relay",
                 "supply_sensor": "Supply temperature after the mixer",
                 "mixer_position": "Mixer position",
-                "pump_delay": "Pump start delay",
-                "pump_run_on": "Pump run-on",
                 "source": "Heat source"
               },
               "data_description": {
                 "mixer_position": "Cover of the old integration; its position is used only as a first guess until the valve is homed.",
-                "pump_delay": "Seconds of demand before the pump starts, so the zone valves can open.",
-                "pump_run_on": "Seconds the pump keeps running after heating demand ends.",
                 "source": "Where the circuit takes its water from. With a single heat source in the house it is used even when none is chosen."
-              }
-            },
-            "mixer": {
-              "name": "Mixer regulation",
-              "description": "How the valve regulates the water temperature after the mixer. The defaults suit most radiator and floor circuits.",
-              "data": {
-                "travel": "Full valve travel time",
-                "hysteresis": "Hysteresis",
-                "settle": "Settle time",
-                "gain": "Step per 1 °C off the target",
-                "min_step": "Smallest step",
-                "max_step": "Largest step",
-                "trend_window": "Trend window",
-                "source_compensation": "Follow the heat source",
-                "min_source_gap": "Smallest source – supply difference"
-              },
-              "data_description": {
-                "travel": "Seconds the actuator needs from fully closed to fully open (on its label).",
-                "hysteresis": "The valve stays while the water after the mixer is within ± this of the target.",
-                "settle": "Seconds to wait after a valve move before the next one, until the changed water reaches the supply sensor. Longer if the valve swings, shorter if it is slow to reach the target.",
-                "gain": "How far the valve moves for each °C the water is off the target. Larger reaches the target faster but may overshoot.",
-                "min_step": "A smaller move would not change the water noticeably.",
-                "max_step": "Limits a single move far from the target.",
-                "trend_window": "Seconds of supply readings the direction of the temperature is taken from. When it is heading for the target, the valve waits.",
-                "source_compensation": "When the source temperature changes, move the valve at once so the water after the mixer stays the same, without waiting for the supply sensor.",
-                "min_source_gap": "The source must be at least this much warmer than the water after the mixer; with a smaller difference sensor noise would move the valve too much."
               }
             }
           }
@@ -354,41 +282,11 @@
                 "mixer_close": "Mixer close relay",
                 "supply_sensor": "Supply temperature after the mixer",
                 "mixer_position": "Mixer position",
-                "pump_delay": "Pump start delay",
-                "pump_run_on": "Pump run-on",
                 "source": "Heat source"
               },
               "data_description": {
                 "mixer_position": "Cover of the old integration; its position is used only as a first guess until the valve is homed.",
-                "pump_delay": "Seconds of demand before the pump starts, so the zone valves can open.",
-                "pump_run_on": "Seconds the pump keeps running after heating demand ends.",
                 "source": "Where the circuit takes its water from. With a single heat source in the house it is used even when none is chosen."
-              }
-            },
-            "mixer": {
-              "name": "Mixer regulation",
-              "description": "How the valve regulates the water temperature after the mixer. The defaults suit most radiator and floor circuits.",
-              "data": {
-                "travel": "Full valve travel time",
-                "hysteresis": "Hysteresis",
-                "settle": "Settle time",
-                "gain": "Step per 1 °C off the target",
-                "min_step": "Smallest step",
-                "max_step": "Largest step",
-                "trend_window": "Trend window",
-                "source_compensation": "Follow the heat source",
-                "min_source_gap": "Smallest source – supply difference"
-              },
-              "data_description": {
-                "travel": "Seconds the actuator needs from fully closed to fully open (on its label).",
-                "hysteresis": "The valve stays while the water after the mixer is within ± this of the target.",
-                "settle": "Seconds to wait after a valve move before the next one, until the changed water reaches the supply sensor. Longer if the valve swings, shorter if it is slow to reach the target.",
-                "gain": "How far the valve moves for each °C the water is off the target. Larger reaches the target faster but may overshoot.",
-                "min_step": "A smaller move would not change the water noticeably.",
-                "max_step": "Limits a single move far from the target.",
-                "trend_window": "Seconds of supply readings the direction of the temperature is taken from. When it is heading for the target, the valve waits.",
-                "source_compensation": "When the source temperature changes, move the valve at once so the water after the mixer stays the same, without waiting for the supply sensor.",
-                "min_source_gap": "The source must be at least this much warmer than the water after the mixer; with a smaller difference sensor noise would move the valve too much."
               }
             }
           }
@@ -399,8 +297,7 @@
         "mixer_needs_both_relays": "A mixing valve needs both the open and the close relay.",
         "mixer_relays_same": "The open and close relay must differ.",
         "mixer_needs_supply_sensor": "A mixing valve needs the supply temperature sensor.",
-        "design_outdoor_above_room": "The design outdoor temperature must be below the room temperature.",
-        "mixer_min_step_above_max": "The smallest step is larger than the largest step."
+        "design_outdoor_above_room": "The design outdoor temperature must be below the room temperature."
       },
       "initiate_flow": {
         "user": "Add circuit"
@@ -421,18 +318,14 @@
             "setpoint_entity": "Set temperature",
             "heater_name": "Heat generator name",
             "heater_supply": "Heat generator supply temperature",
-            "heater_return": "Heat generator return temperature",
-            "setpoint_min": "Lowest setting",
-            "setpoint_max": "Highest setting"
+            "heater_return": "Heat generator return temperature"
           },
           "data_description": {
             "temperature_sensor": "The water that goes to the circuits: for a buffer tank its outlet pipe to the mixers; for a boiler or heat pump its supply.",
             "setpoint_entity": "What the source is set to give, e.g. the heat pump's target for the tank (a climate's target temperature, or a number or sensor). Used to warn when a circuit wants more than the source can give.",
             "heater_name": "What heats this source, e.g. Heat pump. Only shown on the schema card.",
             "heater_supply": "Water leaving the heat pump or boiler towards the source. Optional, only shown on the schema card.",
-            "heater_return": "Water going back to the heat pump or boiler. Optional, only shown on the schema card.",
-            "setpoint_min": "The source is never set below this.",
-            "setpoint_max": "The source is never set above this."
+            "heater_return": "Water going back to the heat pump or boiler. Optional, only shown on the schema card."
           }
         },
         "reconfigure": {
@@ -444,18 +337,14 @@
             "setpoint_entity": "Set temperature",
             "heater_name": "Heat generator name",
             "heater_supply": "Heat generator supply temperature",
-            "heater_return": "Heat generator return temperature",
-            "setpoint_min": "Lowest setting",
-            "setpoint_max": "Highest setting"
+            "heater_return": "Heat generator return temperature"
           },
           "data_description": {
             "temperature_sensor": "The water that goes to the circuits: for a buffer tank its outlet pipe to the mixers; for a boiler or heat pump its supply.",
             "setpoint_entity": "What the source is set to give, e.g. the heat pump's target for the tank (a climate's target temperature, or a number or sensor). Used to warn when a circuit wants more than the source can give.",
             "heater_name": "What heats this source, e.g. Heat pump. Only shown on the schema card.",
             "heater_supply": "Water leaving the heat pump or boiler towards the source. Optional, only shown on the schema card.",
-            "heater_return": "Water going back to the heat pump or boiler. Optional, only shown on the schema card.",
-            "setpoint_min": "The source is never set below this.",
-            "setpoint_max": "The source is never set above this."
+            "heater_return": "Water going back to the heat pump or boiler. Optional, only shown on the schema card."
           }
         }
       },
@@ -465,9 +354,6 @@
       "entry_type": "Heat source",
       "abort": {
         "reconfigure_successful": "The heat source was updated."
-      },
-      "error": {
-        "setpoint_min_above_max": "The lowest setting is above the highest."
       }
     }
   },
@@ -669,6 +555,9 @@
       },
       "source_setpoint": {
         "name": "Set temperature"
+      },
+      "linked_entities": {
+        "name": "Linked entities"
       }
     },
     "binary_sensor": {
@@ -726,6 +615,12 @@
       },
       "setpoint_control": {
         "name": "Set from the circuits"
+      },
+      "source_compensation": {
+        "name": "Mixer follows the heat source"
+      },
+      "home_mixers_on_start": {
+        "name": "Home mixers when Home Assistant starts"
       }
     },
     "number": {
@@ -737,6 +632,62 @@
       },
       "setpoint_margin": {
         "name": "Margin above the warmest circuit"
+      },
+      "travel": {
+        "name": "Mixer travel time"
+      },
+      "hysteresis": {
+        "name": "Mixer hysteresis"
+      },
+      "settle": {
+        "name": "Mixer settle time"
+      },
+      "gain": {
+        "name": "Mixer step per 1 °C"
+      },
+      "min_step": {
+        "name": "Mixer smallest step"
+      },
+      "max_step": {
+        "name": "Mixer largest step"
+      },
+      "trend_window": {
+        "name": "Mixer trend window"
+      },
+      "min_source_gap": {
+        "name": "Smallest source – supply difference"
+      },
+      "pump_delay": {
+        "name": "Pump start delay"
+      },
+      "pump_run_on": {
+        "name": "Pump run-on"
+      },
+      "setpoint_min": {
+        "name": "Lowest setting"
+      },
+      "setpoint_max": {
+        "name": "Highest setting"
+      },
+      "manual_pause": {
+        "name": "Pause after a change by hand"
+      },
+      "mode_pause": {
+        "name": "Pause between heating and cooling"
+      },
+      "exercise_days": {
+        "name": "Exercise after idle days"
+      },
+      "heat_threshold": {
+        "name": "Fallback heating threshold"
+      },
+      "cool_threshold": {
+        "name": "Fallback cooling threshold"
+      }
+    },
+    "climate": {
+      "heat_generator": {
+        "name": "Heat generator"
       }
     }
   },
@@ -749,6 +700,12 @@
     },
     "curve_unknown_parameter": {
       "message": "Not a parameter of this curve: {parameters}"
+    },
+    "above_max": {
+      "message": "The lower limit cannot be above the upper one."
+    },
+    "below_min": {
+      "message": "The upper limit cannot be below the lower one."
     }
   },
   "services": {

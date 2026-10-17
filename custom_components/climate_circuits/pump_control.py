@@ -14,6 +14,7 @@ from .core.protect import exercise_due
 from .core.pump import PumpDecision, PumpTimer
 from .core.texts import pump_text
 from .relay import Relay
+from .tuning import tuned
 
 if TYPE_CHECKING:
     from .circuit import Circuit
@@ -28,10 +29,16 @@ class PumpController:
         log_to = (f"{circuit.id}_pump", "binary_sensor")
         self.relay = Relay(house, s.pump, f"{circuit.name} pump", log_to)
         self.timer = PumpTimer(s.pump_delay, s.pump_run_on)
+        self.retune()
         self.decision: PumpDecision | None = None
         self._exercise_until = 0.0
         self._was_running = False
         self._logged: tuple[Any, ...] | None = None
+
+    def retune(self) -> None:
+        """Delay and run-on as set on the circuit's device."""
+        self.timer.delay = tuned(self.circuit, "pump_delay")
+        self.timer.run_on = tuned(self.circuit, "pump_run_on")
 
     def inputs(self) -> set[str]:
         return {self.relay.entity_id}
@@ -56,7 +63,7 @@ class PumpController:
             and not demand
             and not running
             and self._exercise_until <= now
-            and exercise_due(stored["last_on"], wall, house.settings.exercise_days)
+            and exercise_due(stored["last_on"], wall, tuned(house, "exercise_days"))
         ):
             self._exercise_until = now + EXERCISE_PUMP_SECONDS
         self.decision = self.timer.update(

@@ -15,7 +15,9 @@ async def test_user_flow_creates_entry(hass: HomeAssistant) -> None:
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
     assert result["type"] is FlowResultType.FORM
 
-    result = await hass.config_entries.flow.async_configure(result["flow_id"], HOUSE_OPTIONS)
+    # The form only chooses entities; the thresholds are numbers on the house device.
+    options = {**HOUSE_OPTIONS, "fallback": {"kind": "tank", "sensor": "sensor.tank"}}
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], options)
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["options"]["mode"]["capabilities"] == ["heat", "cool"]
 
@@ -49,16 +51,11 @@ async def test_add_circuit(hass: HomeAssistant, make_entry) -> None:
         },
         "cool_curve": {"room": 24, "slope": 0.5, "minimum": 16, "maximum": 22, "correction": 0},
         "outputs": {"mixer_open": "switch.open"},
-        "mixer": {"travel": 125, "hysteresis": 0.5, "min_step": 5, "max_step": 3},
     }
     result = await hass.config_entries.subentries.async_configure(result["flow_id"], data)
     assert result["errors"] == {"base": "mixer_needs_both_relays"}
 
     data["outputs"] |= {"mixer_close": "switch.close", "supply_sensor": "sensor.supply"}
-    result = await hass.config_entries.subentries.async_configure(result["flow_id"], data)
-    assert result["errors"] == {"base": "mixer_min_step_above_max"}
-
-    data["mixer"]["max_step"] = 20
     result = await hass.config_entries.subentries.async_configure(result["flow_id"], data)
     assert result["type"] is FlowResultType.CREATE_ENTRY
     subentry = next(iter(entry.subentries.values()))

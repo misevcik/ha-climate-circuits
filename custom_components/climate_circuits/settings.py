@@ -13,6 +13,7 @@ from .const import (
     DEFAULT_GAIN,
     DEFAULT_HEAT_CURVE,
     DEFAULT_HYSTERESIS,
+    DEFAULT_MANUAL_PAUSE,
     DEFAULT_MAX_STEP,
     DEFAULT_MIN_SOURCE_GAP,
     DEFAULT_MIN_STEP,
@@ -188,6 +189,7 @@ class SourceSettings:
     setpoint_margin: float = DEFAULT_SETPOINT_MARGIN
     setpoint_min: float = DEFAULT_SETPOINT_MIN
     setpoint_max: float = DEFAULT_SETPOINT_MAX
+    manual_pause: float = DEFAULT_MANUAL_PAUSE  # min
 
     @classmethod
     def from_data(cls, data: Mapping[str, Any]) -> SourceSettings:

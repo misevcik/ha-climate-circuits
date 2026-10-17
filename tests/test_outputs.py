@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from dataclasses import replace
 from datetime import timedelta
 from typing import Any
 
@@ -380,7 +379,7 @@ async def test_homing_cut_short_is_repeated(hass, house, clock, calls) -> None:
 
 async def _restart_mixer(hass, house, *, booting: bool, home: bool) -> Any:
     """The mixer as it starts again, with the house start flag and the homing setting."""
-    house.settings = replace(house.settings, home_mixers_on_start=home)
+    house.persisted["tuning"][house.id]["home_mixers_on_start"] = home
     await _control(hass, True)
     mixer = next(iter(house.circuits.values())).mixer
     mixer.tracker.set(40.0)
@@ -634,3 +633,34 @@ async def test_relay_board_connecting_at_start_is_not_a_drop_out(hass, house, cl
     mixer._tick(None)
     await hass.async_block_till_done()
     assert any("unavailable" in e.data["message"] for e in events)
+
+
+async def test_regulation_values_are_numbers_on_the_circuit(hass, house, clock) -> None:
+    circuit = next(iter(house.circuits.values()))
+    # What the circuit's configuration held before is kept: travel 100 s, pump delay 180 s.
+    assert hass.states.get("number.f1_mixer_travel_time").state == "100.0"
+    assert hass.states.get("number.f1_pump_start_delay").state == "180.0"
+    await hass.services.async_call(
+        "number",
+        "set_value",
+        {"entity_id": "number.f1_mixer_settle_time", "value": 240},
+        blocking=True,
+    )
+    await hass.services.async_call(
+        "number",
+        "set_value",
+        {"entity_id": "number.f1_pump_start_delay", "value": 60},
+        blocking=True,
+    )
+    await hass.services.async_call(
+        "switch",
+        "turn_off",
+        {"entity_id": "switch.f1_mixer_follows_the_heat_source"},
+        blocking=True,
+    )
+    assert circuit.mixer.params.settle == 240
+    assert circuit.mixer.params.compensate is False
+    assert circuit.pump.timer.delay == 60
+    linked = hass.states.get("sensor.f1_linked_entities")
+    assert linked.attributes["mixer_open"] == OPEN and linked.attributes["pump"] == PUMP
+    assert int(linked.state) == 5  # zone, pump, two mixer relays, supply sensor

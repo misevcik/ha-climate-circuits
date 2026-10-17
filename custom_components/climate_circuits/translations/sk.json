@@ -24,14 +24,10 @@
             "name": "Záloha, keď zdroj nie je dostupný",
             "data": {
               "kind": "Záloha",
-              "sensor": "Senzor teploty",
-              "heat_threshold": "Prah kúrenia",
-              "cool_threshold": "Prah chladenia"
+              "sensor": "Senzor teploty"
             },
             "data_description": {
-              "kind": "Nádrž: teplá voda znamená kúrenie. Vonkajšia: zima vonku znamená kúrenie.",
-              "heat_threshold": "Nádrž: kúrenie od tejto teploty vyššie. Vonkajšia: kúrenie od tejto teploty nižšie.",
-              "cool_threshold": "Nádrž: chladenie od tejto teploty nižšie. Vonkajšia: chladenie od tejto teploty vyššie."
+              "kind": "Nádrž: teplá voda znamená kúrenie. Vonkajšia: zima vonku znamená kúrenie."
             }
           },
           "weather": {
@@ -53,15 +49,12 @@
             "data": {
               "circulation_sensor": "Teplota spiatočky cirkulácie",
               "circulation_pump": "Cirkulačné čerpadlo",
-              "threshold": "Prah (čerpadlo vypne)",
-              "delta": "Delta (čerpadlo zapne pod prah − delta)",
               "tank_sensor": "Teplota zásobníka TUV",
               "tank_setpoint": "Nastavená teplota zásobníka TUV",
               "tank_name": "Názov nádrže TUV"
             },
             "data_description": {
               "circulation_sensor": "Teplota na konci cirkulačného okruhu.",
-              "threshold": "Dá sa meniť aj na zariadení Hot water.",
               "tank_sensor": "Iba na zobrazenie v karte schémy.",
               "tank_setpoint": "Na koľko sa zásobník ohrieva, napr. cieľ TUV tepelného čerpadla. Iba na zobrazenie v karte schémy.",
               "tank_name": "Zobrazí sa v karte schémy; prázdne = Nádrž TÚV."
@@ -74,20 +67,6 @@
             },
             "data_description": {
               "info_sensors": "Ich hodnoty sa zobrazia v atribútoch senzora režimu, napr. TUV, akumulačka alebo výstup tepelného čerpadla."
-            }
-          },
-          "protection": {
-            "name": "Ochrany",
-            "description": "Pauza medzi kúrením a chladením, pravidelné prevádzkovanie nepoužívaných čerpadiel a ventilov a homing zmiešavačov pri štarte. Iba pri zapnutom Ovládať zariadenia.",
-            "data": {
-              "mode_pause": "Pauza pri prepnutí medzi kúrením a chladením",
-              "exercise_days": "Prevádzkovať nepoužívané čerpadlá a ventily po",
-              "home_mixers_on_start": "Homovať zmiešavače pri štarte Home Assistanta"
-            },
-            "data_description": {
-              "mode_pause": "Minúty, ktoré nový režim čaká po zastavení druhého. Návrat do predošlého režimu pauzu nepotrebuje.",
-              "exercise_days": "Dní bez behu; 0 vypne prevádzkovanie.",
-              "home_mixers_on_start": "Asi 30 s po štarte Home Assistanta zatvorí každý zmiešavač na doraz, lebo poloha sa mohla zmeniť, kým nebežal. Trvá jeden celý zdvih; vypnuté ponechá uloženú polohu. Nie pri reloade integrácie."
             }
           }
         }
@@ -127,14 +106,10 @@
             "name": "Záloha, keď zdroj nie je dostupný",
             "data": {
               "kind": "Záloha",
-              "sensor": "Senzor teploty",
-              "heat_threshold": "Prah kúrenia",
-              "cool_threshold": "Prah chladenia"
+              "sensor": "Senzor teploty"
             },
             "data_description": {
-              "kind": "Nádrž: teplá voda znamená kúrenie. Vonkajšia: zima vonku znamená kúrenie.",
-              "heat_threshold": "Nádrž: kúrenie od tejto teploty vyššie. Vonkajšia: kúrenie od tejto teploty nižšie.",
-              "cool_threshold": "Nádrž: chladenie od tejto teploty nižšie. Vonkajšia: chladenie od tejto teploty vyššie."
+              "kind": "Nádrž: teplá voda znamená kúrenie. Vonkajšia: zima vonku znamená kúrenie."
             }
           },
           "weather": {
@@ -156,15 +131,12 @@
             "data": {
               "circulation_sensor": "Teplota spiatočky cirkulácie",
               "circulation_pump": "Cirkulačné čerpadlo",
-              "threshold": "Prah (čerpadlo vypne)",
-              "delta": "Delta (čerpadlo zapne pod prah − delta)",
               "tank_sensor": "Teplota zásobníka TUV",
               "tank_setpoint": "Nastavená teplota zásobníka TUV",
               "tank_name": "Názov nádrže TUV"
             },
             "data_description": {
               "circulation_sensor": "Teplota na konci cirkulačného okruhu.",
-              "threshold": "Dá sa meniť aj na zariadení Hot water.",
               "tank_sensor": "Iba na zobrazenie v karte schémy.",
               "tank_setpoint": "Na koľko sa zásobník ohrieva, napr. cieľ TUV tepelného čerpadla. Iba na zobrazenie v karte schémy.",
               "tank_name": "Zobrazí sa v karte schémy; prázdne = Nádrž TÚV."
@@ -177,20 +149,6 @@
             },
             "data_description": {
               "info_sensors": "Ich hodnoty sa zobrazia v atribútoch senzora režimu, napr. TUV, akumulačka alebo výstup tepelného čerpadla."
-            }
-          },
-          "protection": {
-            "name": "Ochrany",
-            "description": "Pauza medzi kúrením a chladením, pravidelné prevádzkovanie nepoužívaných čerpadiel a ventilov a homing zmiešavačov pri štarte. Iba pri zapnutom Ovládať zariadenia.",
-            "data": {
-              "mode_pause": "Pauza pri prepnutí medzi kúrením a chladením",
-              "exercise_days": "Prevádzkovať nepoužívané čerpadlá a ventily po",
-              "home_mixers_on_start": "Homovať zmiešavače pri štarte Home Assistanta"
-            },
-            "data_description": {
-              "mode_pause": "Minúty, ktoré nový režim čaká po zastavení druhého. Návrat do predošlého režimu pauzu nepotrebuje.",
-              "exercise_days": "Dní bez behu; 0 vypne prevádzkovanie.",
-              "home_mixers_on_start": "Asi 30 s po štarte Home Assistanta zatvorí každý zmiešavač na doraz, lebo poloha sa mohla zmeniť, kým nebežal. Trvá jeden celý zdvih; vypnuté ponechá uloženú polohu. Nie pri reloade integrácie."
             }
           }
         }
@@ -260,41 +218,11 @@
                 "mixer_close": "Relé zmiešavača zatvor",
                 "supply_sensor": "Teplota vody za zmiešavačom",
                 "mixer_position": "Poloha zmiešavača",
-                "pump_delay": "Oneskorenie štartu čerpadla",
-                "pump_run_on": "Dobeh čerpadla",
                 "source": "Zdroj tepla"
               },
               "data_description": {
                 "mixer_position": "Cover starej integrácie; jeho poloha slúži iba ako prvý odhad, kým sa ventil nezahomuje.",
-                "pump_delay": "Sekundy požiadavky pred štartom čerpadla, aby sa stihli otvoriť ventily zón.",
-                "pump_run_on": "Sekundy, počas ktorých čerpadlo beží po skončení požiadavky na kúrenie.",
                 "source": "Odkiaľ okruh berie vodu. Keď je v dome jediný zdroj tepla, použije sa, aj keď nie je vybraný."
-              }
-            },
-            "mixer": {
-              "name": "Regulácia zmiešavača",
-              "description": "Ako ventil reguluje teplotu vody za zmiešavačom. Predvolené hodnoty sedia na väčšinu radiátorových aj podlahových okruhov.",
-              "data": {
-                "travel": "Čas celej dráhy ventilu",
-                "hysteresis": "Hysteréza",
-                "settle": "Čas ustálenia",
-                "gain": "Krok na 1 °C odchýlky od cieľa",
-                "min_step": "Najmenší krok",
-                "max_step": "Najväčší krok",
-                "trend_window": "Okno trendu",
-                "source_compensation": "Sledovať zdroj tepla",
-                "min_source_gap": "Najmenší rozdiel zdroj – výstup"
-              },
-              "data_description": {
-                "travel": "Sekundy, za ktoré pohon prejde z úplne zatvoreného do úplne otvoreného (na štítku pohonu).",
-                "hysteresis": "Ventil stojí, kým je voda za zmiešavačom v rozmedzí ± tejto hodnoty od cieľa.",
-                "settle": "Sekundy čakania po pohybe ventilu pred ďalším, kým zmenená voda dotečie k senzoru prívodu. Dlhší, ak zmiešavač kmitá, kratší, ak cieľ dobieha pomaly.",
-                "gain": "O koľko sa ventil pohne za každý °C, o ktorý je voda mimo cieľa. Väčší dobehne cieľ rýchlejšie, ale môže prestreliť.",
-                "min_step": "Menší pohyb by vodu citeľne nezmenil.",
-                "max_step": "Obmedzí jeden pohyb ďaleko od cieľa.",
-                "trend_window": "Sekundy meraní za zmiešavačom, z ktorých sa berie smer teploty. Keď teplota už ide k cieľu, ventil čaká.",
-                "source_compensation": "Keď sa zmení teplota zdroja, ventil sa hneď pohne tak, aby voda za zmiešavačom ostala rovnaká, bez čakania na senzor prívodu.",
-                "min_source_gap": "Zdroj musí byť aspoň o toľko teplejší ako voda za zmiešavačom; pri menšom rozdiele by šum senzora hýbal ventilom príliš."
               }
             }
           }
@@ -354,41 +282,11 @@
                 "mixer_close": "Relé zmiešavača zatvor",
                 "supply_sensor": "Teplota vody za zmiešavačom",
                 "mixer_position": "Poloha zmiešavača",
-                "pump_delay": "Oneskorenie štartu čerpadla",
-                "pump_run_on": "Dobeh čerpadla",
                 "source": "Zdroj tepla"
               },
               "data_description": {
                 "mixer_position": "Cover starej integrácie; jeho poloha slúži iba ako prvý odhad, kým sa ventil nezahomuje.",
-                "pump_delay": "Sekundy požiadavky pred štartom čerpadla, aby sa stihli otvoriť ventily zón.",
-                "pump_run_on": "Sekundy, počas ktorých čerpadlo beží po skončení požiadavky na kúrenie.",
                 "source": "Odkiaľ okruh berie vodu. Keď je v dome jediný zdroj tepla, použije sa, aj keď nie je vybraný."
-              }
-            },
-            "mixer": {
-              "name": "Regulácia zmiešavača",
-              "description": "Ako ventil reguluje teplotu vody za zmiešavačom. Predvolené hodnoty sedia na väčšinu radiátorových aj podlahových okruhov.",
-              "data": {
-                "travel": "Čas celej dráhy ventilu",
-                "hysteresis": "Hysteréza",
-                "settle": "Čas ustálenia",
-                "gain": "Krok na 1 °C odchýlky od cieľa",
-                "min_step": "Najmenší krok",
-                "max_step": "Najväčší krok",
-                "trend_window": "Okno trendu",
-                "source_compensation": "Sledovať zdroj tepla",
-                "min_source_gap": "Najmenší rozdiel zdroj – výstup"
-              },
-              "data_description": {
-                "travel": "Sekundy, za ktoré pohon prejde z úplne zatvoreného do úplne otvoreného (na štítku pohonu).",
-                "hysteresis": "Ventil stojí, kým je voda za zmiešavačom v rozmedzí ± tejto hodnoty od cieľa.",
-                "settle": "Sekundy čakania po pohybe ventilu pred ďalším, kým zmenená voda dotečie k senzoru prívodu. Dlhší, ak zmiešavač kmitá, kratší, ak cieľ dobieha pomaly.",
-                "gain": "O koľko sa ventil pohne za každý °C, o ktorý je voda mimo cieľa. Väčší dobehne cieľ rýchlejšie, ale môže prestreliť.",
-                "min_step": "Menší pohyb by vodu citeľne nezmenil.",
-                "max_step": "Obmedzí jeden pohyb ďaleko od cieľa.",
-                "trend_window": "Sekundy meraní za zmiešavačom, z ktorých sa berie smer teploty. Keď teplota už ide k cieľu, ventil čaká.",
-                "source_compensation": "Keď sa zmení teplota zdroja, ventil sa hneď pohne tak, aby voda za zmiešavačom ostala rovnaká, bez čakania na senzor prívodu.",
-                "min_source_gap": "Zdroj musí byť aspoň o toľko teplejší ako voda za zmiešavačom; pri menšom rozdiele by šum senzora hýbal ventilom príliš."
               }
             }
           }
@@ -399,8 +297,7 @@
         "mixer_needs_both_relays": "Zmiešavač potrebuje relé otvor aj zatvor.",
         "mixer_relays_same": "Relé otvor a zatvor musia byť rôzne.",
         "mixer_needs_supply_sensor": "Zmiešavač potrebuje senzor teploty za zmiešavačom.",
-        "design_outdoor_above_room": "Návrhová vonkajšia teplota musí byť nižšia ako teplota v izbe.",
-        "mixer_min_step_above_max": "Najmenší krok je väčší ako najväčší krok."
+        "design_outdoor_above_room": "Návrhová vonkajšia teplota musí byť nižšia ako teplota v izbe."
       },
       "initiate_flow": {
         "user": "Pridať okruh"
@@ -421,18 +318,14 @@
             "setpoint_entity": "Nastavená teplota",
             "heater_name": "Názov zdroja tepla",
             "heater_supply": "Teplota výstupu zo zdroja tepla",
-            "heater_return": "Teplota spiatočky do zdroja tepla",
-            "setpoint_min": "Najnižšie nastavenie",
-            "setpoint_max": "Najvyššie nastavenie"
+            "heater_return": "Teplota spiatočky do zdroja tepla"
           },
           "data_description": {
             "temperature_sensor": "Voda, ktorá ide do okruhov: pri akumulačnej nádrži jej výstupné potrubie k zmiešavačom; pri kotle alebo tepelnom čerpadle jeho výstup.",
             "setpoint_entity": "Na koľko je zdroj nastavený, napr. cieľ tepelného čerpadla pre akumulačku (cieľová teplota climate entity, alebo number či senzor). Slúži na upozornenie, keď okruh chce viac, ako zdroj môže dať.",
             "heater_name": "Čo ohrieva tento zdroj, napr. Tepelné čerpadlo. Iba na zobrazenie v karte schémy.",
             "heater_supply": "Voda z tepelného čerpadla alebo kotla do zdroja. Nepovinné, iba na zobrazenie v karte schémy.",
-            "heater_return": "Voda späť do tepelného čerpadla alebo kotla. Nepovinné, iba na zobrazenie v karte schémy.",
-            "setpoint_min": "Pod túto hodnotu sa zdroj nikdy nenastaví.",
-            "setpoint_max": "Nad túto hodnotu sa zdroj nikdy nenastaví."
+            "heater_return": "Voda späť do tepelného čerpadla alebo kotla. Nepovinné, iba na zobrazenie v karte schémy."
           }
         },
         "reconfigure": {
@@ -444,18 +337,14 @@
             "setpoint_entity": "Nastavená teplota",
             "heater_name": "Názov zdroja tepla",
             "heater_supply": "Teplota výstupu zo zdroja tepla",
-            "heater_return": "Teplota spiatočky do zdroja tepla",
-            "setpoint_min": "Najnižšie nastavenie",
-            "setpoint_max": "Najvyššie nastavenie"
+            "heater_return": "Teplota spiatočky do zdroja tepla"
           },
           "data_description": {
             "temperature_sensor": "Voda, ktorá ide do okruhov: pri akumulačnej nádrži jej výstupné potrubie k zmiešavačom; pri kotle alebo tepelnom čerpadle jeho výstup.",
             "setpoint_entity": "Na koľko je zdroj nastavený, napr. cieľ tepelného čerpadla pre akumulačku (cieľová teplota climate entity, alebo number či senzor). Slúži na upozornenie, keď okruh chce viac, ako zdroj môže dať.",
             "heater_name": "Čo ohrieva tento zdroj, napr. Tepelné čerpadlo. Iba na zobrazenie v karte schémy.",
             "heater_supply": "Voda z tepelného čerpadla alebo kotla do zdroja. Nepovinné, iba na zobrazenie v karte schémy.",
-            "heater_return": "Voda späť do tepelného čerpadla alebo kotla. Nepovinné, iba na zobrazenie v karte schémy.",
-            "setpoint_min": "Pod túto hodnotu sa zdroj nikdy nenastaví.",
-            "setpoint_max": "Nad túto hodnotu sa zdroj nikdy nenastaví."
+            "heater_return": "Voda späť do tepelného čerpadla alebo kotla. Nepovinné, iba na zobrazenie v karte schémy."
           }
         }
       },
@@ -465,9 +354,6 @@
       "entry_type": "Zdroj tepla",
       "abort": {
         "reconfigure_successful": "Zdroj tepla bol upravený."
-      },
-      "error": {
-        "setpoint_min_above_max": "Najnižšie nastavenie je vyššie ako najvyššie."
       }
     }
   },
@@ -669,6 +555,9 @@
       },
       "source_setpoint": {
         "name": "Nastavená teplota"
+      },
+      "linked_entities": {
+        "name": "Pripojené entity"
       }
     },
     "binary_sensor": {
@@ -726,6 +615,12 @@
       },
       "setpoint_control": {
         "name": "Nastavovať podľa okruhov"
+      },
+      "source_compensation": {
+        "name": "Zmiešavač sleduje zdroj tepla"
+      },
+      "home_mixers_on_start": {
+        "name": "Homovať zmiešavače pri štarte HA"
       }
     },
     "number": {
@@ -737,6 +632,62 @@
       },
       "setpoint_margin": {
         "name": "Rezerva nad najteplejší okruh"
+      },
+      "travel": {
+        "name": "Čas dráhy zmiešavača"
+      },
+      "hysteresis": {
+        "name": "Hysteréza zmiešavača"
+      },
+      "settle": {
+        "name": "Čas ustálenia zmiešavača"
+      },
+      "gain": {
+        "name": "Krok zmiešavača na 1 °C"
+      },
+      "min_step": {
+        "name": "Najmenší krok zmiešavača"
+      },
+      "max_step": {
+        "name": "Najväčší krok zmiešavača"
+      },
+      "trend_window": {
+        "name": "Okno trendu zmiešavača"
+      },
+      "min_source_gap": {
+        "name": "Najmenší rozdiel zdroj – výstup"
+      },
+      "pump_delay": {
+        "name": "Oneskorenie štartu čerpadla"
+      },
+      "pump_run_on": {
+        "name": "Dobeh čerpadla"
+      },
+      "setpoint_min": {
+        "name": "Najnižšie nastavenie"
+      },
+      "setpoint_max": {
+        "name": "Najvyššie nastavenie"
+      },
+      "manual_pause": {
+        "name": "Pauza po ručnej zmene"
+      },
+      "mode_pause": {
+        "name": "Pauza medzi kúrením a chladením"
+      },
+      "exercise_days": {
+        "name": "Protáčanie po dňoch nečinnosti"
+      },
+      "heat_threshold": {
+        "name": "Záložný prah kúrenia"
+      },
+      "cool_threshold": {
+        "name": "Záložný prah chladenia"
+      }
+    },
+    "climate": {
+      "heat_generator": {
+        "name": "Zdroj tepla"
       }
     }
   },
@@ -749,6 +700,12 @@
     },
     "curve_unknown_parameter": {
       "message": "Nie je parameter tejto krivky: {parameters}"
+    },
+    "above_max": {
+      "message": "Dolná hranica nemôže byť vyššia ako horná."
+    },
+    "below_min": {
+      "message": "Horná hranica nemôže byť nižšia ako dolná."
     }
   },
   "services": {
