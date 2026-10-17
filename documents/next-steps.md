@@ -177,6 +177,7 @@ Kód hotový lokálne (151 testov, ruff OK): čerpadlá okruhov, vlastná poloha
 - [ ] Zmerať skutočný čas dráhy pohonu F1 (odhad polohy uteká)
 - [x] Pravidlá nastavovania TČ (učiaca sa rezerva, ručná rezerva, pauza 4 h po ručnej zmene, bez kúrenia nemení) + `binary_sensor.<okruh>_source_not_enough` – 0.1.18, tag pushnutý
 - [x] Karta: riadok Nastavovanie tepelka na ladenie (0.1.19), tag pushnutý
-- [ ] Release `v0.1.19` (obsahuje 0.1.18), update, reštart; zapnúť *Set from the circuits*
+- [x] Režim rezervy Učí sa / Ručne (0.1.20), tag pushnutý
+- [ ] Release `v0.1.20` (obsahuje 0.1.18–0.1.19), update, reštart; zapnúť *Set from the circuits*
 - [ ] Typ a výkon TČ od používateľa (dimenzovanie)
 - [ ] Štart okruhu so studenou vodou – overiť pri najbližšom štarte

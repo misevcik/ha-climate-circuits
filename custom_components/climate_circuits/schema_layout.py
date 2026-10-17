@@ -62,6 +62,7 @@ def schema_layout(house: House) -> dict[str, Any]:
                 "setpoint": find("sensor", s.id, "source_setpoint"),
                 "setpoint_control": find("switch", s.id, "setpoint_control"),
                 "margin": find("number", s.id, "setpoint_margin"),
+                "margin_mode": find("select", s.id, "margin_mode"),
                 "heater": {
                     "name": s.settings.heater_name,
                     "supply": s.settings.heater_supply,

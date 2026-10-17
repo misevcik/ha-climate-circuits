@@ -705,6 +705,13 @@
           "cool": "Cool",
           "off": "Off"
         }
+      },
+      "margin_mode": {
+        "name": "Margin",
+        "state": {
+          "auto": "Learned",
+          "manual": "Manual"
+        }
       }
     },
     "switch": {

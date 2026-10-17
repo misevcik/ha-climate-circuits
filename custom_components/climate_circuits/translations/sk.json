@@ -705,6 +705,13 @@
           "cool": "Chladenie",
           "off": "Vypnuté"
         }
+      },
+      "margin_mode": {
+        "name": "Rezerva",
+        "state": {
+          "auto": "Učí sa",
+          "manual": "Ručne"
+        }
       }
     },
     "switch": {

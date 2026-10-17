@@ -40,6 +40,7 @@ if TYPE_CHECKING:
     from .house import House
 
 MARGIN = MarginSettings()
+MARGIN_MODES = ("auto", "manual")  # learned from the mixers, or the value set by hand
 
 
 class Source(Listeners):
@@ -88,9 +89,22 @@ class Source(Listeners):
         """°C above the warmest circuit target: learned, or set by hand."""
         return float(self._stored.get("margin", self.settings.setpoint_margin))
 
+    @property
+    def margin_mode(self) -> str:
+        return str(self._stored.get("margin_mode", "auto"))
+
+    @callback
+    def set_margin_mode(self, mode: str) -> None:
+        """Back to auto, learning starts from the margin as it is."""
+        self._stored["margin_mode"] = mode
+        self._margin_changed_at = self.house.now()
+        self._comfortable_since = None
+        self.house.save()
+        self.house.evaluate()
+
     @callback
     def set_margin(self, margin: float) -> None:
-        """By hand: learning goes on from here."""
+        """By hand: holds in manual mode; in auto mode learning goes on from here."""
         self._stored["margin"] = margin
         self._margin_changed_at = self.house.now()
         self._comfortable_since = None
@@ -137,7 +151,7 @@ class Source(Listeners):
         paused = self.paused_until is not None
         self._log_resume(paused)
         heating = self._heating_circuits() if mode is Mode.HEAT else []
-        if live and not paused:
+        if live and not paused and self.margin_mode == "auto":
             self._learn_margin(heating)
         decision = self.setpoint_decision = setpoint_decision(
             heating=mode is Mode.HEAT,

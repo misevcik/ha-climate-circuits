@@ -241,6 +241,22 @@ async def test_margin_learns_and_can_be_set_by_hand(hass: HomeAssistant, make_en
     )
     assert source.margin == 6.0
     assert hass.states.get(margin).state == "6.0"
+    mode = "select.buffer_tank_margin"
+    await hass.services.async_call(
+        "select", "select_option", {"entity_id": mode, "option": "manual"}, blocking=True
+    )
+    source._margin_changed_at = None  # learning would be allowed again by now
+    house.evaluate()
+    await hass.async_block_till_done()
+    assert source.margin == 6.0  # manual: the value set by hand holds, the mixer still short
+    await hass.services.async_call(
+        "select", "select_option", {"entity_id": mode, "option": "auto"}, blocking=True
+    )
+    source._margin_changed_at = None
+    house.evaluate()
+    await hass.async_block_till_done()
+    assert source.margin == 7.0  # auto again: learns on from the value set by hand
     (card,) = hass.states.get("sensor.climate_circuits_mode").attributes["layout"]["sources"]
     assert card["setpoint_control"] == "switch.buffer_tank_set_from_the_circuits"
     assert card["margin"] == margin
+    assert card["margin_mode"] == mode

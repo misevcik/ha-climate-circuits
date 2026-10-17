@@ -27,6 +27,7 @@ const TEXTS = {
     auto: "Nastavovanie tepelka", auto_off: "vypnuté", auto_on: "zapnuté",
     auto_dry: "skúšobný režim", auto_paused: "pozastavené do {t} (ručná zmena)",
     auto_set: "nastavené", auto_wants: "chce", auto_margin: "rezerva",
+    margin_auto: "učí sa", margin_manual: "ručne",
     auto_idle: "nikto nekúri, nemení sa", auto_cool: "nekúri sa, nemení sa",
     hot_water: "Nádrž TÚV", heater: "Zdroj tepla", heater_out: "výstup", heater_in: "spiatočka", circulation: "Cirkulácia TÚV", circ_return: "spiatočka cirkulácie",
     starts_below: "zapne pod", stops_at: "vypne pri", running: "beží", stopped: "stojí",
@@ -43,6 +44,7 @@ const TEXTS = {
     auto: "Heat source setting", auto_off: "off", auto_on: "on",
     auto_dry: "dry run", auto_paused: "paused until {t} (changed by hand)",
     auto_set: "set", auto_wants: "wants", auto_margin: "margin",
+    margin_auto: "learned", margin_manual: "manual",
     auto_idle: "no circuit heats, left as it is", auto_cool: "not heating, left as it is",
     hot_water: "Hot water tank", heater: "Heat generator", heater_out: "supply", heater_in: "return", circulation: "Circulation", circ_return: "circulation return",
     starts_below: "starts below", stops_at: "stops at", running: "running", stopped: "stopped",
@@ -130,7 +132,7 @@ class ClimateCircuitsSchemaCard extends HTMLElement {
     const hw = layout.hot_water;
     if (hw) ids.push(hw.state, hw.temperature, hw.threshold, hw.delta, hw.enabled, hw.tank, hw.tank_setpoint);
     for (const s of layout.sources) {
-      ids.push(s.temperature, s.setpoint, s.setpoint_control, s.margin);
+      ids.push(s.temperature, s.setpoint, s.setpoint_control, s.margin, s.margin_mode);
       if (s.heater) ids.push(s.heater.supply, s.heater.return);
     }
     for (const c of layout.circuits) {
@@ -376,13 +378,15 @@ class ClimateCircuitsSchemaCard extends HTMLElement {
     const set = num(this._val(src.setpoint));
     const wanted = num(a("wanted"));
     const margin = num(this._val(src.margin) ?? a("margin"));
+    const marginMode = this._val(src.margin_mode) || a("margin_mode");
     let detail;
     if (wanted === null) {
       detail = this._t(a("wanted_reason") === "not_heating" ? "auto_cool" : "auto_idle");
     } else {
       detail = `${this._t("auto_wants")} <b>${deg(wanted)}</b> = ${esc(a("warmest_circuit") || "?")} `
         + `${deg(a("warmest_target"))} + `
-        + `<span class="link" data-entity="${esc(src.margin)}">${this._t("auto_margin")} ${deg(margin)}</span>`;
+        + `<span class="link" data-entity="${esc(src.margin)}">${this._t("auto_margin")} ${deg(margin)}</span>`
+        + (marginMode ? ` (<span class="link" data-entity="${esc(src.margin_mode)}">${this._t(`margin_${marginMode}`)}</span>)` : "");
     }
     return `<div class="auto ${on ? (paused ? "paused" : "on") : "off"}" data-entity="${esc(src.setpoint_control)}">
       <b>${this._t("auto")}</b> (${esc(src.name)}): ${esc(state)} ·

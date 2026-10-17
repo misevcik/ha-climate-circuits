@@ -91,7 +91,7 @@ The same change is available as an action, `climate_circuits.set_curve`, targeti
 
 A heat source whose *set temperature* is a climate or a number (a heat pump's target) gets the switch **Set from the circuits** (off by default). With it and *Control equipment* on, the source is set to the warmest water a heating circuit wants plus a margin, at most every 15 minutes and by whole steps; without heating demand it is left alone.
 
-- The margin learns: it rises by 1 °C when a circuit reports *Source not enough* (`binary_sensor.<circuit>_source_not_enough`: the mixer is fully open and the supply stays below its target), and falls by 1 °C after an hour with every heating mixer below 70 % and at its target. It can also be set by hand (`number.<source>_margin_above_the_warmest_circuit`).
+- The margin learns: it rises by 1 °C when a circuit reports *Source not enough* (`binary_sensor.<circuit>_source_not_enough`: the mixer is fully open and the supply stays below its target), and falls by 1 °C after an hour with every heating mixer below 70 % and at its target. It can also be set by hand (`number.<source>_margin_above_the_warmest_circuit`); `select.<source>_margin` switches between *Learned* and *Manual* (the value set by hand holds).
 - A change of the setting made elsewhere (e.g. the heat pump's app) pauses the automatic setting for 4 hours.
 - Every change and its reason is written to Activity.
 

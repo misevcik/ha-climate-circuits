@@ -315,6 +315,7 @@ class SourceSetpointSensor(SourceEntity, SensorEntity):
             "warmest_circuit": d.circuit if d else None,
             "warmest_target": d.target if d else None,
             "margin": self.source.margin,
+            "margin_mode": self.source.margin_mode,
             "paused_until": self.source.paused_until,
             "controlled": self.source.control_enabled and self.source.house.control_equipment,
         }

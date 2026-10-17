@@ -3,6 +3,9 @@
 Architektúra: [architecture.md](architecture.md) (pôvodný Claude Docs dokument z 1. 10. je zastaraný)
 Názov: **Climate Circuits**, doména `climate_circuits`, repozitár `ha-climate-circuits`.
 
+## 2026-10-17 – rezerva: prepínač Učí sa / Ručne (0.1.20)
+- Používateľ chce rezervu prepínať medzi auto a manuál; v manuáli platí zadaná hodnota. Miesto: v Climate Circuits pri zariadení zdroja (vedľa entity rezervy), `select.<zdroj>_margin` – Učí sa / Ručne; karta ukazuje režim pri rezerve. Návrat na Učí sa pokračuje od aktuálnej hodnoty.
+
 ## 2026-10-16 – automatické nastavovanie tepelka: pravidlá (0.1.18)
 - Ráno 16. 10. (vonku 2,5 °C) GF 3× „zdroj nestačí“ (4:53, 5:27, 6:59): výstup z nádrže 39–40,5 °C pri nastavení TČ 45–46 °C; vrch nádrže je o 4–5 °C teplejší ako výstup k zmiešavačom. Nastavenie TČ v noci menil používateľ ručne (45 → 46 → 50 °C).
 - Pravidlá (rozhodnutia používateľa):
