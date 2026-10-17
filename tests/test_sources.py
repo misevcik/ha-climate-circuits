@@ -307,3 +307,18 @@ async def test_limits_are_numbers_on_the_source_and_keep_their_order(
     assert hass.states.get(pause).state == "1.0"
     linked = hass.states.get("sensor.buffer_tank_set_temperature_from")
     assert linked.attributes["entity_id"] == HEAT_PUMP_TARGET
+
+
+async def test_a_list_of_linked_entities_shows_the_first_and_how_many_follow(
+    hass: HomeAssistant, make_entry
+) -> None:
+    hass.states.async_set("climate.kitchen", "heat", {"friendly_name": "Kitchen"})
+    hass.states.async_set("climate.office", "heat", {"friendly_name": "Office"})
+    await _setup(
+        hass,
+        make_entry,
+        circuit_data("F1", zones={"heating_zones": ["climate.kitchen", "climate.office"]}),
+    )
+    linked = hass.states.get("sensor.f1_heating_thermostats")
+    assert linked.state == "Kitchen +1"
+    assert linked.attributes["Office"] == "climate.office"

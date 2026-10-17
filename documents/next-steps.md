@@ -183,6 +183,8 @@ Kód hotový lokálne (151 testov, ruff OK): čerpadlá okruhov, vlastná poloha
 - [x] `v0.1.21` nainštalovaná, hodnoty z formulárov prevzaté (prah TUV 36, delta 1)
 - [x] Prepínač premenovaný na *Heat pump controlled by integration* (0.1.22), tag pushnutý
 - [x] Pripojené entity jednotlivo na zariadení (0.1.23), tag pushnutý
-- [ ] Release `v0.1.23` (obsahuje 0.1.22), update, reštart; zapnúť prepínač
+- [x] `v0.1.23` nainštalovaná
+- [x] Zoznam pripojených entít skrátený na „prvá +N“ (0.1.24), tag pushnutý
+- [ ] Release `v0.1.24`, update, reštart; zapnúť prepínač
 - [ ] Typ a výkon TČ od používateľa (dimenzovanie)
 - [ ] Štart okruhu so studenou vodou – overiť pri najbližšom štarte

@@ -411,10 +411,18 @@ class LinkedEntitySensor(SensorEntity):
 
     @property
     def native_value(self) -> str | None:
-        names = [name_of(self.hass, e) or e for e in self._entities()]
-        return ", ".join(names)[:255] or None
+        """One name fits the device page; with more, the first and how many follow."""
+        entities = self._entities()
+        if not entities:
+            return None
+        first = name_of(self.hass, entities[0]) or entities[0]
+        return first if len(entities) == 1 else f"{first} +{len(entities) - 1}"
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
+        """Every linked entity, its name with its id."""
         entities = self._entities()
-        return {"entity_id": entities[0] if len(entities) == 1 else entities}
+        return {
+            "entity_id": entities[0] if len(entities) == 1 else entities,
+            **{name_of(self.hass, e) or e: e for e in entities},
+        }
