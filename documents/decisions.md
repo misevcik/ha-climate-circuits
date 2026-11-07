@@ -3,6 +3,17 @@
 Architektúra: [architecture.md](architecture.md) (pôvodný Claude Docs dokument z 1. 10. je zastaraný)
 Názov: **Climate Circuits**, doména `climate_circuits`, repozitár `ha-climate-circuits`.
 
+## 2026-11-07 – meraný pokles nádrže implementovaný (nevydané)
+- Implementované podľa [heat-source-setting.md](heat-source-setting.md): nastavenie tepelka = najteplejší cieľ + rezerva 2 °C + pokles nádrže (90. percentil za 3 h). Učiaca sa rezerva (±1 °C, prahy zvýšiť/znížiť) zrušená; staré `number.<zdroj>_margin_above_the_warmest_circuit` sa pri štarte zmaže z registra, `select.<zdroj>_margin` ostáva (rovnaké unique_id) ako *Pokles nádrže* Meraný / Ručne. Stará naučená rezerva (15 °C) sa neprenáša – štart s 8 °C a meraním.
+- Krivka podľa termostatov: jeden prepínač na okruh (nie na zónu) – používateľ to vzal späť. Plánovač termostatov je mimo integrácie; keď zvýši teplotu zóny, zvýši sa cieľ okruhu aj nastavenie tepelka.
+- Pri testoch nájdené a opravené: entity zdroja sa obnovovali pred výpočtom nastavenia (o jedno vyhodnotenie neskôr); vzorka sa mohla vynechať pri ticku chvíľu pred 60 s (tolerancia 1 s); Aktivita písala „zmeraný“ aj pri predvolenom poklese → atribút a text `drop_from` (zmeraný / naposledy zmeraný / predvolený / ručne).
+- Pred commitom beží code review (skill `code-review`) – požiadavka používateľa, platí odteraz. Prvé review (high) našlo 9 bodov, opravené: pokles nikdy pod 0 (inak by voda z iného zdroja stiahla nastavenie až na minimum); zmazanie aj `number.<zdroj>_margin_raise_gap` / `_margin_lower_gap` z registra; ručná rezerva spred 0.1.27 sa prenesie ako ručný pokles (rezerva − 2 °C); krátky výpadok entity tepelka nereštartuje 30 min čakanie; meraný pokles sa počíta raz pri novej vzorke; `samples`/`measured` mimo recordera; `drop_mode`/`drop_from` len na senzore poklesu; prázdny konštruktor preč. Ponechané podľa špecifikácie: keď sa nastavenie mení každých 15 min, 30 min čakanie po zmene blokuje vzorky (v praxi sa cieľ mení zriedka). Testy: 225.
+- Čaká: rozhodnutie o vydaní (tag v0.1.27 už pushnutý na starší stav – presunúť, alebo vydať ako 0.1.28).
+
+## 2026-11-07 – požadované správanie nastavovania tepelka (návrh, schválené)
+- Používateľ: s vydaním 0.1.27 počkať (tag pushnutý, release nevydaný), najprv plán. Požiadavka: **voda prichádzajúca do zmiešavačov má mať aspoň teplotu žiadanú za zmiešavačom + rezervu.**
+- Rozhodnutia: rezerva 2 °C; o koľko vyššie nastaviť tepelko sa **meria** (pokles nádrže = 90. percentil z „nastavenie − voda pri zmiešavačoch“ za 3 h, bez TÚV/odmrazovania a 30 min po nich, bez 30 min po zmene nastavenia); nahrádza učiacu sa rezervu. Špecifikácia a diagram: [heat-source-setting.md](heat-source-setting.md).
+
 ## 2026-11-07 – učenie rezervy z vody z nádrže, odmrazovanie, krivka podľa termostatov (0.1.27)
 - Používateľ schválil návrh z rozboru nižšie a doplnil: aj zmiešavač otvorený naplno má zvýšiť teplotu tepelka; krivke chýba najvyššia požadovaná teplota termostatov okruhu.
 - Rezerva sa učí z vody z nádrže: +1 °C, keď je 10 min pod cieľ + 1 °C **alebo** kúriaci zmiešavač ostáva naplno pod cieľom (najviac raz za 30 min); −1 °C po hodine ≥ cieľ + 3 °C bez zmiešavača naplno. Nezvyšuje sa počas ohrevu TÚV, odmrazovania a 30 min po nich, ani keď je nastavenie na strope. Prahy 1 a 3 °C sú number entity zdroja. Odhad rovnováhy pre tento dom: rezerva ~9–10 °C (výstup z nádrže ~4 °C pod vrchom, hysteréza TČ ~5 °C).

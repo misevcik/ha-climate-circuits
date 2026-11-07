@@ -191,7 +191,10 @@ Kód hotový lokálne (151 testov, ruff OK): čerpadlá okruhov, vlastná poloha
 - [x] Karta: tok podľa polohy zmiešavača; dotlak po reštarte; log pri vypínaní (0.1.26), tag pushnutý
 - [x] `v0.1.26` nainštalovaná
 - [x] Učenie rezervy z vody z nádrže, odmrazovanie, krivka podľa termostatov (0.1.27), tag pushnutý
-- [ ] Release `v0.1.27`, update, reštart; rezerva teraz 15 °C – stiahnuť na ~10 °C (učenie ju potom doladí)
+- [x] Plán nastavovania tepelka: [heat-source-setting.md](heat-source-setting.md) – schválený
+- [x] Meraný pokles nádrže namiesto učiacej sa rezervy, rezerva 2 °C, krivka podľa termostatov (jeden prepínač na okruh)
+- [x] Code review pred commitom (9 bodov, 8 opravených), 225 testov, ruff OK, commit (bez pushu)
+- [ ] Vydanie – čaká na súhlas používateľa (tag v0.1.27 je pushnutý na starší stav: presunúť alebo 0.1.28); po update overiť `sensor.akumulacna_nadrz_tank_drop` po ~1 h kúrenia
 - [ ] Rýchlejší senzor vonkajšej teploty (`sensor.outside_temperature` sa mení raz za ~64 min)
 - [ ] Senzor trojcestného ventilu cez Modbus (používateľ zváži) → pole *Ohrev TÚV* pri zdroji
 - [ ] Typ a výkon TČ od používateľa (dimenzovanie)

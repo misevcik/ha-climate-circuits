@@ -1,5 +1,5 @@
 """Manual mode override (modes the source cannot deliver are not offered); a heat source's
-margin: learned or set by hand."""
+tank drop: measured or set by hand."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from . import ClimateCircuitsConfigEntry
 from .core.mode import Mode, Override
 from .entity import HouseEntity, SourceEntity
-from .source import MARGIN_MODES
+from .source import DROP_MODES
 
 
 async def async_setup_entry(
@@ -23,7 +23,7 @@ async def async_setup_entry(
     for source in entry.runtime_data.sources.values():
         if source.controllable:
             async_add_entities(
-                [MarginModeSelect(source, "margin_mode")], config_subentry_id=source.id
+                [DropModeSelect(source, "margin_mode")], config_subentry_id=source.id
             )
 
 
@@ -43,15 +43,15 @@ class OverrideSelect(HouseEntity, SelectEntity):
         self.house.set_override(Override(option))
 
 
-class MarginModeSelect(SourceEntity, SelectEntity):
-    """auto: the margin learns from the mixers; manual: the value set by hand holds."""
+class DropModeSelect(SourceEntity, SelectEntity):
+    """auto: the tank drop is measured; manual: the value set by hand holds."""
 
     _attr_entity_category = EntityCategory.CONFIG
-    _attr_options = list(MARGIN_MODES)
+    _attr_options = list(DROP_MODES)
 
     @property
     def current_option(self) -> str:
-        return self.source.margin_mode
+        return self.source.drop_mode
 
     async def async_select_option(self, option: str) -> None:
-        self.source.set_margin_mode(option)
+        self.source.set_drop_mode(option)

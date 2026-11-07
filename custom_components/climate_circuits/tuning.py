@@ -54,8 +54,8 @@ SOURCE = (
     Tunable("setpoint_max", 10, 80, 1, "°C", lambda s: s.settings.setpoint_max),
     Tunable("manual_pause", 0, 1440, 1, "min", lambda s: s.settings.manual_pause),
     Tunable("hot_water_gap", 3, 30, 0.5, "°C", lambda s: s.settings.hot_water_gap),
-    Tunable("margin_raise_gap", 0, 10, 0.5, "°C", lambda s: s.settings.margin_raise_gap),
-    Tunable("margin_lower_gap", 0, 15, 0.5, "°C", lambda s: s.settings.margin_lower_gap),
+    Tunable("reserve", 0, 10, 0.5, "°C", lambda s: s.settings.reserve),
+    Tunable("drop_window", 1, 12, 0.5, "h", lambda s: s.settings.drop_window),
 )
 HOT_WATER = (
     Tunable("circulation_threshold", 20, 60, 0.5, "°C", lambda h: h.settings.threshold),
@@ -75,11 +75,7 @@ _ALL = {t.key: t for t in (*MIXER, *MIXER_SWITCHES, *CIRCUIT_SWITCHES, *PUMP, *S
 _ALL |= {t.key: t for t in (*HOT_WATER, *HOUSE)}
 _ALL |= {t.key: t for t in (*FALLBACK, *HOUSE_SWITCHES)}
 # Pairs that must keep their order: (lower, upper).
-_ORDERED = (
-    ("min_step", "max_step"),
-    ("setpoint_min", "setpoint_max"),
-    ("margin_raise_gap", "margin_lower_gap"),
-)
+_ORDERED = (("min_step", "max_step"), ("setpoint_min", "setpoint_max"))
 
 
 def tuned(owner: Any, key: str) -> Any:

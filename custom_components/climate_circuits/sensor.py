@@ -45,6 +45,7 @@ from .entity import (
 from .house import House
 from .schema_layout import schema_layout
 from .states import name_of, number, state_of
+from .tuning import tuned
 
 _TEMP = vol.All(vol.Coerce(float), vol.Range(min=-40, max=90))
 SET_CURVE_SCHEMA = {
@@ -99,6 +100,8 @@ async def async_setup_entry(
         ]
         if source.settings.setpoint_entity:
             source_entities.append(SourceSetpointSensor(source, "source_setpoint"))
+        if source.controllable:
+            source_entities.append(TankDropSensor(source, "tank_drop"))
         async_add_entities(source_entities, config_subentry_id=source.id)
     for circuit in house.circuits.values():
         entities: list[SensorEntity] = [
@@ -338,8 +341,9 @@ class SourceSetpointSensor(SourceEntity, SensorEntity):
             "wanted_reason": d.reason if d else None,
             "warmest_circuit": d.circuit if d else None,
             "warmest_target": d.target if d else None,
+            "reserve": self.source.reserve,
+            "drop": self.source.drop,
             "margin": self.source.margin,
-            "margin_mode": self.source.margin_mode,
             "paused_until": self.source.paused_until,
             "controlled": self.source.control_enabled and self.source.house.control_equipment,
         }
@@ -427,4 +431,29 @@ class LinkedEntitySensor(SensorEntity):
         return {
             "entity_id": entities[0] if len(entities) == 1 else entities,
             **{name_of(self.hass, e) or e: e for e in entities},
+        }
+
+
+class TankDropSensor(SourceEntity, SensorEntity):
+    """°C the water at the mixers is below the source's setting: measured, or set by hand."""
+
+    _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS  # a difference: no device class
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_suggested_display_precision = 1
+    _attr_icon = "mdi:thermometer-chevron-down"
+    _unrecorded_attributes = frozenset({"measured", "samples"})  # change every minute
+
+    @property
+    def native_value(self) -> float:
+        return self.source.drop
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        source = self.source
+        return {
+            "mode": source.drop_mode,
+            "drop_from": source.drop_from,
+            "measured": source.measured_drop,
+            "samples": source.sample_count,
+            "window_hours": tuned(source, "drop_window"),
         }

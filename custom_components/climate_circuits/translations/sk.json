@@ -619,6 +619,9 @@
       },
       "linked_hot_water_entity": {
         "name": "Ohrev TÚV z"
+      },
+      "tank_drop": {
+        "name": "Pokles nádrže"
       }
     },
     "binary_sensor": {
@@ -663,9 +666,9 @@
         }
       },
       "margin_mode": {
-        "name": "Rezerva",
+        "name": "Pokles nádrže",
         "state": {
-          "auto": "Učí sa",
+          "auto": "Meraný",
           "manual": "Ručne"
         }
       }
@@ -699,9 +702,6 @@
       },
       "circulation_delta": {
         "name": "Delta cirkulácie"
-      },
-      "setpoint_margin": {
-        "name": "Rezerva nad najteplejší okruh"
       },
       "travel": {
         "name": "Čas dráhy zmiešavača"
@@ -757,11 +757,14 @@
       "hot_water_gap": {
         "name": "TÚV: výstup nad nádržou"
       },
-      "margin_raise_gap": {
-        "name": "Rezerva: zvýšiť pod cieľ +"
+      "reserve": {
+        "name": "Rezerva pri zmiešavačoch"
       },
-      "margin_lower_gap": {
-        "name": "Rezerva: znížiť nad cieľ +"
+      "drop_window": {
+        "name": "Okno merania poklesu"
+      },
+      "manual_drop": {
+        "name": "Pokles nádrže ručne"
       }
     },
     "climate": {

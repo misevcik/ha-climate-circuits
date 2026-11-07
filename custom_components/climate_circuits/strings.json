@@ -619,6 +619,9 @@
       },
       "linked_hot_water_entity": {
         "name": "Hot water heating from"
+      },
+      "tank_drop": {
+        "name": "Tank drop"
       }
     },
     "binary_sensor": {
@@ -663,10 +666,10 @@
         }
       },
       "margin_mode": {
-        "name": "Margin",
+        "name": "Tank drop",
         "state": {
-          "auto": "Learned",
-          "manual": "Manual"
+          "auto": "Measured",
+          "manual": "By hand"
         }
       }
     },
@@ -699,9 +702,6 @@
       },
       "circulation_delta": {
         "name": "Circulation delta"
-      },
-      "setpoint_margin": {
-        "name": "Margin above the warmest circuit"
       },
       "travel": {
         "name": "Mixer travel time"
@@ -757,11 +757,14 @@
       "hot_water_gap": {
         "name": "Hot water: supply above the tank"
       },
-      "margin_raise_gap": {
-        "name": "Margin: raise below target +"
+      "reserve": {
+        "name": "Reserve at the mixers"
       },
-      "margin_lower_gap": {
-        "name": "Margin: lower above target +"
+      "drop_window": {
+        "name": "Tank drop window"
+      },
+      "manual_drop": {
+        "name": "Tank drop by hand"
       }
     },
     "climate": {

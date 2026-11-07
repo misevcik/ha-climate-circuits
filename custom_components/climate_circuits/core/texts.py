@@ -118,13 +118,11 @@ _SK = {
     "len {spare}, prívod nemusí stačiť",
     "src_enough": "{name}: {source} nastavený na {setpoint} opäť stačí na cieľ {target}",
     "sp_set": "{source}: nastavujem na {wanted} (bolo {current}) – najteplejšiu vodu chce "
-    "{circuit} ({target}) + rezerva {margin}",
-    "sp_margin_raise": "{source}: rezerva zvýšená na {margin} – voda z nádrže {water} je menej "
-    "ako {gap} nad najteplejším cieľom {target}",
-    "sp_margin_open": "{source}: rezerva zvýšená na {margin} – zmiešavač {circuit} je naplno "
-    "a stále pod cieľom (voda z nádrže {water}, cieľ {target})",
-    "sp_margin_lower": "{source}: rezerva znížená na {margin} – voda z nádrže je už hodinu "
-    "aspoň {gap} nad najteplejším cieľom (teraz {water}, cieľ {target})",
+    "{circuit} ({target}) + rezerva {reserve} + pokles nádrže {drop}{how}",
+    "sp_drop_measured": " (zmeraný za {hours} h)",
+    "sp_drop_last": " (naposledy zmeraný)",
+    "sp_drop_default": " (predvolený, ešte nezmeraný)",
+    "sp_drop_manual": " (ručne)",
     "sp_manual": "{source}: nastavenie zmenené ručne na {value} – automatika pozastavená "
     "do {until}",
     "sp_resumed": "{source}: pauza po ručnej zmene skončila, nastavujem opäť podľa okruhov",
@@ -248,13 +246,11 @@ _EN = {
     "to spare, the supply may fall short",
     "src_enough": "{name}: {source} set to {setpoint} covers the {target} target again",
     "sp_set": "{source}: setting it to {wanted} (was {current}) – {circuit} wants the warmest "
-    "water ({target}) + margin {margin}",
-    "sp_margin_raise": "{source}: margin raised to {margin} – the tank's water {water} is less "
-    "than {gap} above the warmest target {target}",
-    "sp_margin_open": "{source}: margin raised to {margin} – the {circuit} mixer is fully open "
-    "and still below its target (tank water {water}, target {target})",
-    "sp_margin_lower": "{source}: margin lowered to {margin} – the tank's water has been at least "
-    "{gap} above the warmest target for an hour (now {water}, target {target})",
+    "water ({target}) + reserve {reserve} + tank drop {drop}{how}",
+    "sp_drop_measured": " (measured over {hours} h)",
+    "sp_drop_last": " (last measured)",
+    "sp_drop_default": " (default, not measured yet)",
+    "sp_drop_manual": " (by hand)",
     "sp_manual": "{source}: setting changed by hand to {value} – automatic setting paused until "
     "{until}",
     "sp_resumed": "{source}: the pause after a change by hand is over, setting it from the "
@@ -438,24 +434,30 @@ def setpoint_text(
     current: float | None,
     circuit: str | None,
     target: float | None,
-    margin: float,
+    reserve: float,
+    drop: float,
+    drop_from: str,
+    window: float,
     language: str,
     dry_run: bool,
 ) -> str:
-    """The heat source is set from the circuits."""
+    """The heat source is set from the circuits; drop_from: manual, measured, last, default."""
     t = _t(language)
+    how = t[f"sp_drop_{drop_from}"].format(hours=f"{window:g}")
     return t["sp_set"].format(
         source=source,
         wanted=_temp(wanted),
         current=_temp(current),
         circuit=circuit or "?",
         target=_temp(target),
-        margin=_temp(margin),
+        reserve=_temp(reserve),
+        drop=_temp(drop),
+        how=how,
     ) + (t["out_dry_run"] if dry_run else "")
 
 
 def setpoint_event_text(key: str, source: str, language: str, **values: Any) -> str:
-    """The margin learned, a change by hand, the end of its pause."""
+    """A change by hand, the end of its pause, hot water heating and defrost."""
     formatted = {
         k: _temp(v)
         if isinstance(v, float)

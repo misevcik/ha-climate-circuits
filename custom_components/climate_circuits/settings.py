@@ -9,21 +9,20 @@ from typing import Any
 from .const import (
     DEFAULT_COOL_CURVE,
     DEFAULT_DELTA,
+    DEFAULT_DROP_WINDOW,
     DEFAULT_EXERCISE_DAYS,
     DEFAULT_GAIN,
     DEFAULT_HEAT_CURVE,
     DEFAULT_HOT_WATER_GAP,
     DEFAULT_HYSTERESIS,
     DEFAULT_MANUAL_PAUSE,
-    DEFAULT_MARGIN_LOWER_GAP,
-    DEFAULT_MARGIN_RAISE_GAP,
     DEFAULT_MAX_STEP,
     DEFAULT_MIN_SOURCE_GAP,
     DEFAULT_MIN_STEP,
     DEFAULT_MODE_PAUSE,
     DEFAULT_PUMP_DELAY,
     DEFAULT_PUMP_RUN_ON,
-    DEFAULT_SETPOINT_MARGIN,
+    DEFAULT_RESERVE,
     DEFAULT_SETPOINT_MAX,
     DEFAULT_SETPOINT_MIN,
     DEFAULT_SETTLE,
@@ -189,14 +188,13 @@ class SourceSettings:
     heater_supply: str | None = None
     heater_return: str | None = None
     hot_water_entity: str | None = None  # on while the heat generator heats hot water
-    # Setting the source from the circuits (with its switch on): warmest target + margin.
-    setpoint_margin: float = DEFAULT_SETPOINT_MARGIN
+    # Setting the source from the circuits (with its switch on): limits.
     setpoint_min: float = DEFAULT_SETPOINT_MIN
     setpoint_max: float = DEFAULT_SETPOINT_MAX
     manual_pause: float = DEFAULT_MANUAL_PAUSE  # min
     hot_water_gap: float = DEFAULT_HOT_WATER_GAP
-    margin_raise_gap: float = DEFAULT_MARGIN_RAISE_GAP
-    margin_lower_gap: float = DEFAULT_MARGIN_LOWER_GAP
+    reserve: float = DEFAULT_RESERVE
+    drop_window: float = DEFAULT_DROP_WINDOW
 
     @classmethod
     def from_data(cls, data: Mapping[str, Any]) -> SourceSettings:
@@ -208,7 +206,6 @@ class SourceSettings:
             heater_supply=data.get("heater_supply"),
             heater_return=data.get("heater_return"),
             hot_water_entity=data.get("hot_water_entity"),
-            setpoint_margin=float(data.get("setpoint_margin", DEFAULT_SETPOINT_MARGIN)),
             setpoint_min=float(data.get("setpoint_min", DEFAULT_SETPOINT_MIN)),
             setpoint_max=float(data.get("setpoint_max", DEFAULT_SETPOINT_MAX)),
         )

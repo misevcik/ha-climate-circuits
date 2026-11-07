@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 from custom_components.climate_circuits.core.setpoint import (
-    MarginSettings,
     SetpointSettings,
-    next_margin,
     setpoint_decision,
+    tank_drop,
 )
 
 S = SetpointSettings(margin=5.0, minimum=30.0, maximum=55.0, step=1.0, interval=900.0)
@@ -49,35 +48,8 @@ def test_left_alone_without_demand_or_heating() -> None:
     assert _decide(targets={}).change is False
 
 
-M = MarginSettings(
-    minimum=3.0, maximum=15.0, step=1.0, short_after=600, raise_after=1800, lower_after=3600
-)
-
-
-def _margin(margin=8.0, **kwargs):
-    args = {
-        "short_for": None,
-        "plenty_for": None,
-        "since_change": None,
-        "can_raise": True,
-        "settings": M,
-    }
-    return next_margin(margin, **(args | kwargs))
-
-
-def test_margin_rises_when_the_water_stays_short_but_not_too_often() -> None:
-    assert _margin(short_for=300) == (8.0, None)  # a moment, e.g. the bottom of a cycle
-    assert _margin(short_for=600) == (9.0, "raise")
-    assert _margin(short_for=600, since_change=600) == (8.0, None)  # the tank is heating up
-    assert _margin(15.0, short_for=600) == (15.0, None)
-
-
-def test_no_raise_when_the_setting_is_at_its_highest_anyway() -> None:
-    assert _margin(short_for=3600, can_raise=False) == (8.0, None)
-
-
-def test_margin_falls_after_an_hour_of_plenty_of_water() -> None:
-    assert _margin(plenty_for=1800) == (8.0, None)
-    assert _margin(plenty_for=3600) == (7.0, "lower")
-    assert _margin(plenty_for=3600, since_change=1200) == (8.0, None)
-    assert _margin(3.0, plenty_for=7200) == (3.0, None)
+def test_tank_drop_is_near_the_worst_of_the_samples() -> None:
+    samples = [4.0] * 80 + [8.0] * 15 + [20.0] * 5  # cycles, their bottoms, a few odd readings
+    assert tank_drop(samples) == 8.0
+    assert tank_drop([5.0] * 29) is None  # not enough yet
+    assert tank_drop([-3.0] * 40) == 0.0  # water above the setting (another heat source)

@@ -2,14 +2,19 @@
 
 from __future__ import annotations
 
+import math
+
 import pytest
 from homeassistant.config_entries import SOURCE_USER
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.exceptions import ServiceValidationError
+from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import async_capture_events
 
 from custom_components.climate_circuits.const import (
+    DOMAIN,
+    DROP_SETTLE,
     EVENT_ACTIVITY,
     SUBENTRY_TYPE_CIRCUIT,
     SUBENTRY_TYPE_SOURCE,
@@ -137,7 +142,7 @@ async def test_source_is_set_from_the_circuits_only_when_switched_on(
     set_thermostat(hass, "climate.room", "heating")
     events = async_capture_events(hass, EVENT_ACTIVITY)
     source = source_data("Buffer tank", TANK_TOP)
-    source["data"] |= {"setpoint_entity": HEAT_PUMP_TARGET, "setpoint_margin": 5.0}
+    source["data"] |= {"setpoint_entity": HEAT_PUMP_TARGET}
     entry = await _setup(
         hass, make_entry, source, circuit_data("F1", zones={"heating_zones": ["climate.room"]})
     )
@@ -145,7 +150,8 @@ async def test_source_is_set_from_the_circuits_only_when_switched_on(
     hass.services.async_register("climate", "set_temperature", set_temperature)
     house = entry.runtime_data
     target = float(hass.states.get("sensor.f1_target_water_temperature").state)
-    wanted = float(int(target + 5.0) + (0 if (target + 5.0).is_integer() else 1))
+    margin = 2.0 + 8.0  # the reserve + the tank drop until one is measured
+    wanted = float(math.ceil(target + margin))
     attrs = hass.states.get("sensor.buffer_tank_set_temperature").attributes
     assert attrs["wanted"] == wanted and attrs["controlled"] is False
     assert calls == []  # the switch is off
@@ -200,7 +206,7 @@ async def test_a_change_by_hand_pauses_the_automatic_setting(
     events = async_capture_events(hass, EVENT_ACTIVITY)
     house = await _heat_pump_house(hass, make_entry, calls)
     source = next(iter(house.sources.values()))
-    assert len(calls) == 1 and source.margin == 8.0  # set once, nothing seen as by hand
+    assert len(calls) == 1 and source.margin == 10.0  # set once, nothing seen as by hand
     assert source.paused_until is None
 
     hass.states.async_set(
@@ -235,7 +241,7 @@ class _Clock:
 
 
 class _FullyOpenMixer:
-    """A mixer fully open: with the supply below the target, the water is not enough."""
+    """A mixer fully open: what comes out of it is the tank's water."""
 
     starved = True
     params = MixerSettings()
@@ -247,15 +253,25 @@ class _FullyOpenMixer:
         return None
 
 
-async def _water(hass: HomeAssistant, house, above_target: float) -> float:
-    """Set the tank's water this far above the warmest circuit target; returns the target."""
-    target = float(hass.states.get("sensor.f1_target_water_temperature").state)
-    hass.states.async_set(TANK_TOP, str(target + above_target))
+DROP = "sensor.buffer_tank_tank_drop"
+
+
+async def _tank(hass: HomeAssistant, below_setting: float) -> float:
+    """Set the tank's water this far below the heat pump's setting; returns the setting."""
+    setting = hass.states.get(HEAT_PUMP_TARGET).attributes["temperature"]
+    hass.states.async_set(TANK_TOP, str(setting - below_setting))
     await hass.async_block_till_done()
-    return target
+    return setting
 
 
-async def test_margin_rises_when_the_tank_water_stays_short(
+async def _minutes(hass: HomeAssistant, house, clock: _Clock, minutes: int) -> None:
+    for _ in range(minutes):
+        clock += 60
+        house.evaluate()
+    await hass.async_block_till_done()
+
+
+async def test_the_tank_drop_is_measured_from_the_water_at_the_mixers(
     hass: HomeAssistant, make_entry
 ) -> None:
     calls: list[dict] = []
@@ -263,103 +279,93 @@ async def test_margin_rises_when_the_tank_water_stays_short(
     house = await _heat_pump_house(hass, make_entry, calls)
     source = next(iter(house.sources.values()))
     clock = _Clock(house)
-    await _water(hass, house, 0.5)  # less than 1 °C above the target
-    house.evaluate()
-    assert source.margin == 8.0  # not yet: the bottom of a heat pump cycle is short too
-    clock += 601
-    house.evaluate()
-    assert source.margin == 9.0
-    assert any("less than 1.0 °C above" in e.data["message"] for e in events)
-    clock += 601
-    house.evaluate()
-    assert source.margin == 9.0  # 30 min between raises: the tank needs time to heat up
+    setting = await _tank(hass, 6.0)
+    clock += DROP_SETTLE - 60  # the tank still heats up after the setting at the start
+    await _minutes(hass, house, clock, 29)
+    assert hass.states.get(DROP).attributes["samples"] == 29
+    assert source.measured_drop is None and source.margin == 10.0  # not enough yet
+
+    await _minutes(hass, house, clock, 1)
+    assert source.measured_drop == 6.0 and source.margin == 8.0
+    state = hass.states.get(DROP)
+    assert float(state.state) == 6.0 and state.attributes["mode"] == "auto"
+    assert calls[-1]["temperature"] == setting - 2  # target + reserve 2 + drop 6, was + 10
+    assert any("tank drop 8.0 °C (default, not measured yet)" in e.data["message"] for e in events)
+    assert any("tank drop 6.0 °C (measured over 3 h)" in e.data["message"] for e in events)
+    assert hass.states.get(DROP).attributes["drop_from"] == "measured"
+    assert house.persisted["sources"][source.id]["drop"] == 6.0  # holds over a restart
+
+    await _minutes(hass, house, clock, 29)
+    assert hass.states.get(DROP).attributes["samples"] == 30  # the new setting still settles
+    await _minutes(hass, house, clock, 1)
+    assert hass.states.get(DROP).attributes["samples"] == 31
 
 
-async def test_margin_rises_when_a_mixer_stays_fully_open(hass: HomeAssistant, make_entry) -> None:
+async def test_old_samples_leave_the_window(hass: HomeAssistant, make_entry) -> None:
     calls: list[dict] = []
-    events = async_capture_events(hass, EVENT_ACTIVITY)
+    house = await _heat_pump_house(hass, make_entry, calls)
+    source = next(iter(house.sources.values()))
+    clock = _Clock(house)
+    await _tank(hass, 6.0)
+    clock += DROP_SETTLE
+    await _minutes(hass, house, clock, 40)
+    assert source.measured_drop is not None
+    hass.states.async_set("climate.room", "heat", {"hvac_action": "idle"})  # no more heating
+    await hass.async_block_till_done()
+    await _minutes(hass, house, clock, 3 * 60)
+    assert hass.states.get(DROP).attributes["samples"] == 0
+    assert source.drop == 6.0  # the last measured drop holds
+
+
+async def test_a_fully_open_mixer_shows_the_water_at_the_mixers(
+    hass: HomeAssistant, make_entry
+) -> None:
+    calls: list[dict] = []
     house = await _heat_pump_house(hass, make_entry, calls)
     source = next(iter(house.sources.values()))
     circuit = next(iter(house.circuits.values()))
     clock = _Clock(house)
-    target = await _water(hass, house, 5.0)  # the tank's water looks enough
+    setting = await _tank(hass, 5.0)  # the tank's sensor looks fine
     circuit.mixer = _FullyOpenMixer()
-    circuit.supply_temperature = lambda: target - 2.0  # but the circuit stays below its target
-    house.evaluate()
-    clock += 601
-    house.evaluate()
-    assert source.margin == 9.0
-    assert any("F1 mixer is fully open" in e.data["message"] for e in events)
+    circuit.supply_temperature = lambda: setting - 9.0  # but less reaches the circuit
+    clock += DROP_SETTLE
+    await _minutes(hass, house, clock, 30)
+    assert source.measured_drop == 9.0
 
 
-async def test_margin_falls_after_an_hour_of_plenty_of_water(
-    hass: HomeAssistant, make_entry
-) -> None:
-    calls: list[dict] = []
-    events = async_capture_events(hass, EVENT_ACTIVITY)
-    house = await _heat_pump_house(hass, make_entry, calls)
-    source = next(iter(house.sources.values()))
-    clock = _Clock(house)
-    await _water(hass, house, 5.0)
-    house.evaluate()
-    clock += 3601
-    house.evaluate()
-    assert source.margin == 7.0
-    assert any("for an hour" in e.data["message"] for e in events)
-
-
-async def test_no_raise_when_the_heat_pump_is_at_its_highest_setting(
+async def test_the_tank_drop_set_by_hand_holds_in_manual_mode(
     hass: HomeAssistant, make_entry
 ) -> None:
     calls: list[dict] = []
     house = await _heat_pump_house(hass, make_entry, calls)
     source = next(iter(house.sources.values()))
     clock = _Clock(house)
-    target = await _water(hass, house, 0.0)
+    by_hand, mode = "number.buffer_tank_tank_drop_by_hand", "select.buffer_tank_tank_drop"
     await hass.services.async_call(
-        "number",
-        "set_value",
-        {"entity_id": "number.buffer_tank_highest_setting", "value": round(target + 5)},
-        blocking=True,
+        "number", "set_value", {"entity_id": by_hand, "value": 5}, blocking=True
     )
-    house.evaluate()
-    clock += 3600
-    house.evaluate()
-    assert source.margin == 8.0  # target + 8 is above the highest setting anyway
-
-
-async def test_margin_set_by_hand_holds_in_manual_mode(hass: HomeAssistant, make_entry) -> None:
-    calls: list[dict] = []
-    house = await _heat_pump_house(hass, make_entry, calls)
-    source = next(iter(house.sources.values()))
-    clock = _Clock(house)
-    margin = "number.buffer_tank_margin_above_the_warmest_circuit"
-    await hass.services.async_call(
-        "number", "set_value", {"entity_id": margin, "value": 6}, blocking=True
-    )
-    assert source.margin == 6.0
-    assert hass.states.get(margin).state == "6.0"
-    mode = "select.buffer_tank_margin"
     await hass.services.async_call(
         "select", "select_option", {"entity_id": mode, "option": "manual"}, blocking=True
     )
-    await _water(hass, house, 0.0)
+    assert source.drop == 5.0 and source.margin == 7.0
+    clock += 901  # the next change of the setting: the reserve + 5
     house.evaluate()
-    clock += 3600
-    house.evaluate()
-    assert source.margin == 6.0  # manual: the value set by hand holds, the water still short
+    await hass.async_block_till_done()
+    assert len(calls) == 2
+    await _tank(hass, 12.0)
+    clock += DROP_SETTLE
+    await _minutes(hass, house, clock, 30)
+    assert source.drop == 5.0  # by hand: holds, while the measurement goes on
+    assert hass.states.get(DROP).attributes["measured"] == 12.0
     await hass.services.async_call(
         "select", "select_option", {"entity_id": mode, "option": "auto"}, blocking=True
     )
-    clock += 1801
-    house.evaluate()
-    clock += 601
-    house.evaluate()
-    assert source.margin == 7.0  # auto again: learns on from the value set by hand
+    assert source.drop == 12.0
     (card,) = hass.states.get("sensor.climate_circuits_mode").attributes["layout"]["sources"]
     assert card["setpoint_control"] == "switch.buffer_tank_heat_pump_controlled_by_integration"
-    assert card["margin"] == margin
-    assert card["margin_mode"] == mode
+    assert card["reserve"] == "number.buffer_tank_reserve_at_the_mixers"
+    assert card["drop"] == DROP
+    assert card["drop_mode"] == mode
 
 
 async def test_the_heat_pump_shows_on_the_source_and_a_change_there_counts_as_by_hand(
@@ -420,40 +426,35 @@ async def test_a_list_of_linked_entities_shows_the_first_and_how_many_follow(
     assert linked.attributes["Office"] == "climate.office"
 
 
-async def test_margin_is_not_raised_while_the_heat_pump_heats_hot_water(
+async def test_no_drop_samples_while_the_heat_pump_heats_hot_water(
     hass: HomeAssistant, make_entry
 ) -> None:
     calls: list[dict] = []
     events = async_capture_events(hass, EVENT_ACTIVITY)
     hass.states.async_set("sensor.hp_out", "44.0")
     house = await _heat_pump_house(hass, make_entry, calls, heater_supply="sensor.hp_out")
-    source = next(iter(house.sources.values()))
     clock = _Clock(house)
     heating = "binary_sensor.buffer_tank_hot_water_heating"
     assert hass.states.get(heating).state == "off"  # 44 is close to the tank's 45.5
-    target = await _water(hass, house, 0.0)
-    hass.states.async_set("sensor.hp_out", str(target + 12))  # all the heat goes to hot water
+    setting = await _tank(hass, 15.0)
+    hass.states.async_set("sensor.hp_out", str(setting + 2))  # all the heat goes to hot water
     await hass.async_block_till_done()
     assert hass.states.get(heating).state == "on"
     assert any("heats hot water" in e.data["message"] for e in events)
-    clock += 900
-    house.evaluate()
-    assert source.margin == 8.0  # short of water because of the hot water, not raised
+    clock += DROP_SETTLE
+    await _minutes(hass, house, clock, 20)
+    assert hass.states.get(DROP).attributes["samples"] == 0  # short because of the hot water
 
-    hass.states.async_set("sensor.hp_out", str(target + 1))
+    hass.states.async_set("sensor.hp_out", str(setting - 14))
     await hass.async_block_till_done()
     assert hass.states.get(heating).state == "off"
-    clock += 900
-    house.evaluate()
-    assert source.margin == 8.0  # the tank still recovers
-    clock += 901
-    house.evaluate()
-    clock += 601
-    house.evaluate()
-    assert source.margin == 9.0
+    await _minutes(hass, house, clock, 29)
+    assert hass.states.get(DROP).attributes["samples"] == 0  # the tank still recovers
+    await _minutes(hass, house, clock, 1)
+    assert hass.states.get(DROP).attributes["samples"] == 1
 
 
-async def test_margin_is_not_raised_while_the_heat_pump_defrosts(
+async def test_no_drop_samples_while_the_heat_pump_defrosts(
     hass: HomeAssistant, make_entry
 ) -> None:
     calls: list[dict] = []
@@ -463,7 +464,6 @@ async def test_margin_is_not_raised_while_the_heat_pump_defrosts(
     house = await _heat_pump_house(
         hass, make_entry, calls, heater_supply="sensor.hp_out", heater_return="sensor.hp_in"
     )
-    source = next(iter(house.sources.values()))
     clock = _Clock(house)
     defrost = "binary_sensor.buffer_tank_defrosting"
     assert hass.states.get(defrost).state == "off"
@@ -472,10 +472,53 @@ async def test_margin_is_not_raised_while_the_heat_pump_defrosts(
     await hass.async_block_till_done()
     assert hass.states.get(defrost).state == "on"
     assert any("defrosts" in e.data["message"] for e in events)
-    await _water(hass, house, -8.0)  # the tank's water falls far below the target
-    clock += 900
-    house.evaluate()
-    assert source.margin == 8.0
+    await _tank(hass, 15.0)  # the tank's water falls far below the setting
+    clock += DROP_SETTLE
+    await _minutes(hass, house, clock, 10)
+    assert hass.states.get(DROP).attributes["samples"] == 0
     hass.states.async_set("sensor.hp_in", "unavailable")  # a sensor drops out for a moment
     await hass.async_block_till_done()
     assert hass.states.get(defrost).state == "on"  # keeps its last state, not unknown
+
+
+async def test_a_moment_without_the_setting_does_not_restart_the_settle(
+    hass: HomeAssistant, make_entry
+) -> None:
+    calls: list[dict] = []
+    house = await _heat_pump_house(hass, make_entry, calls)
+    clock = _Clock(house)
+    setting = await _tank(hass, 6.0)
+    clock += DROP_SETTLE - 120
+    hass.states.async_set(HEAT_PUMP_TARGET, "unavailable")  # the heat pump's cloud drops out
+    await hass.async_block_till_done()
+    hass.states.async_set(
+        HEAT_PUMP_TARGET, "heat", {"temperature": setting, "min_temp": 20, "max_temp": 60}
+    )
+    await hass.async_block_till_done()
+    await _minutes(hass, house, clock, 3)
+    assert hass.states.get(DROP).attributes["samples"] == 2
+
+
+async def test_a_margin_set_by_hand_before_carries_over_as_the_tank_drop(
+    hass: HomeAssistant, make_entry
+) -> None:
+    calls: list[dict] = []
+    house = await _heat_pump_house(hass, make_entry, calls)
+    source = next(iter(house.sources.values()))
+    source._stored.update(margin=9.0, margin_mode="manual")  # stored by 0.1.20–0.1.26
+    assert source.manual_drop == 7.0 and source.margin == 9.0  # the same setting as before
+
+
+async def test_the_learned_margin_entities_are_removed(hass: HomeAssistant, make_entry) -> None:
+    registry = er.async_get(hass)
+    for key in ("setpoint_margin", "margin_raise_gap", "margin_lower_gap"):
+        registry.async_get_or_create("number", DOMAIN, f"tank_{key}")
+    source = source_data("Buffer tank", TANK_TOP)
+    source["subentry_id"] = "tank"
+    source["data"] |= {"setpoint_entity": HEAT_PUMP_TARGET}
+    hass.states.async_set(HEAT_PUMP_TARGET, "heat", {"temperature": 45.0})
+    await _setup(hass, make_entry, source)
+    assert not {"tank_setpoint_margin", "tank_margin_raise_gap", "tank_margin_lower_gap"} & {
+        e.unique_id for e in registry.entities.values()
+    }
+    assert "tank_manual_drop" in {e.unique_id for e in registry.entities.values()}
