@@ -1,6 +1,6 @@
 # Nastavovanie tepelka podľa okruhov – požadované správanie
 
-Stav: schválené a implementované (2026-11-07, zatiaľ nevydané). Nahrádza učiacu sa rezervu (0.1.18–0.1.26).
+Stav: schválené a implementované v 0.1.28 (2026-11-07). Nahrádza učiacu sa rezervu (0.1.18–0.1.26).
 
 ![Ako sa nastavuje tepelko](heat-source-setting.png)
 

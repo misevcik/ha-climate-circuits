@@ -194,7 +194,9 @@ Kód hotový lokálne (151 testov, ruff OK): čerpadlá okruhov, vlastná poloha
 - [x] Plán nastavovania tepelka: [heat-source-setting.md](heat-source-setting.md) – schválený
 - [x] Meraný pokles nádrže namiesto učiacej sa rezervy, rezerva 2 °C, krivka podľa termostatov (jeden prepínač na okruh)
 - [x] Code review pred commitom (9 bodov, 8 opravených), 225 testov, ruff OK, commit (bez pushu)
-- [ ] Vydanie – čaká na súhlas používateľa (tag v0.1.27 je pushnutý na starší stav: presunúť alebo 0.1.28); po update overiť `sensor.akumulacna_nadrz_tank_drop` po ~1 h kúrenia
+- [x] `v0.1.28` – tag pushnutý (0.1.27 ostáva nevydaný)
+- [ ] Release `v0.1.28` na GitHube (odkaz), update cez HACS, reštart
+- [ ] Po update overiť `sensor.akumulacna_nadrz_tank_drop` po ~1 h kúrenia a nastavenie tepelka v Aktivite
 - [ ] Rýchlejší senzor vonkajšej teploty (`sensor.outside_temperature` sa mení raz za ~64 min)
 - [ ] Senzor trojcestného ventilu cez Modbus (používateľ zváži) → pole *Ohrev TÚV* pri zdroji
 - [ ] Typ a výkon TČ od používateľa (dimenzovanie)
