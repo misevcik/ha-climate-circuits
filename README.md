@@ -7,7 +7,7 @@ Everything is set up in the UI. It works with the relays, sensors and thermostat
 ## Features
 
 - **House mode** – heat, cool or off, taken from a heat pump or any other entity (climate, select, sensor, switch), with a fallback sensor (buffer tank or outdoor temperature) and a manual override.
-- **Weather curves** per circuit – a heating curve from the design point and the emitter exponent, a linear cooling curve that never goes below the dew point + 2 °C. A dashboard card shows the curve and lets you drag it; another one shows the whole system as a live diagram.
+- **Weather curves** per circuit – a heating curve from the design point and the emitter exponent, a linear cooling curve that never goes below the dew point + 2 °C. By default the curve aims at the warmest set temperature of the circuit's heating thermostats instead of its own room temperature (switch *Curve from the thermostats*). A dashboard card shows the curve and lets you drag it; another one shows the whole system as a live diagram.
 - **Circuit demand** from the circuit's thermostats, with the calling zones shown.
 - **Circuit pumps** with a start delay (so the zone valves can open) and a run-on after heating.
 - **Three-point mixing valves** – the position is calculated from the relay run times, the supply temperature is regulated in steps, the valve is homed against its end stop when the position is unknown, and the motor is protected: never both relays at once, a run-time watchdog, stray relays switched off, short relay dropouts tolerated.
@@ -91,7 +91,7 @@ The same change is available as an action, `climate_circuits.set_curve`, targeti
 
 A heat source whose *set temperature* is a climate or a number (a heat pump's target) gets the switch **Heat pump controlled by integration** (off by default). With it and *Control equipment* on, the source is set to the warmest water a heating circuit wants plus a margin, at most every 15 minutes and by whole steps; without heating demand it is left alone.
 
-- The margin learns: it rises by 1 °C when a circuit reports *Source not enough* (`binary_sensor.<circuit>_source_not_enough`: the mixer is fully open and the supply stays below its target), and falls by 1 °C after an hour with every heating mixer below 70 % and at its target. It can also be set by hand (`number.<source>_margin_above_the_warmest_circuit`); `select.<source>_margin` switches between *Learned* and *Manual* (the value set by hand holds).
+- The margin learns from the water the source gives: it rises by 1 °C when that water stays less than 1 °C above the warmest target for 10 minutes or a heating mixer stays fully open below its target, and falls by 1 °C after an hour at least 3 °C above it with no mixer fully open (both gaps are numbers on the source). It is not raised while the heat pump heats hot water or defrosts (`binary_sensor.<source>_defrosting`: its supply colder than its return) and for 30 minutes after, nor when the setting is at its highest anyway. It can also be set by hand (`number.<source>_margin_above_the_warmest_circuit`); `select.<source>_margin` switches between *Learned* and *Manual* (the value set by hand holds).
 - A change of the setting made elsewhere (e.g. the heat pump's app, or the *Heat generator* climate entity on the source's device that mirrors it) pauses the automatic setting – 1 minute by default, set on the source's device.
 - Every change and its reason is written to Activity.
 

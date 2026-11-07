@@ -44,6 +44,7 @@ MIXER = (
     Tunable("min_source_gap", 1, 20, 0.5, "°C", lambda c: c.settings.mixer.min_source_gap),
 )
 MIXER_SWITCHES = (TunableSwitch("source_compensation", lambda c: c.settings.mixer.compensate),)
+CIRCUIT_SWITCHES = (TunableSwitch("curve_from_thermostats", lambda c: True),)
 PUMP = (
     Tunable("pump_delay", 0, 900, 10, "s", lambda c: c.settings.pump_delay),
     Tunable("pump_run_on", 0, 900, 10, "s", lambda c: c.settings.pump_run_on),
@@ -53,6 +54,8 @@ SOURCE = (
     Tunable("setpoint_max", 10, 80, 1, "°C", lambda s: s.settings.setpoint_max),
     Tunable("manual_pause", 0, 1440, 1, "min", lambda s: s.settings.manual_pause),
     Tunable("hot_water_gap", 3, 30, 0.5, "°C", lambda s: s.settings.hot_water_gap),
+    Tunable("margin_raise_gap", 0, 10, 0.5, "°C", lambda s: s.settings.margin_raise_gap),
+    Tunable("margin_lower_gap", 0, 15, 0.5, "°C", lambda s: s.settings.margin_lower_gap),
 )
 HOT_WATER = (
     Tunable("circulation_threshold", 20, 60, 0.5, "°C", lambda h: h.settings.threshold),
@@ -68,10 +71,15 @@ FALLBACK = (
 )
 HOUSE_SWITCHES = (TunableSwitch("home_mixers_on_start", lambda h: h.settings.home_mixers_on_start),)
 
-_ALL = {t.key: t for t in (*MIXER, *MIXER_SWITCHES, *PUMP, *SOURCE, *HOT_WATER, *HOUSE)}
+_ALL = {t.key: t for t in (*MIXER, *MIXER_SWITCHES, *CIRCUIT_SWITCHES, *PUMP, *SOURCE)}
+_ALL |= {t.key: t for t in (*HOT_WATER, *HOUSE)}
 _ALL |= {t.key: t for t in (*FALLBACK, *HOUSE_SWITCHES)}
 # Pairs that must keep their order: (lower, upper).
-_ORDERED = (("min_step", "max_step"), ("setpoint_min", "setpoint_max"))
+_ORDERED = (
+    ("min_step", "max_step"),
+    ("setpoint_min", "setpoint_max"),
+    ("margin_raise_gap", "margin_lower_gap"),
+)
 
 
 def tuned(owner: Any, key: str) -> Any:
@@ -104,11 +112,11 @@ def tunables(house: Any) -> list[tuple[Any, tuple[Tunable | TunableSwitch, ...]]
     ]
     for circuit in house.circuits.values():
         values = (
+            *CIRCUIT_SWITCHES,
             *(PUMP if circuit.pump else ()),
             *(MIXER + MIXER_SWITCHES if circuit.mixer else ()),
         )
-        if values:
-            owners.append((circuit, values))
+        owners.append((circuit, values))
     owners += [(source, SOURCE) for source in house.sources.values() if source.controllable]
     if house.hot_water:
         owners.append((house.hot_water, HOT_WATER))

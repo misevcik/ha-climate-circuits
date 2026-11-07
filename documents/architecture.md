@@ -279,6 +279,8 @@ flowchart LR
 
 Výsledok je v `sensor.<okruh>_target_water_temperature` s atribútmi `reason`, `dew_point`, `outdoor_temperature` a dátami pre kartu (parametre oboch kriviek, aktuálny režim domu). Parametre mení služba `climate_circuits.set_curve` na tomto senzore.
 
+- **Izbová teplota krivky podľa termostatov** (0.1.27, prepínač okruhu *Krivka podľa termostatov*, predvolene zapnutý): namiesto pevnej izbovej teploty z krivky sa použije najvyššia nastavená teplota termostatov okruhu, ktoré práve kúria (pri chladení najnižšia chladiacich); bez kúriaceho termostatu ostáva izbová teplota krivky. Na cieľovej teplote vody atribúty `room`, `room_from`.
+
 ### Čerpadlo – Hotové lokálne (míľnik 2)
 - Zapne sa, až keď požiadavka okruhu trvá dobu otvárania termoelektrických hlavíc (predvolene 3 min). Hlavice ovláda termostat, preto integrácia čaká na trvanie požiadavky, nie na potvrdenie ventilu.
 - Požiadavka na zdroj tepla ide až po potvrdení, že čerpadlo beží.
@@ -329,10 +331,11 @@ Zdroj (akumulačná nádrž, kotol, tepelné čerpadlo, hydraulický separátor)
 ### Nastavovanie zdroja podľa okruhov – Hotové (0.1.15, pravidlá 0.1.18)
 - Prepínač zdroja **Tepelné čerpadlo riadi integrácia** / *Heat pump controlled by integration* (`switch.<zdroj>_heat_pump_controlled_by_integration`; v starších inštaláciách ostáva `…_set_from_the_circuits`, predvolene vypnutý; vzniká, len keď *Nastavená teplota* je climate, number alebo input_number). Ostro iba s prepínačom **a** Ovládať zariadenia; inak len záznam v Aktivite (skúšobný režim).
 - Nastavenie = najteplejšia voda, ktorú chce kúriaci okruh tohto zdroja, + **rezerva**, v rozmedzí najnižšie–najvyššie (30–55 °C) a v rozsahu a kroku entity (zaokrúhlené nahor). Mení sa najviac raz za 15 min a o ≥ 1 °C; bez kúrenia sa nemení.
-- **Rezerva sa učí** (`number.<zdroj>_margin_above_the_warmest_circuit`, štart 8 °C, 3–15 °C): +1 °C, keď niektorý okruh hlási „zdroj nestačí“ (najviac raz za 30 min); −1 °C po hodine, keď sú všetky kúriace zmiešavače ≤ 70 % a v cieli. Uložená cez reštart. Režim rezervy `select.<zdroj>_margin`: **Učí sa** (ručná zmena = nový štart učenia) alebo **Ručne** (platí zadaná hodnota, neučí sa) – 0.1.20.
+- **Rezerva sa učí** (`number.<zdroj>_margin_above_the_warmest_circuit`, štart 8 °C, 3–15 °C) – od 0.1.27 z vody z nádrže: **+1 °C**, keď voda z nádrže 10 min ostáva pod najteplejší cieľ + *Rezerva: zvýšiť pod cieľ +* (1 °C) alebo niektorý kúriaci zmiešavač ostáva naplno pod cieľom (najviac raz za 30 min; nie počas ohrevu TÚV, odmrazovania a 30 min po nich; nie keď je nastavenie aj tak na strope); **−1 °C** po hodine, keď je voda z nádrže aspoň cieľ + *Rezerva: znížiť nad cieľ +* (3 °C) a žiadny zmiešavač nie je naplno (poklesy počas TÚV/odmrazovania hodinu nepreruší). Uložená cez reštart. Režim rezervy `select.<zdroj>_margin`: **Učí sa** (ručná zmena = nový štart učenia) alebo **Ručne** (platí zadaná hodnota, neučí sa) – 0.1.20.
 - **Ručná zmena** nastavenia (napr. aplikácia TČ), ktorú nespravila integrácia → automatika sa pozastaví na 4 h (`paused_until`), ďalšia ručná zmena pauzu predĺži; začiatok aj koniec pauzy v Aktivite.
 - Na `sensor.<zdroj>_set_temperature` atribúty `wanted`, `wanted_reason`, `warmest_circuit`, `margin`, `paused_until`, `controlled`.
 - „Zdroj nestačí“ aj ako `binary_sensor.<okruh>_source_not_enough` (pri okruhu so zmiešavačom).
+- **Odmrazovanie** (0.1.27): `binary_sensor.<zdroj>_defrosting`, keď je výstup zdroja tepla chladnejší ako jeho spiatočka (o > 0,5 °C); Aktivita pri začiatku a konci, karta ho ukáže v riadku Nastavovanie tepelka.
 - **Ohrev TÚV** (0.1.25): `binary_sensor.<zdroj>_hot_water_heating` z voliteľnej entity zdroja (binary_sensor/switch/input_boolean, napr. ventil cez Modbus), inak výstup zdroja tepla ≥ voda z nádrže + *TÚV: výstup nad nádržou* (8 °C). Počas ohrevu a 30 min po ňom sa rezerva nezvyšuje; Aktivita pri začiatku a konci; karta kreslí smer trojcestného ventilu.
 - Karta schémy ukazuje pod hlavičkou riadok **Nastavovanie tepelka**: stav (zapnuté / vypnuté / skúšobný režim / pozastavené do …), nastavené, čo chce a prečo (okruh + cieľ + rezerva); klik otvorí prepínač, nastavenú teplotu alebo rezervu (0.1.19).
 

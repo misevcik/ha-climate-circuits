@@ -15,6 +15,8 @@ from .const import (
     DEFAULT_HOT_WATER_GAP,
     DEFAULT_HYSTERESIS,
     DEFAULT_MANUAL_PAUSE,
+    DEFAULT_MARGIN_LOWER_GAP,
+    DEFAULT_MARGIN_RAISE_GAP,
     DEFAULT_MAX_STEP,
     DEFAULT_MIN_SOURCE_GAP,
     DEFAULT_MIN_STEP,
@@ -193,6 +195,8 @@ class SourceSettings:
     setpoint_max: float = DEFAULT_SETPOINT_MAX
     manual_pause: float = DEFAULT_MANUAL_PAUSE  # min
     hot_water_gap: float = DEFAULT_HOT_WATER_GAP
+    margin_raise_gap: float = DEFAULT_MARGIN_RAISE_GAP
+    margin_lower_gap: float = DEFAULT_MARGIN_LOWER_GAP
 
     @classmethod
     def from_data(cls, data: Mapping[str, Any]) -> SourceSettings:

@@ -59,11 +59,12 @@ def setpoint_decision(
 
 @dataclass(frozen=True, slots=True)
 class MarginSettings:
-    """How the margin above the warmest circuit target learns from the mixers."""
+    """How the margin above the warmest circuit target learns from the water the source gives."""
 
     minimum: float = 3.0
     maximum: float = 15.0
     step: float = 1.0
+    short_after: float = 600.0  # s the water stays short before it counts
     raise_after: float = 1800.0  # s between raises: the tank needs time to heat up
     lower_after: float = 3600.0  # s of water warmer than needed before each lowering
 
@@ -71,24 +72,30 @@ class MarginSettings:
 def next_margin(
     margin: float,
     *,
-    starved: bool,
-    comfortable_for: float | None,
+    short_for: float | None,
+    plenty_for: float | None,
     since_change: float | None,
+    can_raise: bool,
     settings: MarginSettings,
 ) -> tuple[float, str | None]:
-    """The margin after this look at the mixers, and why it changed (raise, lower) or None.
+    """The margin after this look at the source's water, and why it changed (raise, lower).
 
-    starved: a heating circuit's mixer is fully open and still below its target;
-    comfortable_for: s all heating mixers have been well below fully open and at their target.
+    short_for: s the water has been too little above the warmest target (not counting the heat
+    generator heating hot water or defrosting); plenty_for: s it has been well above it;
+    can_raise: False when the setting is at its highest anyway, so a raise would change nothing.
     """
     s = settings
-    if starved:
-        if margin < s.maximum and (since_change is None or since_change >= s.raise_after):
+    if short_for is not None and short_for >= s.short_after:
+        if (
+            can_raise
+            and margin < s.maximum
+            and (since_change is None or since_change >= s.raise_after)
+        ):
             return min(margin + s.step, s.maximum), "raise"
         return margin, None
     if (
-        comfortable_for is not None
-        and comfortable_for >= s.lower_after
+        plenty_for is not None
+        and plenty_for >= s.lower_after
         and margin > s.minimum
         and (since_change is None or since_change >= s.lower_after)
     ):

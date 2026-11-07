@@ -207,6 +207,8 @@ class TargetWaterSensor(CircuitEntity, SensorEntity):
         dew = circuit.dew_point
         return {
             "reason": circuit.target.reason if circuit.target else "mode off",
+            "room": circuit.room[0] if circuit.room else None,
+            "room_from": circuit.room[1] if circuit.room else None,
             "dew_point": round(dew, 1) if dew is not None else None,
             "outdoor_temperature": circuit.house.outdoor,
             "house_mode": circuit.house.mode.value,

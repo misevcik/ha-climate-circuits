@@ -3,6 +3,7 @@ pump and mixing valve."""
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.config_entries import ConfigSubentry
@@ -20,6 +21,7 @@ from .mixer_control import MixerController
 from .pump_control import PumpController
 from .settings import CircuitSettings
 from .states import float_of, name_of, number, state_of
+from .tuning import tuned
 
 if TYPE_CHECKING:
     from .house import House
@@ -49,6 +51,7 @@ class Circuit(Listeners):
         self.settings = CircuitSettings.from_data(subentry.data)
         self.demand = Demand(False, reason="not evaluated")
         self.target: WaterTarget | None = None
+        self.room: tuple[float, str] | None = None  # set temperature the curve aims at, zone
         self.dew_point: float | None = None
         self.explanation: CircuitExplanation | None = None
         self.blocked: Blocked | None = None
@@ -165,6 +168,9 @@ class Circuit(Listeners):
         self.explanation = explain_circuit(mode, [snapshots[z] for z in mode_zones], self.demand)
         self.dew_point = worst_dew_point(temperatures, humidities)
         curve = s.heat_curve if mode is Mode.HEAT else s.cool_curve
+        self.room = self._wanted_room(mode, [snapshots[z] for z in mode_zones])
+        if self.room is not None:
+            curve = replace(curve, room=self.room[0])
         self.target = water_target(mode, curve, outdoor, self.dew_point, DEW_POINT_MARGIN)
         self.blocked = self._check_protections(mode, self.house.pause_remaining, temperatures)
         self._log_change()
@@ -172,6 +178,18 @@ class Circuit(Listeners):
         if self.pump:
             self.pump.evaluate()
         self._notify()
+
+    def _wanted_room(self, mode: Mode, zones: list[ZoneSnapshot]) -> tuple[float, str] | None:
+        """The room temperature the curve aims at: the warmest set temperature of the zones
+        heating now (the coolest when cooling), with the zone; None keeps the curve's own.
+        """
+        if mode is Mode.OFF or not tuned(self, "curve_from_thermostats"):
+            return None
+        action = "heating" if mode is Mode.HEAT else "cooling"
+        wanted = [(z.target, z.name) for z in zones if z.hvac_action == action and z.target]
+        if not wanted:
+            return None
+        return max(wanted) if mode is Mode.HEAT else min(wanted)
 
     def _check_protections(
         self, mode: Mode, pause: float, temperatures: list[float]

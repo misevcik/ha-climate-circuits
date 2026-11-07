@@ -647,6 +647,9 @@
       },
       "hot_water_heating": {
         "name": "Ohrev TÚV"
+      },
+      "defrosting": {
+        "name": "Odmrazovanie"
       }
     },
     "select": {
@@ -685,6 +688,9 @@
       },
       "home_mixers_on_start": {
         "name": "Homovať zmiešavače pri štarte HA"
+      },
+      "curve_from_thermostats": {
+        "name": "Krivka podľa termostatov"
       }
     },
     "number": {
@@ -750,6 +756,12 @@
       },
       "hot_water_gap": {
         "name": "TÚV: výstup nad nádržou"
+      },
+      "margin_raise_gap": {
+        "name": "Rezerva: zvýšiť pod cieľ +"
+      },
+      "margin_lower_gap": {
+        "name": "Rezerva: znížiť nad cieľ +"
       }
     },
     "climate": {

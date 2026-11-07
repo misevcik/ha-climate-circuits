@@ -647,6 +647,9 @@
       },
       "hot_water_heating": {
         "name": "Hot water heating"
+      },
+      "defrosting": {
+        "name": "Defrosting"
       }
     },
     "select": {
@@ -685,6 +688,9 @@
       },
       "home_mixers_on_start": {
         "name": "Home mixers when Home Assistant starts"
+      },
+      "curve_from_thermostats": {
+        "name": "Curve from the thermostats"
       }
     },
     "number": {
@@ -750,6 +756,12 @@
       },
       "hot_water_gap": {
         "name": "Hot water: supply above the tank"
+      },
+      "margin_raise_gap": {
+        "name": "Margin: raise below target +"
+      },
+      "margin_lower_gap": {
+        "name": "Margin: lower above target +"
       }
     },
     "climate": {

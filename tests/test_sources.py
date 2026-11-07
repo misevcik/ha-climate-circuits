@@ -14,6 +14,7 @@ from custom_components.climate_circuits.const import (
     SUBENTRY_TYPE_CIRCUIT,
     SUBENTRY_TYPE_SOURCE,
 )
+from custom_components.climate_circuits.core.mixer import MixerSettings
 
 from .conftest import HEAT_PUMP, OUTDOOR, circuit_data, set_thermostat, source_data
 
@@ -221,24 +222,117 @@ async def test_a_change_by_hand_pauses_the_automatic_setting(
     assert any("pause after a change by hand is over" in e.data["message"] for e in events)
 
 
-async def test_margin_learns_and_can_be_set_by_hand(hass: HomeAssistant, make_entry) -> None:
+class _Clock:
+    """Monotonic time of the house, moved on by the test."""
+
+    def __init__(self, house) -> None:
+        self.now = house.now()
+        house.now = lambda: self.now
+
+    def __iadd__(self, seconds: float):
+        self.now += seconds
+        return self
+
+
+class _FullyOpenMixer:
+    """A mixer fully open: with the supply below the target, the water is not enough."""
+
+    starved = True
+    params = MixerSettings()
+
+    def position(self) -> float:
+        return 100.0
+
+    def async_stop(self) -> None:
+        return None
+
+
+async def _water(hass: HomeAssistant, house, above_target: float) -> float:
+    """Set the tank's water this far above the warmest circuit target; returns the target."""
+    target = float(hass.states.get("sensor.f1_target_water_temperature").state)
+    hass.states.async_set(TANK_TOP, str(target + above_target))
+    await hass.async_block_till_done()
+    return target
+
+
+async def test_margin_rises_when_the_tank_water_stays_short(
+    hass: HomeAssistant, make_entry
+) -> None:
     calls: list[dict] = []
+    events = async_capture_events(hass, EVENT_ACTIVITY)
+    house = await _heat_pump_house(hass, make_entry, calls)
+    source = next(iter(house.sources.values()))
+    clock = _Clock(house)
+    await _water(hass, house, 0.5)  # less than 1 °C above the target
+    house.evaluate()
+    assert source.margin == 8.0  # not yet: the bottom of a heat pump cycle is short too
+    clock += 601
+    house.evaluate()
+    assert source.margin == 9.0
+    assert any("less than 1.0 °C above" in e.data["message"] for e in events)
+    clock += 601
+    house.evaluate()
+    assert source.margin == 9.0  # 30 min between raises: the tank needs time to heat up
+
+
+async def test_margin_rises_when_a_mixer_stays_fully_open(hass: HomeAssistant, make_entry) -> None:
+    calls: list[dict] = []
+    events = async_capture_events(hass, EVENT_ACTIVITY)
     house = await _heat_pump_house(hass, make_entry, calls)
     source = next(iter(house.sources.values()))
     circuit = next(iter(house.circuits.values()))
-
-    class Mixer:
-        starved = True
-        params = type("P", (), {"hysteresis": 0.5})()
-
-        def position(self) -> float:
-            return 100.0
-
-    circuit.mixer = Mixer()
+    clock = _Clock(house)
+    target = await _water(hass, house, 5.0)  # the tank's water looks enough
+    circuit.mixer = _FullyOpenMixer()
+    circuit.supply_temperature = lambda: target - 2.0  # but the circuit stays below its target
     house.evaluate()
-    await hass.async_block_till_done()
+    clock += 601
+    house.evaluate()
     assert source.margin == 9.0
+    assert any("F1 mixer is fully open" in e.data["message"] for e in events)
 
+
+async def test_margin_falls_after_an_hour_of_plenty_of_water(
+    hass: HomeAssistant, make_entry
+) -> None:
+    calls: list[dict] = []
+    events = async_capture_events(hass, EVENT_ACTIVITY)
+    house = await _heat_pump_house(hass, make_entry, calls)
+    source = next(iter(house.sources.values()))
+    clock = _Clock(house)
+    await _water(hass, house, 5.0)
+    house.evaluate()
+    clock += 3601
+    house.evaluate()
+    assert source.margin == 7.0
+    assert any("for an hour" in e.data["message"] for e in events)
+
+
+async def test_no_raise_when_the_heat_pump_is_at_its_highest_setting(
+    hass: HomeAssistant, make_entry
+) -> None:
+    calls: list[dict] = []
+    house = await _heat_pump_house(hass, make_entry, calls)
+    source = next(iter(house.sources.values()))
+    clock = _Clock(house)
+    target = await _water(hass, house, 0.0)
+    await hass.services.async_call(
+        "number",
+        "set_value",
+        {"entity_id": "number.buffer_tank_highest_setting", "value": round(target + 5)},
+        blocking=True,
+    )
+    house.evaluate()
+    clock += 3600
+    house.evaluate()
+    assert source.margin == 8.0  # target + 8 is above the highest setting anyway
+
+
+async def test_margin_set_by_hand_holds_in_manual_mode(hass: HomeAssistant, make_entry) -> None:
+    calls: list[dict] = []
+    house = await _heat_pump_house(hass, make_entry, calls)
+    source = next(iter(house.sources.values()))
+    clock = _Clock(house)
     margin = "number.buffer_tank_margin_above_the_warmest_circuit"
     await hass.services.async_call(
         "number", "set_value", {"entity_id": margin, "value": 6}, blocking=True
@@ -249,16 +343,18 @@ async def test_margin_learns_and_can_be_set_by_hand(hass: HomeAssistant, make_en
     await hass.services.async_call(
         "select", "select_option", {"entity_id": mode, "option": "manual"}, blocking=True
     )
-    source._margin_changed_at = None  # learning would be allowed again by now
+    await _water(hass, house, 0.0)
     house.evaluate()
-    await hass.async_block_till_done()
-    assert source.margin == 6.0  # manual: the value set by hand holds, the mixer still short
+    clock += 3600
+    house.evaluate()
+    assert source.margin == 6.0  # manual: the value set by hand holds, the water still short
     await hass.services.async_call(
         "select", "select_option", {"entity_id": mode, "option": "auto"}, blocking=True
     )
-    source._margin_changed_at = None
+    clock += 1801
     house.evaluate()
-    await hass.async_block_till_done()
+    clock += 601
+    house.evaluate()
     assert source.margin == 7.0  # auto again: learns on from the value set by hand
     (card,) = hass.states.get("sensor.climate_circuits_mode").attributes["layout"]["sources"]
     assert card["setpoint_control"] == "switch.buffer_tank_heat_pump_controlled_by_integration"
@@ -332,33 +428,54 @@ async def test_margin_is_not_raised_while_the_heat_pump_heats_hot_water(
     hass.states.async_set("sensor.hp_out", "44.0")
     house = await _heat_pump_house(hass, make_entry, calls, heater_supply="sensor.hp_out")
     source = next(iter(house.sources.values()))
-    circuit = next(iter(house.circuits.values()))
-
-    class Mixer:
-        starved = True
-        params = type("P", (), {"hysteresis": 0.5})()
-
-        def position(self) -> float:
-            return 100.0
-
+    clock = _Clock(house)
     heating = "binary_sensor.buffer_tank_hot_water_heating"
     assert hass.states.get(heating).state == "off"  # 44 is close to the tank's 45.5
-    hass.states.async_set("sensor.hp_out", "55.0")  # all the heat goes to the hot water
+    target = await _water(hass, house, 0.0)
+    hass.states.async_set("sensor.hp_out", str(target + 12))  # all the heat goes to hot water
     await hass.async_block_till_done()
     assert hass.states.get(heating).state == "on"
     assert any("heats hot water" in e.data["message"] for e in events)
-
-    circuit.mixer = Mixer()
+    clock += 900
     house.evaluate()
-    await hass.async_block_till_done()
     assert source.margin == 8.0  # short of water because of the hot water, not raised
 
-    hass.states.async_set("sensor.hp_out", "46.0")
+    hass.states.async_set("sensor.hp_out", str(target + 1))
     await hass.async_block_till_done()
     assert hass.states.get(heating).state == "off"
+    clock += 900
     house.evaluate()
     assert source.margin == 8.0  # the tank still recovers
-    now = house.now()
-    house.now = lambda: now + 1801
+    clock += 901
+    house.evaluate()
+    clock += 601
     house.evaluate()
     assert source.margin == 9.0
+
+
+async def test_margin_is_not_raised_while_the_heat_pump_defrosts(
+    hass: HomeAssistant, make_entry
+) -> None:
+    calls: list[dict] = []
+    events = async_capture_events(hass, EVENT_ACTIVITY)
+    hass.states.async_set("sensor.hp_out", "47.0")
+    hass.states.async_set("sensor.hp_in", "43.0")
+    house = await _heat_pump_house(
+        hass, make_entry, calls, heater_supply="sensor.hp_out", heater_return="sensor.hp_in"
+    )
+    source = next(iter(house.sources.values()))
+    clock = _Clock(house)
+    defrost = "binary_sensor.buffer_tank_defrosting"
+    assert hass.states.get(defrost).state == "off"
+    hass.states.async_set("sensor.hp_out", "31.0")  # reversed: colder than its return
+    hass.states.async_set("sensor.hp_in", "36.0")
+    await hass.async_block_till_done()
+    assert hass.states.get(defrost).state == "on"
+    assert any("defrosts" in e.data["message"] for e in events)
+    await _water(hass, house, -8.0)  # the tank's water falls far below the target
+    clock += 900
+    house.evaluate()
+    assert source.margin == 8.0
+    hass.states.async_set("sensor.hp_in", "unavailable")  # a sensor drops out for a moment
+    await hass.async_block_till_done()
+    assert hass.states.get(defrost).state == "on"  # keeps its last state, not unknown

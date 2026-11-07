@@ -30,6 +30,8 @@ async def async_setup_entry(
             async_add_entities(
                 [HotWaterHeatingSensor(source, "hot_water_heating")], config_subentry_id=source.id
             )
+        if s.heater_supply and s.heater_return:
+            async_add_entities([DefrostSensor(source, "defrosting")], config_subentry_id=source.id)
 
 
 class DemandSensor(CircuitEntity, BinarySensorEntity):
@@ -84,3 +86,14 @@ class HotWaterHeatingSensor(SourceEntity, BinarySensorEntity):
     @property
     def is_on(self) -> bool | None:
         return self.source.hot_water_heating
+
+
+class DefrostSensor(SourceEntity, BinarySensorEntity):
+    """The heat pump defrosts: its supply comes back colder than its return. The circuits'
+    water cools meanwhile."""
+
+    _attr_icon = "mdi:snowflake-melt"
+
+    @property
+    def is_on(self) -> bool | None:
+        return self.source.defrosting

@@ -29,7 +29,7 @@ const TEXTS = {
     auto_set: "nastavené", auto_wants: "chce", auto_margin: "rezerva",
     margin_auto: "učí sa", margin_manual: "ručne",
     auto_idle: "nikto nekúri, nemení sa", auto_cool: "nekúri sa, nemení sa",
-    auto_dhw: "tepelko ohrieva TÚV",
+    auto_dhw: "tepelko ohrieva TÚV", auto_defrost: "tepelko odmrazuje",
     hot_water: "Nádrž TÚV", heater: "Zdroj tepla", heater_out: "výstup", heater_in: "spiatočka", circulation: "Cirkulácia TÚV", circ_return: "spiatočka cirkulácie",
     starts_below: "zapne pod", stops_at: "vypne pri", running: "beží", stopped: "stojí",
     disabled: "vypnutá",
@@ -47,7 +47,7 @@ const TEXTS = {
     auto_set: "set", auto_wants: "wants", auto_margin: "margin",
     margin_auto: "learned", margin_manual: "manual",
     auto_idle: "no circuit heats, left as it is", auto_cool: "not heating, left as it is",
-    auto_dhw: "the heat pump heats hot water",
+    auto_dhw: "the heat pump heats hot water", auto_defrost: "the heat pump defrosts",
     hot_water: "Hot water tank", heater: "Heat generator", heater_out: "supply", heater_in: "return", circulation: "Circulation", circ_return: "circulation return",
     starts_below: "starts below", stops_at: "stops at", running: "running", stopped: "stopped",
     disabled: "disabled",
@@ -140,7 +140,7 @@ class ClimateCircuitsSchemaCard extends HTMLElement {
     const hw = layout.hot_water;
     if (hw) ids.push(hw.state, hw.temperature, hw.threshold, hw.delta, hw.enabled, hw.tank, hw.tank_setpoint);
     for (const s of layout.sources) {
-      ids.push(s.temperature, s.setpoint, s.setpoint_control, s.margin, s.margin_mode, s.hot_water_heating);
+      ids.push(s.temperature, s.setpoint, s.setpoint_control, s.margin, s.margin_mode, s.hot_water_heating, s.defrosting);
       if (s.heater) ids.push(s.heater.supply, s.heater.return);
     }
     for (const c of layout.circuits) {
@@ -405,6 +405,9 @@ class ClimateCircuitsSchemaCard extends HTMLElement {
     }
     if (this._val(src.hot_water_heating) === "on") {
       detail += ` · <span class="link" data-entity="${esc(src.hot_water_heating)}">${this._t("auto_dhw")}</span>`;
+    }
+    if (this._val(src.defrosting) === "on") {
+      detail += ` · <span class="link" data-entity="${esc(src.defrosting)}">${this._t("auto_defrost")}</span>`;
     }
     return `<div class="auto ${on ? (paused ? "paused" : "on") : "off"}" data-entity="${esc(src.setpoint_control)}">
       <b>${this._t("auto")}</b> (${esc(src.name)}): ${esc(state)} ·

@@ -2,10 +2,12 @@
 optionally its setting from the circuits.
 
 Setting it from the circuits (its own switch, and Control equipment on): the warmest water a
-heating circuit wants plus a margin. The margin learns from the mixers: up when a mixer is
-fully open and still short, down when all of them have been well below fully open for an
-hour. It can also be set by hand. A change of the setting by somebody else (the heat pump's
-app) pauses this for a few hours.
+heating circuit wants plus a margin. The margin learns from the water the source gives: up when
+it stays too little above the warmest target or a mixer is fully open and still short, down
+after an hour well above it with no mixer fully open. Not while the
+heat generator heats hot water or defrosts, nor while the tank recovers from that: the water is
+short for those, not for a setting too low. It can also be set by hand. A change of the
+setting by somebody else (the heat pump's app) pauses this for a while.
 """
 
 from __future__ import annotations
@@ -16,12 +18,8 @@ from typing import TYPE_CHECKING, Any
 from homeassistant.config_entries import ConfigSubentry
 from homeassistant.core import callback
 
-from .const import (
-    COMFORTABLE_OPENING,
-    CONTROLLABLE_SETPOINTS,
-    HOT_WATER_RECOVERY,
-    SETPOINT_INTERVAL,
-)
+from .const import CONTROLLABLE_SETPOINTS, DEFROST_GAP, HEAT_GENERATOR_RECOVERY, SETPOINT_INTERVAL
+from .core.mixer import starved
 from .core.mode import Mode
 from .core.setpoint import (
     MarginSettings,
@@ -41,7 +39,7 @@ if TYPE_CHECKING:
     from .house import House
 
 MARGIN = MarginSettings()
-MARGIN_MODES = ("auto", "manual")  # learned from the mixers, or the value set by hand
+MARGIN_MODES = ("auto", "manual")  # learned from the source's water, or the value set by hand
 
 
 class Source(Listeners):
@@ -58,10 +56,12 @@ class Source(Listeners):
         self._seen: float | None = None  # the setting at the last look
         self._proposed: float | None = None  # dry run: the last value said in Activity
         self._margin_changed_at: float | None = None
-        self._comfortable_since: float | None = None  # all heating mixers well below open
+        self._short_since: float | None = None  # the water too little above the warmest target
+        self._plenty_since: float | None = None  # the water well above it
         self._was_paused = False
         self.hot_water_heating: bool | None = None  # None: cannot tell
-        self._hot_water_ended: float | None = None
+        self.defrosting: bool | None = None
+        self._busy_ended: float | None = None  # hot water heating or a defrost ended
 
     @property
     def name(self) -> str:
@@ -101,7 +101,7 @@ class Source(Listeners):
         """Back to auto, learning starts from the margin as it is."""
         self._stored["margin_mode"] = mode
         self._margin_changed_at = self.house.now()
-        self._comfortable_since = None
+        self._short_since = self._plenty_since = None
         self.house.save()
         self.house.evaluate()
 
@@ -110,7 +110,7 @@ class Source(Listeners):
         """By hand: holds in manual mode; in auto mode learning goes on from here."""
         self._stored["margin"] = margin
         self._margin_changed_at = self.house.now()
-        self._comfortable_since = None
+        self._short_since = self._plenty_since = None
         self.house.save()
         self.house.evaluate()
 
@@ -211,66 +211,82 @@ class Source(Listeners):
             return None
         return supply - tank >= tuned(self, "hot_water_gap")
 
-    def _watch_hot_water(self) -> None:
-        """Activity when the heat generator starts and stops heating hot water."""
-        heating = self._heats_hot_water()
-        was, self.hot_water_heating = self.hot_water_heating, heating
-        if heating is None or was is None or heating == was:
-            return
-        if not heating:
-            self._hot_water_ended = self.house.now()
-        self._log_event("hot_water_on" if heating else "hot_water_off")
+    def _defrosts(self) -> bool | None:
+        """The heat pump reverses to defrost: its supply comes back colder than its return."""
+        hass, s = self.house.hass, self.settings
+        supply, back = float_of(hass, s.heater_supply), float_of(hass, s.heater_return)
+        if supply is None or back is None:
+            return None
+        return supply < back - DEFROST_GAP
 
-    def _recovering_from_hot_water(self) -> bool:
-        """Heating hot water, or the tank still recovering from it: water short for that."""
-        if self.hot_water_heating:
+    def _watch_heat_generator(self) -> None:
+        """Activity when hot water heating or a defrost starts and ends.
+
+        A sensor that drops out for a moment keeps the last state rather than unknown.
+        """
+        for attr, now, key in (
+            ("hot_water_heating", self._heats_hot_water(), "hot_water"),
+            ("defrosting", self._defrosts(), "defrost"),
+        ):
+            was = getattr(self, attr)
+            if now is None or now == was:
+                continue
+            setattr(self, attr, now)
+            if was is None:
+                continue  # the first look after a start
+            if not now:
+                self._busy_ended = self.house.now()
+            self._log_event(f"{key}_on" if now else f"{key}_off")
+
+    def _heat_generator_busy(self) -> bool:
+        """Heating hot water or defrosting, or the tank still recovering from it."""
+        if self.hot_water_heating or self.defrosting:
             return True
-        ended = self._hot_water_ended
-        return ended is not None and self.house.now() - ended < HOT_WATER_RECOVERY
+        ended = self._busy_ended
+        return ended is not None and self.house.now() - ended < HEAT_GENERATOR_RECOVERY
 
     def _learn_margin(self, heating: list[Circuit]) -> None:
-        """Up when a mixer is short of water, down after an hour of water warmer than needed.
-
-        Not up while the heat generator heats hot water or the tank recovers from it: the
-        water is short for that, not for a setting too low.
+        """Up when the water stays too little above the warmest target, or a mixer stays fully
+        open and short; down after an hour well above it with no mixer fully open. A short while
+        the heat generator is busy elsewhere does not count; a raise is not made when the
+        setting is at its highest anyway.
         """
-        mixers = [c for c in heating if c.mixer is not None]
-        if not mixers:
-            self._comfortable_since = None
+        targets = [c.target.value for c in heating if c.target is not None]
+        water = self.temperature()
+        if not targets or water is None:
+            self._short_since = self._plenty_since = None
             return
-        now = self.house.now()
-        starved = [c.name for c in mixers if c.mixer.starved]
-        if self._recovering_from_hot_water():
-            starved = []
-        if all(self._comfortable(c) for c in mixers):
-            self._comfortable_since = self._comfortable_since or now
+        now, warmest = self.house.now(), max(targets)
+        raise_gap, lower_gap = tuned(self, "margin_raise_gap"), tuned(self, "margin_lower_gap")
+        busy = self._heat_generator_busy()
+        fully_open = [c.name for c in heating if _fully_open_and_short(c)]
+        if not busy and (water < warmest + raise_gap or fully_open):
+            self._short_since = self._short_since or now
         else:
-            self._comfortable_since = None
+            self._short_since = None
+        if water >= warmest + lower_gap and not fully_open:
+            self._plenty_since = self._plenty_since or now
+        elif not busy:  # a dip caused by hot water or a defrost does not end it
+            self._plenty_since = None
         margin, why = next_margin(
             self.margin,
-            starved=bool(starved),
-            comfortable_for=None
-            if self._comfortable_since is None
-            else now - self._comfortable_since,
+            short_for=None if self._short_since is None else now - self._short_since,
+            plenty_for=None if self._plenty_since is None else now - self._plenty_since,
             since_change=None if self._margin_changed_at is None else now - self._margin_changed_at,
+            can_raise=warmest + self.margin < self._limits().maximum,
             settings=MARGIN,
         )
         if why is None:
             return
         self._stored["margin"] = margin
         self._margin_changed_at = now
-        self._comfortable_since = None  # another hour before the next lowering
+        self._short_since = self._plenty_since = None
         self.house.save()
-        self._log_event(f"margin_{why}", margin=margin, circuit=", ".join(starved))
-
-    @staticmethod
-    def _comfortable(circuit: Circuit) -> bool:
-        """Well below fully open and at its target: the water is warmer than it needs."""
-        mixer, target = circuit.mixer, circuit.target
-        position, supply = mixer.position(), circuit.supply_temperature()
-        if position is None or supply is None or target is None:
-            return False
-        return position <= COMFORTABLE_OPENING and supply >= target.value - mixer.params.hysteresis
+        gap = raise_gap if why == "raise" else lower_gap
+        key = "margin_open" if why == "raise" and fully_open else f"margin_{why}"
+        self._log_event(
+            key, margin=margin, water=water, target=warmest, gap=gap, circuit=", ".join(fully_open)
+        )
 
     def _log_setpoint(
         self, decision: SetpointDecision, current: float | None, dry_run: bool
@@ -325,7 +341,13 @@ class Source(Listeners):
         return set(
             filter(
                 None,
-                [s.temperature_sensor, s.setpoint_entity, s.heater_supply, s.hot_water_entity],
+                [
+                    s.temperature_sensor,
+                    s.setpoint_entity,
+                    s.heater_supply,
+                    s.heater_return,
+                    s.hot_water_entity,
+                ],
             )
         )
 
@@ -342,5 +364,20 @@ class Source(Listeners):
 
     @callback
     def refresh(self) -> None:
-        self._watch_hot_water()
+        self._watch_heat_generator()
         self._notify()
+
+
+def _fully_open_and_short(circuit: Circuit) -> bool:
+    """The circuit's mixer is fully open and its supply still below the target."""
+    mixer, target = circuit.mixer, circuit.target
+    if mixer is None or target is None:
+        return False
+    return starved(
+        heating=True,
+        demand=True,
+        position=mixer.position(),
+        supply=circuit.supply_temperature(),
+        target=target.value,
+        settings=mixer.params,
+    )

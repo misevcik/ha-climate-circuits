@@ -3,6 +3,27 @@
 Architektúra: [architecture.md](architecture.md) (pôvodný Claude Docs dokument z 1. 10. je zastaraný)
 Názov: **Climate Circuits**, doména `climate_circuits`, repozitár `ha-climate-circuits`.
 
+## 2026-11-07 – učenie rezervy z vody z nádrže, odmrazovanie, krivka podľa termostatov (0.1.27)
+- Používateľ schválil návrh z rozboru nižšie a doplnil: aj zmiešavač otvorený naplno má zvýšiť teplotu tepelka; krivke chýba najvyššia požadovaná teplota termostatov okruhu.
+- Rezerva sa učí z vody z nádrže: +1 °C, keď je 10 min pod cieľ + 1 °C **alebo** kúriaci zmiešavač ostáva naplno pod cieľom (najviac raz za 30 min); −1 °C po hodine ≥ cieľ + 3 °C bez zmiešavača naplno. Nezvyšuje sa počas ohrevu TÚV, odmrazovania a 30 min po nich, ani keď je nastavenie na strope. Prahy 1 a 3 °C sú number entity zdroja. Odhad rovnováhy pre tento dom: rezerva ~9–10 °C (výstup z nádrže ~4 °C pod vrchom, hysteréza TČ ~5 °C).
+- Odmrazovanie: výstup zdroja tepla < spiatočka − 0,5 °C → `binary_sensor.<zdroj>_defrosting`, Aktivita, karta. Senzory TÚV a odmrazovania pri výpadku teplotného senzora držia poslednú hodnotu.
+- Krivka: izbová teplota = najvyššia nastavená teplota kúriacich termostatov okruhu (chladenie: najnižšia); prepínač *Krivka podľa termostatov* pri okruhu, predvolene zapnutý.
+- Otázka používateľa „nemala by na to byť jednoduchá krivka tepelka?“ – nastavenie tepelka už je krivka okruhov (cieľ vody podľa vonkajšej teploty) posunutá o rezervu; ručný režim rezervy = presne taká pevná krivka. Testy: 225.
+
+## 2026-11-07 – rezerva na maxime, pomalá reakcia (rozbor)
+- Stav: rezerva 15 °C (maximum učenia), nastavenie TČ 55 °C (strop) nepretržite od 6. 11. 17:52; ciele vody ~44–46 °C pri −1,5 … +1 °C vonku.
+- Priebeh rezervy: 18.–30. 10. kolísala 5–11 °C; 4.–7. 11. každé ráno rast o 1 °C každých 30 min až na 15 (5. 11. 8:38, 7. 11. 5:35); 5. 11. 14:01 ručne stiahnutá na 8, do rána opäť 13–15. Znižovanie (−1 °C po hodine „pohodlia“) takmer nenastáva – zmiešavače medzi poklesmi nevydržia hodinu pod 70 %.
+- Príčina: **odmrazovanie TČ** (výstup TČ pod spiatočkou: 2:37–2:42, 5:22–5:24, 6:33–6:35 dňa 7. 11.) a ohrev TÚV schladí vodu z nádrže o 7–10 °C (napr. 41,8 → 32,3 °C) na 20–40 min; zmiešavače naplno, „zdroj nestačí“ → rezerva +1. Vyššie nastavenie TČ proti tomu nepomôže, len zhoršuje COP (TČ potom ide ~5 kW). Detekcia TÚV podľa rozdielu výstup TČ − nádrž (8 °C) pri teplej nádrži (47–55 °C) nezaberá.
+- Pomalá reakcia: cieľ vody sa mení len pri zmene `sensor.outside_temperature`, ktorý sa aktualizuje raz za ~64 min → nastavenie TČ sa mení po hodinách (o 1–3 °C); od 6. 11. sa nemení vôbec, lebo je na strope 55 °C.
+- Návrh (čaká na súhlas): odmrazovanie rozpoznať (výstup TČ < spiatočka) a počas neho + 30 min neučiť; učiť z vody z nádrže namiesto polohy zmiešavača (zvýšiť, keď je mimo TÚV/odmrazovania pod cieľ + 2 °C; znížiť, keď bola celú hodinu ≥ cieľ + 4 °C); nezvyšovať, keď je nastavenie na strope; zvážiť rýchlejší senzor vonkajšej teploty.
+
+## 2026-10-18 – noc 17./18. 10. s riadením tepelka (rozbor)
+- Vonku 8 → 4,5 °C, ciele vody 37,6 → 40,6 °C. Integrácia nastavovala TČ 46 → 47 → 46 → 47 → 48 °C; rezerva sa **znížila** 8 → 7 °C (o 2:08, zmiešavače hodinu pod 70 % a v cieli). „Zdroj nestačí“ ani raz.
+- Ohrev TÚV rozpoznaný 2:48–2:57 (výstup TČ 46,5–51,6 °C pri nádrži 38–35,7 °C); po ňom ešte ~20 min dobieha vyšší príkon (dohrev akumulačky).
+- TČ: 4 štarty za 6,5 h, chod ~90–100 min, pauzy ~10 min (večer predtým 6 štartov, chod 15–100 min); ráno pri 4,5 °C 2–2,7 kW. Krátke špičky ~4 kW (23:30, 4:15) – pravdepodobne odmrazovanie.
+- Regulácia (23:00–5:40): F1 52 % v ±0,5 °C / 78 % v ±1 °C, GF 51 % / 75 %; 23 h horšia po homingu pri reštarte 22:52 (prepínač homing pri štarte zapnutý).
+- Drobnosti: `binary_sensor.<zdroj>_hot_water_heating` krátko `unknown` pri výpadku teplotného senzora (2:17, 3:40, 4:59) → držať poslednú hodnotu; raz varovanie HA „sensor.climate_circuits_mode took 1.2 s“ (0:53) – sledovať.
+
 ## 2026-10-17 – karta: tok podľa polohy zmiešavača, drobné opravy (0.1.26)
 - Používateľ: pri zatvorenom zmiešavači nemá byť animovaný prívod z akumulačky. Karta teraz: prívod z nádrže a spiatočka do nádrže tečú len pri otvorení > 0 %, obtok len pod 100 %, farba vody za zmiešavačom podľa otvorenia (modrá → oranžová).
 - Homing oboch zmiešavačov po reštarte 22:39 nebol chyba: používateľ o 22:25 zapol *Home mixers when Home Assistant starts*.

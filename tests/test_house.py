@@ -263,3 +263,39 @@ async def test_overview_sensors_have_their_own_entities(hass, make_entry) -> Non
     hass.states.async_set("sensor.hot_water", "50.0", {"unit_of_measurement": "°C"})
     await hass.async_block_till_done()
     assert hass.states.get("sensor.climate_circuits_hot_water_tank").state == "50.0"
+
+
+async def test_curve_aims_at_the_warmest_set_temperature_of_the_heating_zones(
+    hass: HomeAssistant, make_entry
+) -> None:
+    hass.states.async_set(HEAT_PUMP, "heat")
+    hass.states.async_set(OUTDOOR, "-5")
+    for zone, action, wanted in (
+        ("climate.office", "heating", 21.0),
+        ("climate.kitchen", "heating", 23.5),
+    ):
+        hass.states.async_set(
+            zone,
+            "heat",
+            {"hvac_action": action, "temperature": wanted, "friendly_name": zone[8:].title()},
+        )
+    await _setup(hass, make_entry, F1)
+    target = hass.states.get(F1_TARGET)
+    assert target.attributes["room"] == 23.5 and target.attributes["room_from"] == "Kitchen"
+    # 23.5 + (50 − 23.5) · (28.5/38.5)^(1/1.3): warmer than 44.0 with the curve's own 22 °C
+    assert float(target.state) == 44.5
+
+    hass.states.async_set(
+        "climate.kitchen", "heat", {"hvac_action": "idle", "temperature": 23.5}
+    )  # an idle zone does not count
+    await hass.async_block_till_done()
+    assert hass.states.get(F1_TARGET).attributes["room"] == 21.0
+
+    await hass.services.async_call(
+        "switch",
+        "turn_off",
+        {"entity_id": "switch.f1_curve_from_the_thermostats"},
+        blocking=True,
+    )
+    target = hass.states.get(F1_TARGET)
+    assert target.attributes["room"] is None and float(target.state) == 44.0

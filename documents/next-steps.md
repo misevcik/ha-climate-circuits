@@ -189,7 +189,10 @@ Kód hotový lokálne (151 testov, ruff OK): čerpadlá okruhov, vlastná poloha
 - [x] Ohrev TÚV: rozpoznanie, učenie rezervy počas neho stojí (0.1.25), tag pushnutý
 - [x] `v0.1.25` nainštalovaná
 - [x] Karta: tok podľa polohy zmiešavača; dotlak po reštarte; log pri vypínaní (0.1.26), tag pushnutý
-- [ ] Release `v0.1.26`, update, reštart
+- [x] `v0.1.26` nainštalovaná
+- [x] Učenie rezervy z vody z nádrže, odmrazovanie, krivka podľa termostatov (0.1.27), tag pushnutý
+- [ ] Release `v0.1.27`, update, reštart; rezerva teraz 15 °C – stiahnuť na ~10 °C (učenie ju potom doladí)
+- [ ] Rýchlejší senzor vonkajšej teploty (`sensor.outside_temperature` sa mení raz za ~64 min)
 - [ ] Senzor trojcestného ventilu cez Modbus (používateľ zváži) → pole *Ohrev TÚV* pri zdroji
 - [ ] Typ a výkon TČ od používateľa (dimenzovanie)
 - [ ] Štart okruhu so studenou vodou – overiť pri najbližšom štarte

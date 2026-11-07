@@ -119,15 +119,21 @@ _SK = {
     "src_enough": "{name}: {source} nastavený na {setpoint} opäť stačí na cieľ {target}",
     "sp_set": "{source}: nastavujem na {wanted} (bolo {current}) – najteplejšiu vodu chce "
     "{circuit} ({target}) + rezerva {margin}",
-    "sp_margin_raise": "{source}: rezerva zvýšená na {margin} – zdroj nestačí pre {circuit}",
-    "sp_margin_lower": "{source}: rezerva znížená na {margin} – zmiešavače sú už hodinu pod 70 % "
-    "a v cieli, voda je teplejšia, ako treba",
+    "sp_margin_raise": "{source}: rezerva zvýšená na {margin} – voda z nádrže {water} je menej "
+    "ako {gap} nad najteplejším cieľom {target}",
+    "sp_margin_open": "{source}: rezerva zvýšená na {margin} – zmiešavač {circuit} je naplno "
+    "a stále pod cieľom (voda z nádrže {water}, cieľ {target})",
+    "sp_margin_lower": "{source}: rezerva znížená na {margin} – voda z nádrže je už hodinu "
+    "aspoň {gap} nad najteplejším cieľom (teraz {water}, cieľ {target})",
     "sp_manual": "{source}: nastavenie zmenené ručne na {value} – automatika pozastavená "
     "do {until}",
     "sp_resumed": "{source}: pauza po ručnej zmene skončila, nastavujem opäť podľa okruhov",
     "sp_hot_water_on": "{source}: tepelko ohrieva TÚV – voda pre okruhy môže chvíľu chýbať, "
     "rezerva sa vtedy nezvyšuje",
     "sp_hot_water_off": "{source}: ohrev TÚV skončil",
+    "sp_defrost_on": "{source}: tepelko odmrazuje – voda pre okruhy chvíľu chladne, rezerva sa "
+    "vtedy nezvyšuje",
+    "sp_defrost_off": "{source}: odmrazovanie skončilo",
     "mx_starved": "Zmiešavač {name}: zdroj nestačí – zmiešavač je naplno už {minutes} min a "
     "prívod {supply} je pod cieľom {target}{tail}",
     "mx_starved_tail": "; {source} má {temperature}",
@@ -243,10 +249,12 @@ _EN = {
     "src_enough": "{name}: {source} set to {setpoint} covers the {target} target again",
     "sp_set": "{source}: setting it to {wanted} (was {current}) – {circuit} wants the warmest "
     "water ({target}) + margin {margin}",
-    "sp_margin_raise": "{source}: margin raised to {margin} – the source is not enough for "
-    "{circuit}",
-    "sp_margin_lower": "{source}: margin lowered to {margin} – the mixers have been below 70 % and "
-    "at their targets for an hour, the water is warmer than needed",
+    "sp_margin_raise": "{source}: margin raised to {margin} – the tank's water {water} is less "
+    "than {gap} above the warmest target {target}",
+    "sp_margin_open": "{source}: margin raised to {margin} – the {circuit} mixer is fully open "
+    "and still below its target (tank water {water}, target {target})",
+    "sp_margin_lower": "{source}: margin lowered to {margin} – the tank's water has been at least "
+    "{gap} above the warmest target for an hour (now {water}, target {target})",
     "sp_manual": "{source}: setting changed by hand to {value} – automatic setting paused until "
     "{until}",
     "sp_resumed": "{source}: the pause after a change by hand is over, setting it from the "
@@ -254,6 +262,9 @@ _EN = {
     "sp_hot_water_on": "{source}: the heat pump heats hot water – the circuits may be short of "
     "water for a while, the margin is not raised meanwhile",
     "sp_hot_water_off": "{source}: hot water heating ended",
+    "sp_defrost_on": "{source}: the heat pump defrosts – the circuits' water cools for a while, "
+    "the margin is not raised meanwhile",
+    "sp_defrost_off": "{source}: defrost ended",
     "mx_starved": "Mixer {name}: the heat source is not enough – fully open for {minutes} min and "
     "the supply {supply} is below the target {target}{tail}",
     "mx_starved_tail": "; {source} is at {temperature}",
