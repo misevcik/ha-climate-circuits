@@ -11,6 +11,7 @@ from custom_components.climate_circuits.core.mixer import (
     source_compensation,
     step_size,
     supply_trend,
+    welcome_source_change,
 )
 
 S = MixerSettings(travel=100.0, hysteresis=0.5)
@@ -136,6 +137,35 @@ def test_source_change_moves_at_once_even_while_settling() -> None:
     assert _regulate(supply=35.0, source=45.2, source_ref=45.0) is None
     # without a reference (sensor just appeared) nothing is compensated
     assert _regulate(supply=35.0, source=50.0, source_ref=None) is None
+
+
+def test_a_warmer_tank_is_let_through_while_short_of_water() -> None:
+    # 8 Nov: supply 34 °C, target 44.3 °C, 18 % open, the tank warmed from 40.8 to 42.0 °C
+    below = {"target": 44.3, "supply": 34.0, "position": 18.0, "source_ref": 40.8}
+    assert _regulate(**below, source=42.0, since_move=60.0) is None  # no closing, still settling
+    action = _regulate(**below, source=42.0, since_move=200.0)
+    assert action.direction is Direction.OPEN and action.why == "supply"
+    # a colder tank while short of water: opening to keep up is still right
+    assert _regulate(**below, source=39.0, since_move=60.0).direction is Direction.OPEN
+    # above the target a colder tank is let through
+    above = {"target": 30.0, "supply": 34.0, "position": 50.0, "source_ref": 45.0}
+    assert _regulate(**above, source=42.0, since_move=60.0) is None
+
+
+def test_a_warmer_tank_that_would_overshoot_is_still_compensated() -> None:
+    # supply 33 below 35, but 58 % open and the tank 45 -> 50 would take it to ~35.9
+    action = _regulate(target=35.0, supply=33.0, position=58.0, source=50.0, source_ref=45.0)
+    assert action.direction is Direction.CLOSE and action.why == "source"
+
+
+def test_welcome_source_change_edges() -> None:
+    args = {"position": 50.0, "source_ref": 45.0, "settings": S}  # supply moves by 0.5 x dT
+    assert welcome_source_change(supply=34.0, target=35.0, source=46.0, **args)  # to 34.5
+    assert not welcome_source_change(supply=34.6, target=35.0, source=46.0, **args)  # in band
+    assert not welcome_source_change(supply=34.0, target=None, source=46.0, **args)
+    assert not welcome_source_change(supply=34.0, target=35.0, source=50.0, **args)  # 36.5: past
+    assert not welcome_source_change(supply=34.0, target=35.0, source=44.0, **args)  # colder
+    assert welcome_source_change(supply=36.0, target=35.0, source=44.0, **args)  # above, colder
 
 
 def test_no_source_compensation_close_to_the_supply() -> None:

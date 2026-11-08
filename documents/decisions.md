@@ -3,6 +3,12 @@
 Architektúra: [architecture.md](architecture.md) (pôvodný Claude Docs dokument z 1. 10. je zastaraný)
 Názov: **Climate Circuits**, doména `climate_circuits`, repozitár `ha-climate-circuits`.
 
+## 2026-11-08 – kompenzácia zdroja neprivrie zmiešavač, keď chýba voda (0.1.30)
+- Po reštarte s 0.1.29 (homovanie na 0 %) sa zmiešavače o 8:28 otvorili o 20 %, ale o 8:30 ich kompenzácia zdroja privrela o 2 %: nádrž sa ohriala 40,8 → 42 °C a kompenzácia držala prívod na 34 °C pri cieli 44,3 °C. Každý taký pohyb navyše reštartuje čas ustálenia (150 s) → zmiešavače ostávali ~18 %.
+- Oprava: zmena zdroja sa nekompenzuje, keď je prívod mimo cieľa a celá zmena od posledného pohybu ho priblíži bez prestrelenia (`prívod + poloha × ΔT` nepresiahne cieľ + hysteréza). Ak by prestrelila, kompenzuje sa ako doteraz. Keď prívod vojde do pásma cieľa, teplota zdroja sa vezme ako nové východisko – prívod už zmenu ukazuje, neskôr sa nekompenzuje.
+- Code review 2× (high, medium): prvá verzia (podľa smeru k cieľu) by blokovala aj potrebné privretie pri prestrelení; druhá (posúvanie východiska každý tik) by pri pomalom ohreve nádrže obišla kontrolu prestrelenia → finálne: celá zmena od pohybu + posun východiska pri vstupe do pásma. Spoločná funkcia pásma `in_band`, test cez skutočný tik regulácie, `mixers.md`. Ponechané: odhad prívodu nezapočíta pohyb, ktorý ešte nedotiekol k senzoru (prípadné prestrelenie opraví regulácia po čase ustálenia). Testy: 224.
+- Otvorené: viditeľnosť – stav zmiešavača ukazuje „idle“ aj počas čakania; návrh stavov s dôvodom a časom ďalšieho kroku čaká na súhlas. Vypnúť *Homovať zmiešavače pri štarte* – čaká na súhlas.
+
 ## 2026-11-08 – nastavenie tepelka = najteplejší cieľ + 2 °C (0.1.29)
 - Používateľ: „výstupná teplota z tepelka = ekvitermická hodnota pri vonkajšej teplote + 2 stupne rezerva“ – nič sa nemeria. Meraný pokles nádrže (0.1.28) zrušený: zachytával poklesy pri štartoch tepelka a zamkol nastavenie na strope 55 °C (margin 16,2 °C). Moja chyba: pravidlo používateľa som rozšíril o pokles nádrže, hoci ho povedal doslova.
 - Implementácia: `nastavenie = ceil(max(cieľ kúriacich okruhov) + rezerva)`, 30–55 °C, najviac raz za 15 min a o ≥ 1 °C, bez kúrenia bez zmeny. Rezerva = *Rezerva nad najteplejším okruhom* (2 °C). Entity a uložené hodnoty poklesu a učiacej sa rezervy sa pri štarte zmažú. Ručná rezerva z iných inštalácií sa neprenáša (dom používateľa bol v automatike).

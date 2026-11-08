@@ -494,6 +494,40 @@ async def test_mixer_follows_the_source_at_once(hass, house, clock, calls) -> No
     assert hass.states.get(POSITION).attributes["source_temperature"] == 50.0
 
 
+async def test_a_warmer_tank_is_let_through_while_short_of_water(hass, house, clock, calls) -> None:
+    mixer = next(iter(house.circuits.values())).mixer
+    mixer.tracker.set(18.0)
+    await _control(hass, True)
+    set_thermostat(hass, ZONE, "heating")
+    await _tick(hass, house, clock, 100)
+    target = float(hass.states.get("sensor.f1_target_water_temperature").state)
+    hass.states.async_set(SUPPLY, str(target - 10))
+    hass.states.async_set(SOURCE, str(target - 2))
+    await hass.async_block_till_done()
+    mixer._tick(None)  # far below the target: opens 20 %, the source reference is set
+    await hass.async_block_till_done()
+    assert ("turn_on", OPEN) in calls
+    clock.now += 21
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=25))
+    await hass.async_block_till_done()
+    calls.clear()
+
+    hass.states.async_set(SOURCE, str(target - 0.8))  # the tank warms, the supply still short
+    await hass.async_block_till_done()
+    clock.now += 30
+    mixer._tick(None)
+    await hass.async_block_till_done()
+    assert ("turn_on", CLOSE) not in calls  # let through, not closed against
+
+    hass.states.async_set(SUPPLY, str(target - 0.2))  # in band: it shows the warmer tank now
+    await hass.async_block_till_done()
+    clock.now += 200
+    mixer._tick(None)
+    await hass.async_block_till_done()
+    assert ("turn_on", CLOSE) not in calls  # and it is not compensated afterwards
+    assert mixer._source_ref == pytest.approx(target - 0.8)
+
+
 async def test_activity_says_why_the_mixer_moves(hass, house, clock, calls) -> None:
     mixer = next(iter(house.circuits.values())).mixer
     mixer.tracker.set(50.0)

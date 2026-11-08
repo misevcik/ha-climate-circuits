@@ -7,7 +7,8 @@ is already heading for the target. Without that it overshoots and swings.
 With a source sensor (a buffer tank, a heat pump that cycles) a change of the source is met
 at once: the supply is a mix of source and return water, so a source change of dT moves it
 by about position x dT, and the valve is moved by the share that keeps the supply where it
-is, without waiting for the supply sensor to see it.
+is, without waiting for the supply sensor to see it. Not when the change brings a supply that
+is off its target towards it without going past: then it is let through.
 
 At an end stop the relay is pulsed now and then so the valve really sits there.
 """
@@ -80,6 +81,33 @@ def source_compensation(
     return -100.0 * p * (1.0 - p) * (source - source_ref) / gap
 
 
+def in_band(supply: float, target: float, settings: MixerSettings) -> bool:
+    """The supply is close enough to its target: no move for it."""
+    return abs(target - supply) <= settings.hysteresis
+
+
+def welcome_source_change(
+    position: float,
+    supply: float,
+    target: float | None,
+    source: float,
+    source_ref: float,
+    settings: MixerSettings,
+) -> bool:
+    """The source change brings a supply that is off its target towards it, not past it.
+
+    Then it is let through, not compensated: closing against a warmer tank while short of water
+    keeps the supply short (and restarts the wait for the sensor). Without compensation the
+    supply moves by about position x the source change.
+    """
+    if target is None or in_band(supply, target, settings):
+        return False
+    expected = supply + position / 100.0 * (source - source_ref)
+    if supply < target:
+        return source > source_ref and expected <= target + settings.hysteresis
+    return source < source_ref and expected >= target - settings.hysteresis
+
+
 def homing_action(settings: MixerSettings, reason: str) -> MixerAction:
     return MixerAction(
         Direction.CLOSE,
@@ -149,7 +177,11 @@ def regulate(
         )
     if settings.compensate and heating and None not in (supply, source, source_ref):
         change = source_compensation(position, supply, source, source_ref, settings)  # type: ignore[arg-type]
-        if change is not None and abs(change) >= settings.min_step:
+        if (
+            change is not None
+            and abs(change) >= settings.min_step
+            and not welcome_source_change(position, supply, target, source, source_ref, settings)  # type: ignore[arg-type]
+        ):
             direction = Direction.OPEN if change > 0 else Direction.CLOSE
             room = 100.0 - position if change > 0 else position
             step = min(abs(change), float(settings.max_step), room)
@@ -162,7 +194,7 @@ def regulate(
                     why="source",
                     values={"step": step, "ref": source_ref, "source": source, "supply": supply},
                 )
-    if target is None or supply is None or abs(target - supply) <= settings.hysteresis:
+    if target is None or supply is None or in_band(supply, target, settings):
         return None
     if since_move is not None and since_move < settings.settle:
         return None  # the last move has not reached the sensor yet
@@ -221,7 +253,7 @@ def hold_reason(
     if supply is None:
         return "no_supply", {}
     values = {"supply": supply, "target": target, "position": position}
-    if abs(target - supply) <= settings.hysteresis:
+    if in_band(supply, target, settings):
         return "band", values | {"hysteresis": settings.hysteresis}
     if since_move is not None and since_move < settings.settle:
         return None

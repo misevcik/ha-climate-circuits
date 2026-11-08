@@ -198,7 +198,11 @@ Kód hotový lokálne (151 testov, ruff OK): čerpadlá okruhov, vlastná poloha
 - [x] `v0.1.28` nainštalovaná (7. 11. 21:55) – pokles nádrže sa zamkol na strope 55 °C
 - [x] Nastavenie tepelka = najteplejší cieľ + 2 °C (0.1.29), hysteréza TÚV/odmrazovania; 220 testov, review
 - [x] `v0.1.29` – tag pushnutý
-- [ ] Release `v0.1.29` na GitHube (odkaz), update cez HACS, reštart; overiť, že tepelko ide na ~48 °C
+- [x] `v0.1.29` nainštalovaná (8. 11. 8:23), tepelko 48 °C
+- [x] Kompenzácia zdroja neprivrie zmiešavač pri nedostatku vody (0.1.30, lokálne)
+- [ ] Vydať `v0.1.30` – čaká na súhlas
+- [ ] Stav zmiešavača s dôvodom a časom ďalšieho kroku (karta, senzor) – návrh čaká na súhlas
+- [ ] Vypnúť *Homovať zmiešavače pri štarte* – čaká na súhlas
 - [ ] Sledovať *Zdroj nestačí* pri cieli + 2 °C; prípadne zvýšiť rezervu
 - [ ] Overiť senzory nádrže: vrch 57,7 °C > výstup TČ 54,6 °C, výstup k zmiešavačom 48,7 °C (8. 11. 4:48)
 - [ ] GF termostat má izbovú teplotu z `input_number.gf_room_temperature` (pevne 15 °C) – riadi ho len čas

@@ -15,7 +15,7 @@ Ventil nehlási polohu. Integrácia ju počíta z času chodu relé OTVOR / ZATV
 
 ## Rozhodovanie (každých 30 s)
 1. Žiadna zóna nekúri → zatvoriť; na doraze dotlak 2 s raz za 6 h. Prvých 90 s po štarte HA sa nezatvára (zóny sa ešte načítavajú).
-2. Zmenila sa teplota zdroja (len kúrenie, ak je zapnuté *Sledovať zdroj tepla*) → hneď posun o `−p·(1−p)·ΔT / (zdroj − výstup)`, aby výstup ostal rovnaký. Len ak je zdroj aspoň o *Najmenší rozdiel zdroj – výstup* teplejší (predvolene 3 °C) a posun je aspoň *Najmenší krok*.
+2. Zmenila sa teplota zdroja (len kúrenie, ak je zapnuté *Sledovať zdroj tepla*) → hneď posun o `−p·(1−p)·ΔT / (zdroj − výstup)`, aby výstup ostal rovnaký. Len ak je zdroj aspoň o *Najmenší rozdiel zdroj – výstup* teplejší (predvolene 3 °C) a posun je aspoň *Najmenší krok*. **Nie**, keď je výstup mimo cieľa a zmena zdroja ho k cieľu priblíži bez prestrelenia (odhad `výstup + p·ΔT`): teplejšia nádrž pri nedostatku vody sa prepustí; keď výstup vojde do pásma cieľa, teplota zdroja sa vezme ako nové východisko (0.1.30 – predtým zmiešavač pri studenom prívode privieral proti ohrievajúcej sa nádrži a znova čakal čas ustálenia).
 3. Výstup je v cieli ± hysteréza → stáť.
 4. Od posledného pohybu ešte neuplynul *Čas ustálenia* → stáť (voda ešte nedotiekla k senzoru).
 5. Podľa trendu za *Okno trendu* sa výstup do času ustálenia dostane k cieľu sám → stáť.

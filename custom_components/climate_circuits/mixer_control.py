@@ -29,7 +29,15 @@ from .const import (
     START_GRACE,
     STARVED_AFTER,
 )
-from .core.mixer import Direction, MixerAction, hold_reason, regulate, starved, supply_trend
+from .core.mixer import (
+    Direction,
+    MixerAction,
+    hold_reason,
+    in_band,
+    regulate,
+    starved,
+    supply_trend,
+)
 from .core.mode import Mode
 from .core.protect import exercise_due
 from .core.texts import mixer_hold_text, mixer_text, out_message, starved_text
@@ -80,6 +88,7 @@ class MixerController:
         self._move_ended: float | None = None  # the regulation waits for it to show
         self._supply: list[tuple[float, float]] = []  # (time, supply) for the trend
         self._source_ref: float | None = None  # source temperature at the last move
+        self._in_band: bool | None = None  # the supply within its target ± hysteresis
         self._proposal_logged: tuple[Any, ...] | None = None
         self._hold_logged: str | None = None  # why it last stayed, not repeated in Activity
         self._starved_since: float | None = None  # fully open and below the target
@@ -302,6 +311,7 @@ class MixerController:
         if not circuit.output_demand and now - house.started < START_GRACE:
             return  # the zones may not be loaded yet: no closing for lack of demand
         inputs = self._read_inputs(now)
+        self._rebase_source_in_band(inputs)
         action = regulate(
             heating=house.mode is Mode.HEAT,
             demand=circuit.output_demand,
@@ -376,6 +386,20 @@ class MixerController:
         if key != self._hold_logged and self.circuit.house.logging:
             self._log_text(mixer_hold_text(key, values, self.circuit.name, self._language))
         self._hold_logged = key
+
+    def _rebase_source_in_band(self, inputs: _Inputs) -> None:
+        """When the supply gets into its band, it shows the source changes until now.
+
+        A change let through on the way (see welcome_source_change) is then not compensated.
+        """
+        in_band_now = (
+            inputs.target is not None
+            and inputs.supply is not None
+            and in_band(inputs.supply, inputs.target, self.params)
+        )
+        if in_band_now and self._in_band is False and inputs.source is not None:
+            self._source_ref = inputs.source
+        self._in_band = in_band_now
 
     def _act(self, action: MixerAction | None, now: float, source: float | None) -> None:
         """Move the valve, or in dry run say what would move."""
