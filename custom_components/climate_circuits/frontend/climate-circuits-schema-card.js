@@ -26,8 +26,7 @@ const TEXTS = {
     mixer: "Zmiešavač", pump: "Čerpadlo",
     auto: "Nastavovanie tepelka", auto_off: "vypnuté", auto_on: "zapnuté",
     auto_dry: "skúšobný režim", auto_paused: "pozastavené do {t} (ručná zmena)",
-    auto_set: "nastavené", auto_wants: "chce", auto_reserve: "rezerva", auto_drop: "pokles nádrže",
-    drop_measured: "meraný", drop_last: "naposledy meraný", drop_default: "predvolený", drop_manual: "ručne",
+    auto_set: "nastavené", auto_wants: "chce", auto_reserve: "rezerva",
     auto_idle: "nikto nekúri, nemení sa", auto_cool: "nekúri sa, nemení sa",
     auto_dhw: "tepelko ohrieva TÚV", auto_defrost: "tepelko odmrazuje",
     hot_water: "Nádrž TÚV", heater: "Zdroj tepla", heater_out: "výstup", heater_in: "spiatočka", circulation: "Cirkulácia TÚV", circ_return: "spiatočka cirkulácie",
@@ -44,8 +43,7 @@ const TEXTS = {
     mixer: "Mixer", pump: "Pump",
     auto: "Heat source setting", auto_off: "off", auto_on: "on",
     auto_dry: "dry run", auto_paused: "paused until {t} (changed by hand)",
-    auto_set: "set", auto_wants: "wants", auto_reserve: "reserve", auto_drop: "tank drop",
-    drop_measured: "measured", drop_last: "last measured", drop_default: "default", drop_manual: "by hand",
+    auto_set: "set", auto_wants: "wants", auto_reserve: "reserve",
     auto_idle: "no circuit heats, left as it is", auto_cool: "not heating, left as it is",
     auto_dhw: "the heat pump heats hot water", auto_defrost: "the heat pump defrosts",
     hot_water: "Hot water tank", heater: "Heat generator", heater_out: "supply", heater_in: "return", circulation: "Circulation", circ_return: "circulation return",
@@ -140,7 +138,7 @@ class ClimateCircuitsSchemaCard extends HTMLElement {
     const hw = layout.hot_water;
     if (hw) ids.push(hw.state, hw.temperature, hw.threshold, hw.delta, hw.enabled, hw.tank, hw.tank_setpoint);
     for (const s of layout.sources) {
-      ids.push(s.temperature, s.setpoint, s.setpoint_control, s.reserve, s.drop, s.drop_mode, s.hot_water_heating, s.defrosting);
+      ids.push(s.temperature, s.setpoint, s.setpoint_control, s.reserve, s.hot_water_heating, s.defrosting);
       if (s.heater) ids.push(s.heater.supply, s.heater.return);
     }
     for (const c of layout.circuits) {
@@ -393,17 +391,13 @@ class ClimateCircuitsSchemaCard extends HTMLElement {
     const set = num(this._val(src.setpoint));
     const wanted = num(a("wanted"));
     const reserve = num(this._val(src.reserve) ?? a("reserve"));
-    const drop = num(this._val(src.drop) ?? a("drop"));
-    const dropFrom = this._attr(src.drop, "drop_from");
     let detail;
     if (wanted === null) {
       detail = this._t(a("wanted_reason") === "not_heating" ? "auto_cool" : "auto_idle");
     } else {
       detail = `${this._t("auto_wants")} <b>${deg(wanted)}</b> = ${esc(a("warmest_circuit") || "?")} `
         + `${deg(a("warmest_target"))} + `
-        + `<span class="link" data-entity="${esc(src.reserve)}">${this._t("auto_reserve")} ${deg(reserve)}</span> + `
-        + `<span class="link" data-entity="${esc(src.drop)}">${this._t("auto_drop")} ${deg(drop)}</span>`
-        + (dropFrom ? ` (<span class="link" data-entity="${esc(src.drop_mode)}">${this._t(`drop_${dropFrom}`)}</span>)` : "");
+        + `<span class="link" data-entity="${esc(src.reserve)}">${this._t("auto_reserve")} ${deg(reserve)}</span>`;
     }
     if (this._val(src.hot_water_heating) === "on") {
       detail += ` · <span class="link" data-entity="${esc(src.hot_water_heating)}">${this._t("auto_dhw")}</span>`;

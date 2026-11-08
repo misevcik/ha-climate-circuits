@@ -55,7 +55,6 @@ SOURCE = (
     Tunable("manual_pause", 0, 1440, 1, "min", lambda s: s.settings.manual_pause),
     Tunable("hot_water_gap", 3, 30, 0.5, "°C", lambda s: s.settings.hot_water_gap),
     Tunable("reserve", 0, 10, 0.5, "°C", lambda s: s.settings.reserve),
-    Tunable("drop_window", 1, 12, 0.5, "h", lambda s: s.settings.drop_window),
 )
 HOT_WATER = (
     Tunable("circulation_threshold", 20, 60, 0.5, "°C", lambda h: h.settings.threshold),

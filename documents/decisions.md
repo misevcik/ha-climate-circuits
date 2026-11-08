@@ -3,6 +3,22 @@
 Architektúra: [architecture.md](architecture.md) (pôvodný Claude Docs dokument z 1. 10. je zastaraný)
 Názov: **Climate Circuits**, doména `climate_circuits`, repozitár `ha-climate-circuits`.
 
+## 2026-11-08 – nastavenie tepelka = najteplejší cieľ + 2 °C (0.1.29)
+- Používateľ: „výstupná teplota z tepelka = ekvitermická hodnota pri vonkajšej teplote + 2 stupne rezerva“ – nič sa nemeria. Meraný pokles nádrže (0.1.28) zrušený: zachytával poklesy pri štartoch tepelka a zamkol nastavenie na strope 55 °C (margin 16,2 °C). Moja chyba: pravidlo používateľa som rozšíril o pokles nádrže, hoci ho povedal doslova.
+- Implementácia: `nastavenie = ceil(max(cieľ kúriacich okruhov) + rezerva)`, 30–55 °C, najviac raz za 15 min a o ≥ 1 °C, bez kúrenia bez zmeny. Rezerva = *Rezerva nad najteplejším okruhom* (2 °C). Entity a uložené hodnoty poklesu a učiacej sa rezervy sa pri štarte zmažú. Ručná rezerva z iných inštalácií sa neprenáša (dom používateľa bol v automatike).
+- TÚV končí o 1 °C pod prahom (hysteréza, predtým blikal v desiatkach ms), odmrazovanie končí, keď je výstup nad spiatočkou. Len informácia, nastavenie neovplyvňujú.
+- Riziko (povedané používateľovi): voda z nádrže bola v noci aj na vrchu cyklu ~6–7 °C pod nastavením; pri 48 °C môže voda k zmiešavačom chýbať → sledovať *Zdroj nestačí*, prípadne zvýšiť rezervu. Overiť senzor výstupu z nádrže / vrchu nádrže (vrch 57,7 °C > výstup TČ 54,6 °C).
+- Code review (high): 8 bodov – opravené hysteréza TÚV (2 → 1 °C, inak mohla ostať zapnutá), mazanie uložených kľúčov, `SetpointSettings.margin` → `reserve`, dokumentácia; ponechané podľa rozhodnutia používateľa: „nastavenie je nízke“, prenos ručnej rezervy. Testy: 220.
+- Špecifikácia: [heat-source-setting.md](heat-source-setting.md) (prepísaná, obrázok zmazaný – zastaraný).
+
+## 2026-11-08 – prvá noc s 0.1.28: tepelko na strope 55 °C (rozbor)
+- Stav ráno: chce 61,9 °C = cieľ F1 45,7 (izba 23 °C z termostatov, vonku −1,3) + rezerva 2 + pokles 14,2 (naposledy zmeraný) → strop 55 °C. Celú noc 55 °C (od 21:55 s predvoleným poklesom 8: 44,7 + 10).
+- Pokles: 23:00 prvé meranie 8,5 °C, po polnoci 12,4, ráno 14,2–14,5. Voda z nádrže pri nastavení 55 °C: vrch cyklu 47–48,7 °C, spodky 38–42 °C. Spodky: odmrazovanie (1:19, 3:36, 6:15) a TÚV (2:35, 3:12, 3:46) sa vyradili, ale **poklesy pri každom štarte tepelka** nie: napr. 5:05 štart po pauze, spiatočka do TČ ~40 °C, výstup TČ len ~45 °C, ten ochladí vrch nádrže → voda k zmiešavačom 46,5 → 40,5 °C (5:26), späť na ~47 až okolo 5:50. Nádrž sa po štarte zotaví za ~45 min (~0,16 °C/min pri 5 kW a kúrení všetkých zón).
+- Aj bez spodkov (medián ~8,5 °C) by chcel ~56 °C → strop. Príčina stropu: ciele 44,7–45,7 °C a voda z nádrže je aj na vrchu cyklu 6–7 °C pod nastavením (vrch nádrže 57,7 °C, výstup k zmiešavačom 48,7 °C, výstup TČ 54,6 °C v tom istom čase – senzory/stratifikácia na overenie).
+- Na strope je to zámok: pokles „strop − voda“ drží nastavenie na strope, kým neklesne cieľ.
+- Chyba: *Ohrev TÚV* bliká on/off v desiatkach ms (1:28–1:30, 3:45–3:48) – rozdiel výstup TČ − nádrž okolo prahu 8 °C, senzory sa aktualizujú v iných okamihoch; treba hysterézu.
+- Rozhodnuté (pozri vyššie): bez merania, cieľ + 2 °C.
+
 ## 2026-11-07 – meraný pokles nádrže (0.1.28)
 - Vydanie: používateľ schválil **0.1.28**; tag `v0.1.27` (učiaca sa rezerva) ostáva pushnutý, ale nevydaný – nepresúva sa.
 

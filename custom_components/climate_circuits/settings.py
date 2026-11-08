@@ -9,7 +9,6 @@ from typing import Any
 from .const import (
     DEFAULT_COOL_CURVE,
     DEFAULT_DELTA,
-    DEFAULT_DROP_WINDOW,
     DEFAULT_EXERCISE_DAYS,
     DEFAULT_GAIN,
     DEFAULT_HEAT_CURVE,
@@ -194,7 +193,6 @@ class SourceSettings:
     manual_pause: float = DEFAULT_MANUAL_PAUSE  # min
     hot_water_gap: float = DEFAULT_HOT_WATER_GAP
     reserve: float = DEFAULT_RESERVE
-    drop_window: float = DEFAULT_DROP_WINDOW
 
     @classmethod
     def from_data(cls, data: Mapping[str, Any]) -> SourceSettings:

@@ -195,8 +195,13 @@ Kód hotový lokálne (151 testov, ruff OK): čerpadlá okruhov, vlastná poloha
 - [x] Meraný pokles nádrže namiesto učiacej sa rezervy, rezerva 2 °C, krivka podľa termostatov (jeden prepínač na okruh)
 - [x] Code review pred commitom (9 bodov, 8 opravených), 225 testov, ruff OK, commit (bez pushu)
 - [x] `v0.1.28` – tag pushnutý (0.1.27 ostáva nevydaný)
-- [ ] Release `v0.1.28` na GitHube (odkaz), update cez HACS, reštart
-- [ ] Po update overiť `sensor.akumulacna_nadrz_tank_drop` po ~1 h kúrenia a nastavenie tepelka v Aktivite
+- [x] `v0.1.28` nainštalovaná (7. 11. 21:55) – pokles nádrže sa zamkol na strope 55 °C
+- [x] Nastavenie tepelka = najteplejší cieľ + 2 °C (0.1.29), hysteréza TÚV/odmrazovania; 220 testov, review
+- [x] `v0.1.29` – tag pushnutý
+- [ ] Release `v0.1.29` na GitHube (odkaz), update cez HACS, reštart; overiť, že tepelko ide na ~48 °C
+- [ ] Sledovať *Zdroj nestačí* pri cieli + 2 °C; prípadne zvýšiť rezervu
+- [ ] Overiť senzory nádrže: vrch 57,7 °C > výstup TČ 54,6 °C, výstup k zmiešavačom 48,7 °C (8. 11. 4:48)
+- [ ] GF termostat má izbovú teplotu z `input_number.gf_room_temperature` (pevne 15 °C) – riadi ho len čas
 - [ ] Rýchlejší senzor vonkajšej teploty (`sensor.outside_temperature` sa mení raz za ~64 min)
 - [ ] Senzor trojcestného ventilu cez Modbus (používateľ zváži) → pole *Ohrev TÚV* pri zdroji
 - [ ] Typ a výkon TČ od používateľa (dimenzovanie)

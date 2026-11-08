@@ -1,19 +1,16 @@
-"""Numbers on the devices: thresholds and constants (tuning.py), a heat source's tank drop."""
+"""Numbers on the devices: thresholds and constants (tuning.py)."""
 
 from __future__ import annotations
 
 from typing import Any
 
 from homeassistant.components.number import NumberEntity, NumberMode
-from homeassistant.const import UnitOfTemperature
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import ClimateCircuitsConfigEntry
-from .const import DOMAIN
-from .entity import SourceEntity, owner_entity, subentry_of
+from .entity import owner_entity, subentry_of
 from .tuning import Tunable, set_tuned, tunables, tuned
 
 
@@ -31,14 +28,6 @@ async def async_setup_entry(
                 entity.tune(owner, tunable)
                 entities.append(entity)
         async_add_entities(entities, config_subentry_id=subentry_of(owner))
-    registry = er.async_get(hass)
-    for source in house.sources.values():
-        # 0.1.18–0.1.26 had a learned margin with its gaps; the tank drop is measured now.
-        for key in ("setpoint_margin", "margin_raise_gap", "margin_lower_gap"):
-            if old := registry.async_get_entity_id("number", DOMAIN, f"{source.id}_{key}"):
-                registry.async_remove(old)
-        if source.controllable:
-            async_add_entities([ManualDrop(source, "manual_drop")], config_subentry_id=source.id)
 
 
 class TunedNumber(NumberEntity):
@@ -60,21 +49,3 @@ class TunedNumber(NumberEntity):
 
     async def async_set_native_value(self, value: float) -> None:
         set_tuned(self._owner, self._key, value)
-
-
-class ManualDrop(SourceEntity, NumberEntity):
-    """°C the water at the mixers is below the source's setting, when not measured."""
-
-    _attr_entity_category = EntityCategory.CONFIG
-    _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS  # a difference: no device class
-    _attr_native_min_value = 0
-    _attr_native_max_value = 20
-    _attr_native_step = 0.5
-    _attr_mode = NumberMode.BOX
-
-    @property
-    def native_value(self) -> float:
-        return self.source.manual_drop
-
-    async def async_set_native_value(self, value: float) -> None:
-        self.source.set_manual_drop(value)

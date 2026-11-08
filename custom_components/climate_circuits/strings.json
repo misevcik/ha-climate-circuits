@@ -619,9 +619,6 @@
       },
       "linked_hot_water_entity": {
         "name": "Hot water heating from"
-      },
-      "tank_drop": {
-        "name": "Tank drop"
       }
     },
     "binary_sensor": {
@@ -663,13 +660,6 @@
           "heat": "Heat",
           "cool": "Cool",
           "off": "Off"
-        }
-      },
-      "margin_mode": {
-        "name": "Tank drop",
-        "state": {
-          "auto": "Measured",
-          "manual": "By hand"
         }
       }
     },
@@ -758,13 +748,7 @@
         "name": "Hot water: supply above the tank"
       },
       "reserve": {
-        "name": "Reserve at the mixers"
-      },
-      "drop_window": {
-        "name": "Tank drop window"
-      },
-      "manual_drop": {
-        "name": "Tank drop by hand"
+        "name": "Reserve above the warmest circuit"
       }
     },
     "climate": {

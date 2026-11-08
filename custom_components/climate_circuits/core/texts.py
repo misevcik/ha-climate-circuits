@@ -118,19 +118,13 @@ _SK = {
     "len {spare}, prívod nemusí stačiť",
     "src_enough": "{name}: {source} nastavený na {setpoint} opäť stačí na cieľ {target}",
     "sp_set": "{source}: nastavujem na {wanted} (bolo {current}) – najteplejšiu vodu chce "
-    "{circuit} ({target}) + rezerva {reserve} + pokles nádrže {drop}{how}",
-    "sp_drop_measured": " (zmeraný za {hours} h)",
-    "sp_drop_last": " (naposledy zmeraný)",
-    "sp_drop_default": " (predvolený, ešte nezmeraný)",
-    "sp_drop_manual": " (ručne)",
+    "{circuit} ({target}) + rezerva {reserve}",
     "sp_manual": "{source}: nastavenie zmenené ručne na {value} – automatika pozastavená "
     "do {until}",
     "sp_resumed": "{source}: pauza po ručnej zmene skončila, nastavujem opäť podľa okruhov",
-    "sp_hot_water_on": "{source}: tepelko ohrieva TÚV – voda pre okruhy môže chvíľu chýbať, "
-    "rezerva sa vtedy nezvyšuje",
+    "sp_hot_water_on": "{source}: tepelko ohrieva TÚV – voda pre okruhy môže chvíľu chýbať",
     "sp_hot_water_off": "{source}: ohrev TÚV skončil",
-    "sp_defrost_on": "{source}: tepelko odmrazuje – voda pre okruhy chvíľu chladne, rezerva sa "
-    "vtedy nezvyšuje",
+    "sp_defrost_on": "{source}: tepelko odmrazuje – voda pre okruhy chvíľu chladne",
     "sp_defrost_off": "{source}: odmrazovanie skončilo",
     "mx_starved": "Zmiešavač {name}: zdroj nestačí – zmiešavač je naplno už {minutes} min a "
     "prívod {supply} je pod cieľom {target}{tail}",
@@ -246,20 +240,15 @@ _EN = {
     "to spare, the supply may fall short",
     "src_enough": "{name}: {source} set to {setpoint} covers the {target} target again",
     "sp_set": "{source}: setting it to {wanted} (was {current}) – {circuit} wants the warmest "
-    "water ({target}) + reserve {reserve} + tank drop {drop}{how}",
-    "sp_drop_measured": " (measured over {hours} h)",
-    "sp_drop_last": " (last measured)",
-    "sp_drop_default": " (default, not measured yet)",
-    "sp_drop_manual": " (by hand)",
+    "water ({target}) + reserve {reserve}",
     "sp_manual": "{source}: setting changed by hand to {value} – automatic setting paused until "
     "{until}",
     "sp_resumed": "{source}: the pause after a change by hand is over, setting it from the "
     "circuits again",
     "sp_hot_water_on": "{source}: the heat pump heats hot water – the circuits may be short of "
-    "water for a while, the margin is not raised meanwhile",
+    "water for a while",
     "sp_hot_water_off": "{source}: hot water heating ended",
-    "sp_defrost_on": "{source}: the heat pump defrosts – the circuits' water cools for a while, "
-    "the margin is not raised meanwhile",
+    "sp_defrost_on": "{source}: the heat pump defrosts – the circuits' water cools for a while",
     "sp_defrost_off": "{source}: defrost ended",
     "mx_starved": "Mixer {name}: the heat source is not enough – fully open for {minutes} min and "
     "the supply {supply} is below the target {target}{tail}",
@@ -435,15 +424,11 @@ def setpoint_text(
     circuit: str | None,
     target: float | None,
     reserve: float,
-    drop: float,
-    drop_from: str,
-    window: float,
     language: str,
     dry_run: bool,
 ) -> str:
-    """The heat source is set from the circuits; drop_from: manual, measured, last, default."""
+    """The heat source is set from the circuits: the warmest target + the reserve."""
     t = _t(language)
-    how = t[f"sp_drop_{drop_from}"].format(hours=f"{window:g}")
     return t["sp_set"].format(
         source=source,
         wanted=_temp(wanted),
@@ -451,8 +436,6 @@ def setpoint_text(
         circuit=circuit or "?",
         target=_temp(target),
         reserve=_temp(reserve),
-        drop=_temp(drop),
-        how=how,
     ) + (t["out_dry_run"] if dry_run else "")
 
 

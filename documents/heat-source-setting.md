@@ -1,49 +1,37 @@
-# Nastavovanie tepelka podľa okruhov – požadované správanie
+# Nastavovanie tepelka podľa okruhov
 
-Stav: schválené a implementované v 0.1.28 (2026-11-07). Nahrádza učiacu sa rezervu (0.1.18–0.1.26).
+Stav: platí od 0.1.29 (2026-11-08). Nahrádza učiacu sa rezervu (0.1.18–0.1.27) a meraný pokles nádrže (0.1.28).
 
 ![Ako sa nastavuje tepelko](heat-source-setting.png)
 
-## Požiadavka
-
-**Voda, ktorá prichádza z akumulačky do zmiešavačov, má mať aspoň takú teplotu, akú žiadame za zmiešavačom, plus rezervu 2 °C.**
-
-Tepelko si cieľ meria na vlastnom senzore. Voda pri zmiešavačoch je chladnejšia o **pokles nádrže**: rozdiel medzi vrchom nádrže a výstupom k zmiešavačom (~4 °C) a pokles, kým tepelko znova zapne (~4–5 °C). Integrácia preto nastaví tepelko o tento pokles vyššie a pokles **meria**.
-
-## Výpočet
+## Pravidlo
 
 ```
-nastavenie tepelka = najteplejší cieľ kúriacich okruhov + rezerva + pokles nádrže
+nastavenie tepelka = najteplejší cieľ kúriacich okruhov + rezerva
 ```
 
-- **najteplejší cieľ:** cieľ vody za zmiešavačom z ekvitermickej krivky (vonkajšia teplota a najvyššia nastavená teplota kúriacich termostatov) spomedzi okruhov tohto zdroja, ktoré práve kúria;
-- **rezerva:** 2 °C, entita *Rezerva pri zmiešavači*;
-- **pokles nádrže:** zmeraný za posledné 3 h (entita *Okno merania*), alebo ručný (prepínač *Meraný / Ručne*).
-- Zaokrúhlené nahor na krok tepelka, v rozsahu najnižšie – najvyššie nastavenie (30–55 °C), mení sa najviac raz za 15 min a o ≥ 1 °C. Bez kúrenia sa nemení.
+- **Cieľ okruhu** = ekvitermická hodnota: voda za zmiešavačom podľa krivky okruhu z vonkajšej teploty a najvyššej nastavenej teploty kúriacich termostatov okruhu (prepínač *Krivka podľa termostatov*).
+- **Najteplejší** = najvyšší z okruhov tohto zdroja, ktoré práve kúria.
+- **Rezerva** = 2 °C, entita *Rezerva nad najteplejším okruhom* pri zdroji.
+- Zaokrúhli sa nahor na krok tepelka (1 °C), orezané na *Najnižšie – Najvyššie nastavenie* (30–55 °C).
 
-## Meranie poklesu
+Príklad (8. 11. ráno): F1 45,7 °C (vonku −1,3 °C, izba 23 °C), GF 45,5 °C → 45,7 + 2 = 47,7 → **48 °C**.
 
-Každú minutu, keď niektorý okruh kúri:
+## Kedy sa mení
 
-- vzorka = **nastavenie tepelka − voda pri zmiešavačoch**;
-- voda pri zmiešavačoch = senzor výstupu z nádrže; ak je niektorý kúriaci zmiešavač naplno, jeho výstup je tiež voda z nádrže, berie sa nižšia z hodnôt;
-- **nepočíta sa** počas ohrevu TÚV, odmrazovania a 30 min po nich (vtedy voda chýba kvôli nim, nie kvôli nastaveniu);
-- **nepočíta sa** 30 min po zmene nastavenia tepelka (nádrž sa ešte len ohrieva / chladne – inak by sa nastavenie samo vyháňalo hore).
+- Vyhodnocuje sa každých 30 s a pri každej zmene vstupu (termostat, vonkajšia teplota, nastavenie tepelka).
+- Do tepelka sa zapíše, len keď: od poslednej zmeny prešlo ≥ 15 min, nová hodnota sa líši o ≥ 1 °C, niektorý okruh kúri, nie je pauza po ručnej zmene (1 min), prepínač *Tepelné čerpadlo riadi integrácia* a *Ovládať zariadenia* sú zapnuté. Prvá zmena po štarte HA môže prísť hneď.
+- V praxi sa mení, keď sa zmení vonkajšia teplota (`sensor.outside_temperature` ~1× za hodinu) alebo plánovač zmení teplotu termostatov.
 
-Pokles = 90. percentil vzoriek z okna 3 h, teda „takmer najhorší“ stav na spodku cyklov tepelka; jednotlivé výkyvy ho neovplyvnia. Kým je vzoriek menej ako za 30 min (napr. po reštarte), platí naposledy zmeraný pokles (na úplnom začiatku 8 °C). V ručnom režime meranie beží ďalej (atribút `measured`), platí však ručná hodnota.
+## Prečo nie meranie poklesu (0.1.28)
 
-Keď tepelko nestíha (voda pod nastavením aj po 30 min), pokles rastie a nastavenie ide hore až po *Najvyššie nastavenie* – to je zámer (voda pri zmiešavačoch má stačiť); strop chráni pred únikom.
+Meraný pokles (nastavenie − voda pri zmiešavačoch, 90. percentil za 3 h) vyšiel v prvú noc 14,2 °C – zachytil poklesy vody pri každom štarte tepelka a to, že voda z nádrže je aj na vrchu cyklu ~6–7 °C pod nastavením. Výsledok 61,9 °C → strop 55 °C a na strope sa zamkol. Používateľ rozhodol: jednoduché pravidlo, cieľ + 2 °C. Ak voda pre okruhy nebude stačiť (*Zdroj nestačí*, zmiešavač naplno pod cieľom), zvýši sa rezerva.
 
-## Čo uvidíš
+## Ostáva
 
-- *Pokles nádrže* ako senzor zdroja (zmeraný), na karte aj v Aktivite pri každej zmene: „tepelko 54 °C = GF 44,2 + rezerva 2 + pokles 8 (3 h)“.
-- *Zdroj nestačí*, *Ohrev TÚV*, *Odmrazovanie* ostávajú.
+Ručná zmena nastavenia tepelka pozastaví automatiku (1 min). TÚV a odmrazovanie sa rozpoznávajú a zobrazujú, nastavenie neovplyvňujú. TÚV integrácia neriadi.
 
-## Ostáva bez zmeny
-
-Ručná zmena nastavenia tepelka pozastaví automatiku (1 min), bez kúrenia sa nemení, TÚV integrácia neriadi.
-
-## Diagram (Mermaid)
+<details><summary>Zdroj diagramu (Mermaid)</summary>
 
 ```mermaid
 flowchart TD
@@ -52,18 +40,10 @@ flowchart TD
   CURVE["Ekvitermická krivka okruhu"] --> TGT["Cieľ vody za zmiešavačom<br/>F1, GF"]
   TGT --> MAX["Najteplejší cieľ<br/>spomedzi kúriacich okruhov"]
   MAX --> SUM
-  RES["Rezerva pri zmiešavači<br/>2 °C"] --> SUM
-  DROP["Pokles nádrže<br/>zmeraný alebo ručný"] --> SUM
-  SUM["Nastavenie = najteplejší cieľ + rezerva + pokles<br/>zaokrúhliť nahor, 30–55 °C"] --> CHK{"Kúri aspoň jeden okruh?<br/>Nie je pauza po ručnej zmene?<br/>Zmena ≥ 1 °C a 15 min od poslednej?"}
+  RES["Rezerva<br/>2 °C"] --> SUM
+  SUM["Nastavenie = najteplejší cieľ + rezerva<br/>zaokrúhliť nahor, 30–55 °C"] --> CHK{"Kúri aspoň jeden okruh?<br/>Nie je pauza po ručnej zmene?<br/>Zmena ≥ 1 °C a 15 min od poslednej?"}
   CHK -->|áno| HP["Nastaviť tepelko"]
   CHK -->|nie| KEEP["Nechať, ako je"]
-  W["Voda pri zmiešavačoch =<br/>výstup z nádrže, alebo výstup zmiešavača<br/>otvoreného naplno (nižšia z nich)"] --> S1
-  subgraph M["Meranie poklesu – každú minútu, keď okruh kúri"]
-    S1["Vzorka = nastavenie tepelka − voda pri zmiešavačoch"] --> F1{"Ohrev TÚV, odmrazovanie alebo 30 min po nich?<br/>Do 30 min po zmene nastavenia?"}
-    F1 -->|áno| SKIP["Vzorka sa nepočíta"]
-    F1 -->|nie| BUF["Vzorky za posledné 3 hodiny"]
-    BUF --> P90["90. percentil = pokles nádrže"]
-  end
-  P90 --> DROP
-  HP -.->|nastavenie sa porovnáva s vodou, ktorá prišla k zmiešavačom| S1
 ```
+
+</details>

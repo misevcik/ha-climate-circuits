@@ -619,9 +619,6 @@
       },
       "linked_hot_water_entity": {
         "name": "Ohrev TÚV z"
-      },
-      "tank_drop": {
-        "name": "Pokles nádrže"
       }
     },
     "binary_sensor": {
@@ -663,13 +660,6 @@
           "heat": "Kúrenie",
           "cool": "Chladenie",
           "off": "Vypnuté"
-        }
-      },
-      "margin_mode": {
-        "name": "Pokles nádrže",
-        "state": {
-          "auto": "Meraný",
-          "manual": "Ručne"
         }
       }
     },
@@ -758,13 +748,7 @@
         "name": "TÚV: výstup nad nádržou"
       },
       "reserve": {
-        "name": "Rezerva pri zmiešavačoch"
-      },
-      "drop_window": {
-        "name": "Okno merania poklesu"
-      },
-      "manual_drop": {
-        "name": "Pokles nádrže ručne"
+        "name": "Rezerva nad najteplejším okruhom"
       }
     },
     "climate": {

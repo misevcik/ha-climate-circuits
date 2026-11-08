@@ -1,41 +1,27 @@
 """A heat source (buffer tank, boiler, heat pump): the water it gives the circuits, and
 optionally its setting from the circuits.
 
-The water that reaches the mixers must be at least as warm as the warmest water a heating
-circuit wants after its mixer, plus a reserve. The heat pump measures its setting on its own
-sensor, and the water at the mixers is colder by the tank's drop (the outlet sits below the
-top, and the tank cools until the heat pump starts again). So, with its own switch and
-Control equipment on, the source is set to
+The weather curve of each circuit says how warm the water after its mixer should be. The heat
+pump is asked for that water plus a reserve: with its own switch and Control equipment on,
+the source is set to
 
-    warmest circuit target + reserve + tank drop
+    warmest heating circuit target + reserve
 
-The tank drop is measured: the setting minus the water at the mixers, over the last hours,
-near its worst (90th percentile). Not counted while the heat generator heats hot water or
-defrosts, nor while the tank recovers from that, nor just after the setting changed. It can
-also be set by hand. A change of the setting by somebody else (the heat pump's app) pauses
-the automatic setting for a while.
+A change of the setting by somebody else (the heat pump's app) pauses the automatic setting
+for a while. Hot water heating and defrosts are recognised and shown, they do not change it.
 """
 
 from __future__ import annotations
 
-from collections import deque
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.config_entries import ConfigSubentry
 from homeassistant.core import callback
 
-from .const import (
-    CONTROLLABLE_SETPOINTS,
-    DEFAULT_TANK_DROP,
-    DEFROST_GAP,
-    DROP_SAMPLE_INTERVAL,
-    DROP_SETTLE,
-    HEAT_GENERATOR_RECOVERY,
-    SETPOINT_INTERVAL,
-)
+from .const import CONTROLLABLE_SETPOINTS, DEFROST_GAP, HOT_WATER_HYSTERESIS, SETPOINT_INTERVAL
 from .core.mode import Mode
-from .core.setpoint import SetpointDecision, SetpointSettings, setpoint_decision, tank_drop
+from .core.setpoint import SetpointDecision, SetpointSettings, setpoint_decision
 from .core.texts import setpoint_event_text, setpoint_text
 from .listeners import Listeners
 from .settings import SourceSettings
@@ -45,9 +31,6 @@ from .tuning import tuned
 if TYPE_CHECKING:
     from .circuit import Circuit
     from .house import House
-
-DROP_MODES = ("auto", "manual")  # measured, or the value set by hand
-FULLY_OPEN = 99.0  # % a mixer at this lets the tank's water straight through
 
 
 class Source(Listeners):
@@ -66,12 +49,6 @@ class Source(Listeners):
         self._was_paused = False
         self.hot_water_heating: bool | None = None  # None: cannot tell
         self.defrosting: bool | None = None
-        self._busy_ended: float | None = None  # hot water heating or a defrost ended
-        self._samples: deque[tuple[float, float]] = deque()  # (time, setting − water)
-        self._measured: float | None = None  # the drop from the samples
-        self._sampled_at: float | None = None
-        self._setting: float | None = None  # the setting the samples are taken against
-        self._setting_since: float | None = None
 
     @property
     def name(self) -> str:
@@ -97,72 +74,9 @@ class Source(Listeners):
         self.house.save()
         self.house.evaluate()
 
-    # The tank drop: measured, or set by hand.
-
-    @property
-    def drop_mode(self) -> str:
-        return str(self._stored.get("margin_mode", "auto"))  # the key of 0.1.20
-
-    @callback
-    def set_drop_mode(self, mode: str) -> None:
-        self._stored["margin_mode"] = mode
-        self.house.save()
-        self.house.evaluate()
-
-    @property
-    def manual_drop(self) -> float:
-        """Set by hand; at first a margin set by hand before 0.1.27, less the reserve."""
-        stored = self._stored
-        if "manual_drop" in stored:
-            return float(stored["manual_drop"])
-        if self.drop_mode == "manual" and "margin" in stored:
-            return max(float(stored["margin"]) - self.reserve, 0.0)
-        return DEFAULT_TANK_DROP
-
-    @callback
-    def set_manual_drop(self, drop: float) -> None:
-        self._stored["manual_drop"] = drop
-        self.house.save()
-        self.house.evaluate()
-
-    @property
-    def measured_drop(self) -> float | None:
-        """The drop of the last hours; None until there are enough samples."""
-        return self._measured
-
-    @property
-    def sample_count(self) -> int:
-        return len(self._samples)
-
-    @property
-    def drop_from(self) -> str:
-        """manual, measured, last (measured before a restart) or default (nothing measured yet)."""
-        if self.drop_mode == "manual":
-            return "manual"
-        if self.measured_drop is not None:
-            return "measured"
-        return "last" if "drop" in self._stored else "default"
-
-    @property
-    def drop(self) -> float:
-        """°C the water at the mixers is below the setting: measured or by hand.
-
-        Until enough is measured (after a restart), the last measured value holds.
-        """
-        if self.drop_mode == "manual":
-            return self.manual_drop
-        if self._measured is not None:
-            return self._measured
-        return float(self._stored.get("drop", DEFAULT_TANK_DROP))
-
     @property
     def reserve(self) -> float:
         return float(tuned(self, "reserve"))
-
-    @property
-    def margin(self) -> float:
-        """°C the setting is above the warmest circuit target: reserve + tank drop."""
-        return self.reserve + self.drop
 
     @property
     def paused_until(self) -> datetime | None:
@@ -185,7 +99,7 @@ class Source(Listeners):
             step = number(attrs.get("step")) or 1.0
         lowest, highest = tuned(self, "setpoint_min"), tuned(self, "setpoint_max")
         return SetpointSettings(
-            margin=self.margin,
+            reserve=self.reserve,
             minimum=max(lowest, low) if low is not None else lowest,
             maximum=min(highest, high) if high is not None else highest,
             step=step,
@@ -195,7 +109,7 @@ class Source(Listeners):
 
     @callback
     def evaluate_setpoint(self, mode: Mode) -> None:
-        """After the circuits: measure the tank drop, set the source; then its entities."""
+        """After the circuits: set the source; then its entities."""
         if self.controllable:
             self._set_from_circuits(mode)
         self._notify()
@@ -208,7 +122,6 @@ class Source(Listeners):
         paused = self.paused_until is not None
         self._log_resume(paused)
         heating = self._heating_circuits() if mode is Mode.HEAT else []
-        self._measure_drop(current, heating)
         decision = self.setpoint_decision = setpoint_decision(
             heating=mode is Mode.HEAT,
             targets={c.name: c.target.value for c in heating if c.target is not None},
@@ -253,7 +166,10 @@ class Source(Listeners):
         self._was_paused = paused
 
     def _heats_hot_water(self) -> bool | None:
-        """From the entity chosen for it, else the heat pump's supply far above the tank."""
+        """From the entity chosen for it, else the heat pump's supply far above the tank.
+
+        Ends a little below the gap it starts at: the two sensors report at different moments.
+        """
         s = self.settings
         if s.hot_water_entity:
             state = state_of(self.house.hass, s.hot_water_entity)
@@ -261,15 +177,19 @@ class Source(Listeners):
         supply, tank = float_of(self.house.hass, s.heater_supply), self.temperature()
         if supply is None or tank is None:
             return None
-        return supply - tank >= tuned(self, "hot_water_gap")
+        gap = tuned(self, "hot_water_gap") - (HOT_WATER_HYSTERESIS if self.hot_water_heating else 0)
+        return supply - tank >= gap
 
     def _defrosts(self) -> bool | None:
-        """The heat pump reverses to defrost: its supply comes back colder than its return."""
+        """The heat pump reverses to defrost: its supply comes back colder than its return.
+
+        Ends once the supply is back above the return.
+        """
         hass, s = self.house.hass, self.settings
         supply, back = float_of(hass, s.heater_supply), float_of(hass, s.heater_return)
         if supply is None or back is None:
             return None
-        return supply < back - DEFROST_GAP
+        return supply < back - (0 if self.defrosting else DEFROST_GAP)
 
     def _watch_heat_generator(self) -> None:
         """Activity when hot water heating or a defrost starts and ends.
@@ -286,57 +206,7 @@ class Source(Listeners):
             setattr(self, attr, now)
             if was is None:
                 continue  # the first look after a start
-            if not now:
-                self._busy_ended = self.house.now()
             self._log_event(f"{key}_on" if now else f"{key}_off")
-
-    def _heat_generator_busy(self) -> bool:
-        """Heating hot water or defrosting, or the tank still recovering from it."""
-        if self.hot_water_heating or self.defrosting:
-            return True
-        ended = self._busy_ended
-        return ended is not None and self.house.now() - ended < HEAT_GENERATOR_RECOVERY
-
-    def _measure_drop(self, setting: float | None, heating: list[Circuit]) -> None:
-        """A sample a minute while a circuit heats: the setting minus the water at the mixers.
-
-        Not while the heat generator is busy elsewhere or the tank recovers from it, and not
-        until the setting has stood for a while: the tank still heats up or cools down then,
-        and counting it would push the setting further on its own.
-        """
-        now = self.house.now()
-        if setting is not None and setting != self._setting:  # not when it drops out a moment
-            self._setting, self._setting_since = setting, now
-        window = 3600 * tuned(self, "drop_window")
-        if self._samples and now - self._samples[0][0] > window:
-            while self._samples and now - self._samples[0][0] > window:
-                self._samples.popleft()
-            self._measured = tank_drop([value for _, value in self._samples])
-        if (
-            setting is None
-            or not heating
-            or self._heat_generator_busy()
-            or now - (self._setting_since or now) < DROP_SETTLE
-            or (self._sampled_at is not None and now - self._sampled_at < DROP_SAMPLE_INTERVAL - 1)
-            or (water := self._water_at_mixers(heating)) is None
-        ):
-            return
-        self._samples.append((now, setting - water))
-        self._sampled_at = now
-        self._measured = measured = tank_drop([value for _, value in self._samples])
-        if measured is not None and abs(measured - self._stored.get("drop", -99.0)) >= 0.5:
-            self._stored["drop"] = measured  # holds until enough is measured after a restart
-            self.house.save()
-
-    def _water_at_mixers(self, heating: list[Circuit]) -> float | None:
-        """The tank's outlet, or the supply of a mixer fully open (the same water), the lower."""
-        values = [self.temperature()]
-        for circuit in heating:
-            mixer = circuit.mixer
-            if mixer is not None and (mixer.position() or 0) >= FULLY_OPEN:
-                values.append(circuit.supply_temperature())
-        known = [v for v in values if v is not None]
-        return min(known) if known else None
 
     def _log_setpoint(
         self, decision: SetpointDecision, current: float | None, dry_run: bool
@@ -351,9 +221,6 @@ class Source(Listeners):
             decision.circuit,
             decision.target,
             self.reserve,
-            self.drop,
-            self.drop_from,
-            tuned(self, "drop_window"),
             house.hass.config.language,
             dry_run=dry_run,
         )
@@ -417,5 +284,5 @@ class Source(Listeners):
 
     @callback
     def refresh(self) -> None:
-        """Before the circuits: is the heat generator busy with hot water or a defrost."""
+        """Before the circuits: does the heat generator heat hot water or defrost."""
         self._watch_heat_generator()
