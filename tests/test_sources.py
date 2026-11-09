@@ -290,6 +290,29 @@ async def test_the_heat_pump_shows_on_the_source_and_a_change_there_counts_as_by
     assert source.paused_until is not None  # a change by hand
 
 
+async def test_the_heat_pump_mirror_keeps_a_zero_and_falls_back_to_the_tank(
+    hass: HomeAssistant, make_entry
+) -> None:
+    calls: list[dict] = []
+    await _heat_pump_house(hass, make_entry, calls)
+    mirror = "climate.buffer_tank_heat_generator"
+    hass.states.async_set(
+        HEAT_PUMP_TARGET,
+        "heat",
+        {"temperature": 45.0, "current_temperature": 0.0, "min_temp": 0, "max_temp": 60},
+    )
+    await hass.async_block_till_done()
+    entity = hass.data["entity_components"]["climate"].get_entity(mirror)
+    entity.async_write_ha_state()
+    attrs = hass.states.get(mirror).attributes
+    assert attrs["current_temperature"] == 0.0  # a reading of 0 is a reading
+    assert attrs["min_temp"] == 0.0 and attrs["max_temp"] == 60.0
+    hass.states.async_set(HEAT_PUMP_TARGET, "heat", {"temperature": 45.0})
+    await hass.async_block_till_done()
+    entity.async_write_ha_state()
+    assert hass.states.get(mirror).attributes["current_temperature"] == 45.5  # the tank's top
+
+
 async def test_limits_are_numbers_on_the_source_and_keep_their_order(
     hass: HomeAssistant, make_entry
 ) -> None:

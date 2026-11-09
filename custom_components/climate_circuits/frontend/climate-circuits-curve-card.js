@@ -66,7 +66,7 @@ class ClimateCircuitsCurveCard extends HTMLElement {
       const keys = Object.keys(this._draft);
       if (saved && keys.every((k) => Math.abs(saved[k] - this._draft[k]) < 1e-6)) {
         this._draft = null;
-        this._saving = false;
+        this._endSave();
       }
     }
     if (!this._drag && !this._editing) this._render();
@@ -258,14 +258,16 @@ class ClimateCircuitsCurveCard extends HTMLElement {
     this.shadowRoot.querySelectorAll(".tabs button").forEach((b) =>
       b.addEventListener("click", () => {
         this._view = b.dataset.view;
-        this._draft = null;
+        this._draft = null; // a draft belongs to one view; a save on its way still answers
         this._editing = null;
         this._render();
       })
     );
     this.shadowRoot.querySelectorAll(".value").forEach((el) =>
       el.addEventListener("click", () => {
-        if (this._editing === el.dataset.key) return;
+        // While a change is saved (a few seconds, "saving…" shown) nothing new is started:
+        // the draft belongs to that save until Home Assistant reports it.
+        if (!this._free() || this._editing === el.dataset.key) return;
         this._editing = el.dataset.key;
         this._error = null;
         this._render();
@@ -305,6 +307,8 @@ class ClimateCircuitsCurveCard extends HTMLElement {
 
   _start(ev, handle, view) {
     ev.preventDefault();
+    // One change at a time: not while a save is on its way or a value is being typed.
+    if (!this._free() || this._editing) return;
     const base = this._curve(this._attrs(), view);
     this._drag = { handle, view, scales: this._scalesNow, base };
     this._draft = { ...(this._draft || {}) };
@@ -338,11 +342,10 @@ class ClimateCircuitsCurveCard extends HTMLElement {
     if (!this._drag) return;
     const { view, base } = this._drag;
     this._drag = null;
-    const saved = this._attrs()[`${view}_curve`];
+    // Only what this drag moved: a value of an earlier save (still settling, or refused) is
+    // not sent again.
     const changed = Object.fromEntries(
-      Object.entries(this._draft || {}).filter(
-        ([k, v]) => Math.abs(v - base[k]) > 1e-9 || Math.abs(v - saved[k]) > 1e-9
-      )
+      Object.entries(this._draft || {}).filter(([k, v]) => Math.abs(v - base[k]) > 1e-9)
     );
     if (!Object.keys(changed).length) {
       this._draft = null;
@@ -366,7 +369,9 @@ class ClimateCircuitsCurveCard extends HTMLElement {
   }
 
   _save(view, changed) {
+    const id = (this._saveId = (this._saveId || 0) + 1);
     this._saving = true;
+    this._savedAt = Date.now();
     this._error = null;
     this._hass
       .callService("climate_circuits", "set_curve", {
@@ -374,18 +379,32 @@ class ClimateCircuitsCurveCard extends HTMLElement {
         mode: view,
         ...changed,
       })
-      .then(() => setTimeout(() => this._settle(), 3000))
-      .catch((err) => {
-        this._error = (err && err.message) || String(err);
-        this._settle();
-      });
+      .then(() => setTimeout(() => this._settle(id), 3000))
+      .catch((err) => this._settle(id, (err && err.message) || String(err)));
     this._render();
   }
 
-  _settle() {
-    this._draft = null;
-    this._saving = false;
+  _settle(id, error) {
+    if (id !== this._saveId) return; // already ended (reported by Home Assistant, view changed)
+    if (error) this._error = error;
+    this._endSave();
+    this._draft = null; // Home Assistant's values from here
     this._render();
+  }
+
+  _endSave() {
+    this._saving = false;
+    this._saveId = (this._saveId || 0) + 1; // its timer and its answer no longer count
+  }
+
+  // Nothing new starts while a save is on its way – but not for ever if Home Assistant never
+  // answers: after 15 s that save is given up, with what it showed.
+  _free() {
+    if (!this._saving) return true;
+    if (Date.now() - this._savedAt < 15000) return false;
+    this._endSave();
+    this._draft = null;
+    return true;
   }
 }
 

@@ -14,6 +14,7 @@ from pytest_homeassistant_custom_component.common import (
 )
 
 from custom_components.climate_circuits.const import EVENT_ACTIVITY
+from custom_components.climate_circuits.mixer_control import _Inputs
 
 from .conftest import HEAT_PUMP, circuit_data, set_thermostat, source_data
 
@@ -526,6 +527,18 @@ async def test_a_warmer_tank_is_let_through_while_short_of_water(hass, house, cl
     await hass.async_block_till_done()
     assert ("turn_on", CLOSE) not in calls  # and it is not compensated afterwards
     assert mixer._source_ref == pytest.approx(target - 0.8)
+
+
+async def test_the_source_reference_moves_only_when_the_source_helped(hass, house) -> None:
+    mixer = next(iter(house.circuits.values())).mixer
+    inputs = _Inputs(target=40.0, supply=36.0, source=45.0, since_move=200.0, trend=None)
+    mixer._source_ref = 45.0
+    mixer._rebase_source_in_band(inputs)  # below the band
+    mixer._rebase_source_in_band(inputs._replace(supply=39.8, source=44.0))  # in, tank colder
+    assert mixer._source_ref == 45.0  # the colder tank is still to be compensated
+    mixer._rebase_source_in_band(inputs)  # below again
+    mixer._rebase_source_in_band(inputs._replace(supply=39.8, source=47.0))  # in, tank warmer
+    assert mixer._source_ref == 47.0  # it helped the supply there and shows in it
 
 
 async def test_activity_says_why_the_mixer_moves(hass, house, clock, calls) -> None:

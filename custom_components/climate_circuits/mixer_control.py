@@ -88,7 +88,7 @@ class MixerController:
         self._move_ended: float | None = None  # the regulation waits for it to show
         self._supply: list[tuple[float, float]] = []  # (time, supply) for the trend
         self._source_ref: float | None = None  # source temperature at the last move
-        self._in_band: bool | None = None  # the supply within its target ± hysteresis
+        self._side: int | None = None  # supply below (-1), in (0), above (1) its band
         self._proposal_logged: tuple[Any, ...] | None = None
         self._hold_logged: str | None = None  # why it last stayed, not repeated in Activity
         self._starved_since: float | None = None  # fully open and below the target
@@ -388,18 +388,26 @@ class MixerController:
         self._hold_logged = key
 
     def _rebase_source_in_band(self, inputs: _Inputs) -> None:
-        """When the supply gets into its band, it shows the source changes until now.
+        """A source change let through on the way is not compensated once the supply is in band.
 
-        A change let through on the way (see welcome_source_change) is then not compensated.
+        When the supply gets into its band from below with a warmer source than at the last move
+        (or from above with a colder one), the source helped it there and the supply shows that
+        now: compensation counts from the source as it is. Otherwise nothing changes.
         """
-        in_band_now = (
-            inputs.target is not None
-            and inputs.supply is not None
-            and in_band(inputs.supply, inputs.target, self.params)
-        )
-        if in_band_now and self._in_band is False and inputs.source is not None:
-            self._source_ref = inputs.source
-        self._in_band = in_band_now
+        side = None
+        if inputs.target is not None and inputs.supply is not None:
+            side = (
+                0
+                if in_band(inputs.supply, inputs.target, self.params)
+                else (-1 if inputs.supply < inputs.target else 1)
+            )
+        if side is None:
+            return  # no supply or target for a moment: the side it was on still counts
+        source, ref = inputs.source, self._source_ref
+        if side == 0 and self._side and source is not None and ref is not None:
+            if (self._side < 0 and source > ref) or (self._side > 0 and source < ref):
+                self._source_ref = source
+        self._side = side
 
     def _act(self, action: MixerAction | None, now: float, source: float | None) -> None:
         """Move the valve, or in dry run say what would move."""

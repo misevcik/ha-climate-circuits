@@ -15,7 +15,7 @@ from homeassistant.components.climate import (
     HVACAction,
     HVACMode,
 )
-from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
+from homeassistant.const import ATTR_TEMPERATURE
 from homeassistant.core import HomeAssistant, State
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
@@ -38,8 +38,16 @@ async def async_setup_entry(
             )
 
 
+# Home Assistant 2026.11 moved the climate temperatures and unit to native_* (the old names
+# stop working in 2027.11); older versions only know the old names.
+_NATIVE = hasattr(ClimateEntity, "native_target_temperature")
+
+
 class HeatGenerator(SourceEntity, ClimateEntity):
-    _attr_temperature_unit = UnitOfTemperature.CELSIUS
+    """The linked entity's values are in the unit Home Assistant shows, and a change goes back
+    to it through its service in that unit too: so that is this entity's unit, no conversion.
+    """
+
     _attr_supported_features = ClimateEntityFeature.TARGET_TEMPERATURE
 
     def __init__(self, source: Source, key: str) -> None:
@@ -84,22 +92,35 @@ class HeatGenerator(SourceEntity, ClimateEntity):
         except ValueError:
             return None
 
-    @property
-    def target_temperature(self) -> float | None:
+    def _unit(self) -> str:
+        return self.hass.config.units.temperature_unit
+
+    def _target(self) -> float | None:
         return number(self._attr(ATTR_TEMPERATURE))
 
-    @property
-    def current_temperature(self) -> float | None:
+    def _current(self) -> float | None:
         """The heat pump's own reading, else the water the source gives the circuits."""
-        return number(self._attr("current_temperature")) or self.source.temperature()
+        current = number(self._attr("current_temperature"))
+        return current if current is not None else self.source.temperature()
+
+    if _NATIVE:
+        native_temperature_unit = property(_unit)
+        native_target_temperature = property(_target)
+        native_current_temperature = property(_current)
+    else:
+        temperature_unit = property(_unit)
+        target_temperature = property(_target)
+        current_temperature = property(_current)
 
     @property
     def min_temp(self) -> float:
-        return number(self._attr("min_temp")) or super().min_temp
+        low = number(self._attr("min_temp"))
+        return low if low is not None else super().min_temp
 
     @property
     def max_temp(self) -> float:
-        return number(self._attr("max_temp")) or super().max_temp
+        high = number(self._attr("max_temp"))
+        return high if high is not None else super().max_temp
 
     @property
     def target_temperature_step(self) -> float | None:

@@ -200,9 +200,15 @@ Kód hotový lokálne (151 testov, ruff OK): čerpadlá okruhov, vlastná poloha
 - [x] `v0.1.29` – tag pushnutý
 - [x] `v0.1.29` nainštalovaná (8. 11. 8:23), tepelko 48 °C
 - [x] Kompenzácia zdroja neprivrie zmiešavač pri nedostatku vody (0.1.30, lokálne)
-- [ ] Vydať `v0.1.30` – čaká na súhlas
+- [x] `v0.1.30` schválená: kompenzácia zdroja, karta krivky, climate API
+- [ ] Release `v0.1.30` (odkaz), update cez HACS, reštart; overiť, že HA už nehlási zastarané climate API
 - [ ] Stav zmiešavača s dôvodom a časom ďalšieho kroku (karta, senzor) – návrh čaká na súhlas
 - [ ] Vypnúť *Homovať zmiešavače pri štarte* – čaká na súhlas
+- [x] Karta krivky: pád pri ťahaní do 3 s po uložení (0.1.30)
+- [ ] F1 max 50 → 55,5 °C a návrh 55 → 55,5 °C z 8. 11. 22:15 – potvrdiť s používateľom
+- [x] `HeatGenerator`: `native_*` API (0.1.30)
+- [x] Povinné code review pred commitom – hook `~/.claude/hooks/require-code-review.sh`
+- [ ] Stav 9. 11. 14:12: rezerva 5 °C (používateľ), *Zdroj nestačí* F1 ~3,5 h/deň (ráno 6:22–8:01, krátko po TÚV/odmrazovaní), oba zmiešavače naplno pri prívode ≈ cieľ
 - [ ] Sledovať *Zdroj nestačí* pri cieli + 2 °C; prípadne zvýšiť rezervu
 - [ ] Overiť senzory nádrže: vrch 57,7 °C > výstup TČ 54,6 °C, výstup k zmiešavačom 48,7 °C (8. 11. 4:48)
 - [ ] GF termostat má izbovú teplotu z `input_number.gf_room_temperature` (pevne 15 °C) – riadi ho len čas
