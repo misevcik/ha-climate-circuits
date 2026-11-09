@@ -3,6 +3,11 @@
 Architektúra: [architecture.md](architecture.md) (pôvodný Claude Docs dokument z 1. 10. je zastaraný)
 Názov: **Climate Circuits**, doména `climate_circuits`, repozitár `ha-climate-circuits`.
 
+## 2026-11-09 – karta krivky: jedna krivka podľa termostatov (0.1.31)
+- Používateľ: „Entry chce 23 °C, prečo to nevidím na ekvitermickej krivke?“ – karta kreslila krivku s izbou 22 °C a bod „teraz“ z nej (42,6 °C), cieľ okruhu bol 43,4 °C (izba 23 °C z Entry, od 0.1.27). Návrh dvoch kriviek (použitá + nastavená) používateľ odmietol ako mätúci: „prečo nemôže byť len 1 krivka?“
+- Rozhodnutie: karta kreslí jednu krivku – tú, podľa ktorej sa počíta. Pri zapnutej *Krivke podľa termostatov* je bod izby z termostatov (zamknutý, s menom zóny), bez kúriaceho termostatu izba z krivky s poznámkou; pri vypnutom prepínači ako predtým. Senzor cieľa vody má nový atribút `room_from_thermostats` – režimy, v ktorých izbu určujú termostaty (prepínač a zóny daného režimu; okruh bez zón má izbu upraviteľnú). Ťahanie úchytov počíta s izbou nakreslenej krivky (inak by pri chladení posun otočného bodu o 0,5 °C uložil korekciu +2,5).
+- Overené v JavaScriptCore so zjednodušeným DOM a hodnotami F1 z 9. 11.: „Teraz: 2.3 °C → 43.4 °C · izba 23.0 °C (Entry)“ = senzor; chladenie s izbou 26 °C z termostatu: posun otočného bodu na 26,5 → korekcia 0,5. Code review 4× (high, medium, low). Ponechané podľa dohody: pri zapnutom prepínači je izba zamknutá aj keď žiadny termostat nekúri (zmena len cez termostat alebo vypnutím prepínača); dolná hranica návrhovej vody pri ťahaní je izba nakreslenej krivky + 1 °C.
+
 ## 2026-11-09 – 0.1.30: karta krivky, climate API, povinné code review
 - Používateľ schválil vydanie 0.1.30 s opravami: kompenzácia zdroja (nižšie), karta krivky, climate API.
 - Karta krivky: ťahanie bodu do 3 s po predchádzajúcom uložení padalo (časovač uloženia zmazal draft počas ťahania; 8. 11. 22:15, 42 chýb). V tom čase sa F1 zmenilo max 50 → 55,5 °C a návrh 55 → 55,5 °C – čaká na potvrdenie používateľa.

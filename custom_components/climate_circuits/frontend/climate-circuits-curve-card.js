@@ -15,6 +15,9 @@ const TEXTS = {
     design_supply: "Voda pri min. vonk. tepl.:",
     exponent: "Exponent", minimum: "Min", maximum: "Max", correction: "Korekcia",
     hint_heat: "Ťahaj návrhový bod (◆), bod izby (●) a čiary min/max, alebo klikni na hodnotu.",
+    hint_heat_rooms: "Ťahaj návrhový bod (◆) a čiary min/max, alebo klikni na hodnotu. Izbu (●) určujú termostaty.",
+    hint_cool_rooms: "Ťahaj bod strmosti (◆), otočný bod (●) a čiary min/max, alebo klikni na hodnotu. Izbu určujú termostaty.",
+    room_now: "izba", no_room: "žiadny termostat nekúri – izba z krivky",
     hint_cool: "Ťahaj bod strmosti (◆), otočný bod (●) a čiary min/max, alebo klikni na hodnotu.",
     saving: "Ukladám…", missing: "Entita nemá údaje krivky (Climate Circuits).",
   },
@@ -24,6 +27,9 @@ const TEXTS = {
     design_supply: "Water at Min. Ext. Temp.:",
     exponent: "Exponent", minimum: "Min", maximum: "Max", correction: "Correction",
     hint_heat: "Drag the design point (◆), the room point (●) and the min/max lines, or click a value.",
+    hint_heat_rooms: "Drag the design point (◆) and the min/max lines, or click a value. The thermostats set the room (●).",
+    hint_cool_rooms: "Drag the slope handle (◆), the pivot (●) and the min/max lines, or click a value. The thermostats set the room.",
+    room_now: "room", no_room: "no thermostat calls – the curve's room",
     hint_cool: "Drag the slope handle (◆), the pivot (●) and the min/max lines, or click a value.",
     saving: "Saving…", missing: "The entity has no curve data (Climate Circuits).",
   },
@@ -33,6 +39,8 @@ const STEPS = { slope: 0.05, exponent: 0.05 }; // others 0.5
 const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
 const roundTo = (v, step) => Math.round(v / step) * step;
 const fmt = (v, digits = 1) => Number(v).toFixed(digits);
+const esc = (v) =>
+  String(v).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
 
 // Same model as core/curve.py raw_value.
 function rawValue(view, c, outdoor) {
@@ -100,6 +108,24 @@ class ClimateCircuitsCurveCard extends HTMLElement {
     return this._draft ? { ...attrs[`${view}_curve`], ...this._draft } : attrs[`${view}_curve`];
   }
 
+  // The thermostats set the room (switch "Curve from the thermostats"): the curve that counts
+  // is the one with the room of the warmest calling zone (cooling: the coolest). That one is
+  // drawn; the curve's own room is used only when no zone calls.
+  _roomsSet(attrs, view) {
+    const modes = attrs.room_from_thermostats;
+    return Array.isArray(modes) && modes.includes(view);
+  }
+
+  // { curve, zone }: the curve with the room of the zone that sets it now, else the curve's own
+  // (zone null).
+  _effective(attrs, view, curve) {
+    const room = attrs.house_mode === view ? attrs.room : null;
+    if (!this._roomsSet(attrs, view) || room === null || room === undefined) {
+      return { curve, zone: null };
+    }
+    return { curve: { ...curve, room }, zone: attrs.room_from || "" };
+  }
+
   _handles(view, c) {
     if (view === "heat") {
       return {
@@ -133,10 +159,16 @@ class ClimateCircuitsCurveCard extends HTMLElement {
       return;
     }
     const view = this._currentView(attrs);
-    const curve = this._curve(attrs, view);
+    const curve = this._curve(attrs, view); // as configured (and being edited)
+    let { curve: eff, zone } = this._effective(attrs, view, curve); // as used now: drawn
+    // A drag works with the room it started with: the curve stays where the handle math is.
+    const drag = this._drag;
+    if (drag && drag.view === view && drag.handle !== "room") eff = { ...eff, room: drag.room };
+    const roomsSet = this._roomsSet(attrs, view);
+    const ofZone = zone ? ` (${esc(zone)})` : "";
     // While dragging the Y axis stays still, so the curve does not jump under the pointer;
     // the X axis may grow (the room point moves right as the room temperature rises).
-    const fresh = this._scales(view, curve);
+    const fresh = this._scales(view, eff);
     const s = this._drag ? { ...fresh, y0: this._drag.scales.y0, y1: this._drag.scales.y1 } : fresh;
     this._scalesNow = s;
     const color = COLORS[view];
@@ -161,19 +193,25 @@ class ClimateCircuitsCurveCard extends HTMLElement {
     const limitedPoints = [];
     const rawPoints = [];
     for (let x = s.x0; x <= s.x1 + 1e-9; x += 0.5) {
-      limitedPoints.push(`${px(x).toFixed(1)},${py(limited(view, curve, x)).toFixed(1)}`);
-      rawPoints.push(`${px(x).toFixed(1)},${py(inside(rawValue(view, curve, x))).toFixed(1)}`);
+      limitedPoints.push(`${px(x).toFixed(1)},${py(limited(view, eff, x)).toFixed(1)}`);
+      rawPoints.push(`${px(x).toFixed(1)},${py(inside(rawValue(view, eff, x))).toFixed(1)}`);
     }
 
     let now = "";
     const outdoor = attrs.outdoor_temperature;
     if (attrs.house_mode === view && outdoor !== null && outdoor !== undefined) {
-      const target = limited(view, curve, outdoor);
+      const target = limited(view, eff, outdoor);
       const x = clamp(outdoor, s.x0, s.x1);
+      let room = "";
+      if (zone !== null) {
+        room = ` · ${this._t("room_now")} ${fmt(eff.room)} °C${ofZone}`;
+      } else if (roomsSet) {
+        room = ` · ${this._t("no_room")} ${fmt(curve.room)} °C`;
+      }
       now =
         `<circle cx="${px(x)}" cy="${py(target)}" r="6" fill="${color}" class="now"/>` +
         `<text x="${W - M.right}" y="${M.top + 12}" text-anchor="end" class="nowtext" fill="${color}">` +
-        `${this._t("now")}: ${fmt(outdoor)} °C → ${fmt(target)} °C</text>`;
+        `${this._t("now")}: ${fmt(outdoor)} °C → ${fmt(target)} °C${room}</text>`;
     }
 
     const line = (key, y) =>
@@ -181,13 +219,19 @@ class ClimateCircuitsCurveCard extends HTMLElement {
       `<line x1="${M.left}" y1="${py(y)}" x2="${W - M.right}" y2="${py(y)}" class="hit ns" data-handle="${key}"/>` +
       `<text x="${M.left + 6}" y="${py(y) - 5}" class="limittext" fill="${color}">${this._t(key)} ${fmt(y)}</text>`;
 
-    const h = this._handles(view, curve);
+    const h = this._handles(view, eff);
     const main = { x: px(h.main.x), y: py(inside(h.main.y)) };
     const pivot = { x: px(h.pivot.x), y: py(inside(h.pivot.y)) };
+    // The room is the thermostats' while they set it: shown, not dragged or typed.
+    const fixed = (k) => roomsSet && k === "room";
+    if (this._editing && fixed(this._editing)) this._editing = null; // locked meanwhile
 
     const values = Object.keys(attrs[`${view}_curve`])
       .map((k) => {
         const step = STEPS[k] || 0.5;
+        if (fixed(k)) {
+          return `<span class="value fixed"><b>${this._t(k)}</b> ${fmt(eff.room)}${ofZone}</span>`;
+        }
         const value =
           this._editing === k
             ? `<input type="number" step="${step}" value="${curve[k]}" data-edit="${k}">`
@@ -219,6 +263,8 @@ class ClimateCircuitsCurveCard extends HTMLElement {
         .hint { color: var(--secondary-text-color); font-size: .8em; margin-top: 6px; }
         .hint.error { color: var(--error-color, #db4437); }
         .value { cursor: pointer; }
+        .value.fixed { cursor: default; }
+        .handle.fixed { fill-opacity: .35; stroke: ${color}; stroke-width: 2; }
         .num { border-bottom: 1px dashed var(--secondary-text-color); }
         .value input { width: 5em; font: inherit; color: inherit; background: none;
           border: 1px solid ${color}; border-radius: 4px; padding: 0 4px; }
@@ -226,7 +272,7 @@ class ClimateCircuitsCurveCard extends HTMLElement {
       </style>
       <ha-card>
         <div class="head">
-          <div class="title">${this._config.title || ""}</div>
+          <div class="title">${esc(this._config.title || "")}</div>
           <div class="tabs">
             <button data-view="heat" class="${view === "heat" ? "on" : ""}">${this._t("heat")}</button>
             <button data-view="cool" class="${view === "cool" ? "on" : ""}">${this._t("cool")}</button>
@@ -246,12 +292,13 @@ class ClimateCircuitsCurveCard extends HTMLElement {
           <rect x="${main.x - 7}" y="${main.y - 7}" width="14" height="14" fill="${color}"
             class="handle" transform="rotate(45 ${main.x} ${main.y})"/>
           <circle cx="${main.x}" cy="${main.y}" r="14" class="hit ns" fill="transparent" data-handle="${h.main.key}"/>
-          <circle cx="${pivot.x}" cy="${pivot.y}" r="7" fill="${color}" class="handle"/>
-          <circle cx="${pivot.x}" cy="${pivot.y}" r="14" class="hit ns" fill="transparent" data-handle="${h.pivot.key}"/>
+          <circle cx="${pivot.x}" cy="${pivot.y}" r="7" fill="${color}" class="handle${fixed(h.pivot.key) ? " fixed" : ""}"/>
+          ${fixed(h.pivot.key) ? "" : `<circle cx="${pivot.x}" cy="${pivot.y}" r="14" class="hit ns" fill="transparent" data-handle="${h.pivot.key}"/>`}
         </svg>
         <div class="values">${values}</div>
         <div class="hint ${this._error ? "error" : ""}">${
-          this._error || (this._saving ? this._t("saving") : this._t(`hint_${view}`))
+          this._error ? esc(this._error) :
+          (this._saving ? this._t("saving") : this._t(roomsSet ? `hint_${view}_rooms` : `hint_${view}`))
         }</div>
       </ha-card>`;
 
@@ -263,7 +310,7 @@ class ClimateCircuitsCurveCard extends HTMLElement {
         this._render();
       })
     );
-    this.shadowRoot.querySelectorAll(".value").forEach((el) =>
+    this.shadowRoot.querySelectorAll(".value[data-key]").forEach((el) =>
       el.addEventListener("click", () => {
         // While a change is saved (a few seconds, "saving…" shown) nothing new is started:
         // the draft belongs to that save until Home Assistant reports it.
@@ -309,8 +356,11 @@ class ClimateCircuitsCurveCard extends HTMLElement {
     ev.preventDefault();
     // One change at a time: not while a save is on its way or a value is being typed.
     if (!this._free() || this._editing) return;
-    const base = this._curve(this._attrs(), view);
-    this._drag = { handle, view, scales: this._scalesNow, base };
+    const attrs = this._attrs();
+    const base = this._curve(attrs, view);
+    // The handles sit on the drawn curve: values are worked out with its room.
+    const room = this._effective(attrs, view, base).curve.room;
+    this._drag = { handle, view, scales: this._scalesNow, base, room };
     this._draft = { ...(this._draft || {}) };
     this.shadowRoot.querySelector("svg").setPointerCapture(ev.pointerId);
   }
@@ -320,6 +370,7 @@ class ClimateCircuitsCurveCard extends HTMLElement {
     const { handle } = this._drag;
     const y = this._dataY(ev);
     const c = { ...this._drag.base, ...this._draft };
+    if (handle !== "room") c.room = this._drag.room; // the room handle only moves the curve's own
     const d = this._draft;
     if (handle === "maximum") {
       d.maximum = clamp(roundTo(y, 0.5), c.minimum + 0.5, 90);

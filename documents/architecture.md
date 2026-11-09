@@ -279,7 +279,7 @@ flowchart LR
 
 Výsledok je v `sensor.<okruh>_target_water_temperature` s atribútmi `reason`, `dew_point`, `outdoor_temperature` a dátami pre kartu (parametre oboch kriviek, aktuálny režim domu). Parametre mení služba `climate_circuits.set_curve` na tomto senzore.
 
-- **Izbová teplota krivky podľa termostatov** (0.1.27, prepínač okruhu *Krivka podľa termostatov*, predvolene zapnutý): namiesto pevnej izbovej teploty z krivky sa použije najvyššia nastavená teplota termostatov okruhu, ktoré práve kúria (pri chladení najnižšia chladiacich); bez kúriaceho termostatu ostáva izbová teplota krivky. Na cieľovej teplote vody atribúty `room`, `room_from`.
+- **Izbová teplota krivky podľa termostatov** (0.1.27, prepínač okruhu *Krivka podľa termostatov*, predvolene zapnutý): namiesto pevnej izbovej teploty z krivky sa použije najvyššia nastavená teplota termostatov okruhu, ktoré práve kúria (pri chladení najnižšia chladiacich); bez kúriaceho termostatu ostáva izbová teplota krivky. Na cieľovej teplote vody atribúty `room_from_thermostats` (režimy, v ktorých izbu určujú termostaty: prepínač zapnutý a okruh má zóny daného režimu, napr. `["heat", "cool"]`), `room`, `room_from`. Karta krivky kreslí len krivku s touto izbou (0.1.31).
 
 ### Čerpadlo – Hotové lokálne (míľnik 2)
 - Zapne sa, až keď požiadavka okruhu trvá dobu otvárania termoelektrických hlavíc (predvolene 3 min). Hlavice ovláda termostat, preto integrácia čaká na trvanie požiadavky, nie na potvrdenie ventilu.
@@ -463,6 +463,8 @@ title: F1
 - Hodnoty pod grafom sa dajú upraviť kliknutím: pole na číslo, Enter alebo kliknutie mimo uloží, Esc zruší.
 - Po pustení bodu alebo potvrdení hodnoty zavolá `climate_circuits.set_curve` so zmenenými parametrami; zmena sa objaví v Aktivite. Odmietnutú hodnotu (napr. min nad max) ukáže karta červeným textom.
 - Os X sa rozširuje tak, aby oba ťahacie body ostali v grafe.
+- **Jedna krivka – tá, podľa ktorej sa počíta** (0.1.31): pri zapnutej *Krivke podľa termostatov* je izbová teplota krivky najvyššia nastavená teplota kúriacich termostatov (napr. 23 °C · Entry). Bod izby (●) je vtedy zamknutý (polopriehľadný), hodnota izby sa nedá upraviť a bod „teraz“ ukazuje skutočný cieľ, napr. „Teraz: 2,3 °C → 43,4 °C · izba 23,0 °C (Entry)“. Keď žiadny termostat nekúri: krivka s izbou z krivky a poznámka. Pri vypnutom prepínači sa bod izby ťahá ako predtým.
+- Kým sa zmena ukladá (najviac 15 s), nové ťahanie ani úprava hodnoty sa nezačne (0.1.30).
 
 ```mermaid
 sequenceDiagram

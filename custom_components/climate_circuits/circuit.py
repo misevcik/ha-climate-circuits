@@ -179,6 +179,14 @@ class Circuit(Listeners):
             self.pump.evaluate()
         self._notify()
 
+    def room_from_thermostats(self) -> list[str]:
+        """The modes in which the thermostats set the curve's room."""
+        if not tuned(self, "curve_from_thermostats"):
+            return []
+        s = self.settings
+        modes = ((Mode.HEAT, s.heating_zones), (Mode.COOL, s.cooling_zones))
+        return [mode.value for mode, zones in modes if zones]
+
     def _wanted_room(self, mode: Mode, zones: list[ZoneSnapshot]) -> tuple[float, str] | None:
         """The room temperature the curve aims at: the warmest set temperature of the zones
         heating now (the coolest when cooling), with the zone; None keeps the curve's own.

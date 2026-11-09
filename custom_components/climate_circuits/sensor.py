@@ -207,6 +207,10 @@ class TargetWaterSensor(CircuitEntity, SensorEntity):
         dew = circuit.dew_point
         return {
             "reason": circuit.target.reason if circuit.target else "mode off",
+            # The modes in which the thermostats set the curve's room (switch on and zones of
+            # that mode): when one calls, its room is used, not the curve's own. The card draws
+            # that one curve.
+            "room_from_thermostats": circuit.room_from_thermostats(),
             "room": circuit.room[0] if circuit.room else None,
             "room_from": circuit.room[1] if circuit.room else None,
             "dew_point": round(dew, 1) if dew is not None else None,

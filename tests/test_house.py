@@ -282,6 +282,7 @@ async def test_curve_aims_at_the_warmest_set_temperature_of_the_heating_zones(
     await _setup(hass, make_entry, F1)
     target = hass.states.get(F1_TARGET)
     assert target.attributes["room"] == 23.5 and target.attributes["room_from"] == "Kitchen"
+    assert target.attributes["room_from_thermostats"] == ["heat", "cool"]
     # 23.5 + (50 − 23.5) · (28.5/38.5)^(1/1.3): warmer than 44.0 with the curve's own 22 °C
     assert float(target.state) == 44.5
 
@@ -299,3 +300,4 @@ async def test_curve_aims_at_the_warmest_set_temperature_of_the_heating_zones(
     )
     target = hass.states.get(F1_TARGET)
     assert target.attributes["room"] is None and float(target.state) == 44.0
+    assert target.attributes["room_from_thermostats"] == []

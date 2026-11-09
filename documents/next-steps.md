@@ -202,6 +202,8 @@ Kód hotový lokálne (151 testov, ruff OK): čerpadlá okruhov, vlastná poloha
 - [x] Kompenzácia zdroja neprivrie zmiešavač pri nedostatku vody (0.1.30, lokálne)
 - [x] `v0.1.30` schválená: kompenzácia zdroja, karta krivky, climate API
 - [ ] Release `v0.1.30` (odkaz), update cez HACS, reštart; overiť, že HA už nehlási zastarané climate API
+- [x] Karta krivky: jedna krivka podľa termostatov (0.1.31)
+- [ ] Release `v0.1.31`, update; overiť na karte F1 bod izby 23 °C (Entry) a „Teraz“ = cieľ vody
 - [ ] Stav zmiešavača s dôvodom a časom ďalšieho kroku (karta, senzor) – návrh čaká na súhlas
 - [ ] Vypnúť *Homovať zmiešavače pri štarte* – čaká na súhlas
 - [x] Karta krivky: pád pri ťahaní do 3 s po uložení (0.1.30)
