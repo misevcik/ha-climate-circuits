@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 from typing import Any
 
-from .circulation import CirculationDecision
+from .circulation import CirculationDecision, CirculationReason
 from .explain import CircuitExplanation, CircuitState, ZoneExplanation, ZoneStatus
 from .mode import Mode, ModeSource
 from .protect import Blocked
@@ -60,6 +60,10 @@ _SK = {
     "circ_waiting": "Stojí – cirkulácia {t}, zapne pod {on_below}",
     "circ_disabled": "Vypnuté – cirkulácia je vypnutá prepínačom",
     "circ_no_sensor": "Vypnuté – teplota cirkulácie nie je dostupná",
+    "circ_paused": "Pauza – cirkulácia {t} nedosiahla {off_at} za {run} min, znova o {until}",
+    "circ_paused_warm": "Pauza – cirkulácia {t}, vypne pri {off_at}, znova o {until}",
+    "circ_outside_schedule": "Vypnuté – mimo rozvrhu cirkulácie",
+    "circ_tank": " (podľa zásobníka TUV)",
     "circ_dry_run": " (bez ovládania čerpadla)",
     "kind_heat": "kúrenárske termostaty",
     "kind_cool": "chladiace termostaty",
@@ -182,6 +186,12 @@ _EN = {
     "circ_waiting": "Stopped – circulation {t}, starts below {on_below}",
     "circ_disabled": "Off – circulation is switched off",
     "circ_no_sensor": "Off – circulation temperature unavailable",
+    "circ_paused": (
+        "Paused – circulation {t} did not reach {off_at} in {run} min, again at {until}"
+    ),
+    "circ_paused_warm": "Paused – circulation {t}, stops at {off_at}, again at {until}",
+    "circ_outside_schedule": "Off – outside the circulation schedule",
+    "circ_tank": " (from the hot water tank)",
     "circ_dry_run": " (dry run, pump not switched)",
     "kind_heat": "heating thermostats",
     "kind_cool": "cooling thermostats",
@@ -314,13 +324,24 @@ def curve_parameter_label(kind: str, key: str, language: str) -> str:
     return f"{t[f'label_{kind}']} – {t[f'param_{key}']}"
 
 
-def circulation_message(decision: CirculationDecision, language: str, dry_run: bool) -> str:
+def circulation_message(
+    decision: CirculationDecision, language: str, dry_run: bool, until: str | None = None
+) -> str:
+    """until: the local time a pause ends, e.g. "14:35"."""
     t = _t(language)
-    message = t[f"circ_{decision.reason}"].format(
+    key = f"circ_{decision.reason}"
+    warm = decision.temperature is not None and decision.temperature >= decision.off_at
+    if decision.reason == CirculationReason.PAUSED and warm:
+        key = "circ_paused_warm"  # warmed up during the pause: it did reach it by now
+    message = t[key].format(
         t=_temp(decision.temperature),
         on_below=_temp(decision.on_below),
         off_at=_temp(decision.off_at),
+        run=math.ceil(decision.max_run / 60),
+        until=until or "?",
     )
+    if decision.tank_limited:
+        message += t["circ_tank"]
     return message + (t["circ_dry_run"] if dry_run else "")
 
 

@@ -45,19 +45,21 @@
           },
           "hot_water": {
             "name": "Hot water circulation",
-            "description": "Circulation pump with hysteresis: starts below threshold − delta, stops at the threshold. Leave empty if the house has no circulation.",
+            "description": "Circulation pump with hysteresis: starts below threshold − delta, stops at the threshold. A run that does not reach it within the longest run is followed by a pause; with a tank sensor it stops no higher than the tank less the margin. Leave empty if the house has no circulation.",
             "data": {
               "circulation_sensor": "Circulation return temperature",
               "circulation_pump": "Circulation pump",
+              "circulation_schedule": "Circulation schedule",
               "tank_sensor": "Hot water tank temperature",
               "tank_setpoint": "Hot water tank set temperature",
               "tank_name": "Hot water tank name"
             },
             "data_description": {
               "circulation_sensor": "Temperature at the end of the circulation loop.",
-              "tank_sensor": "Only shown in the schema card.",
+              "tank_sensor": "Shown in the schema card; the circulation stops no higher than this less the margin (Circulation below the tank).",
               "tank_setpoint": "What the tank is heated to, e.g. the heat pump's hot water target. Only shown in the schema card.",
-              "tank_name": "Shown on the schema card; empty = Hot water tank."
+              "tank_name": "Shown on the schema card; empty = Hot water tank.",
+              "circulation_schedule": "Optional: a schedule (or on/off entity). The circulation runs only while it is on, e.g. mornings and evenings."
             }
           },
           "display": {
@@ -75,7 +77,9 @@
     "error": {
       "no_capabilities": "Select at least one mode the source can do.",
       "fallback_sensor_required": "The fallback needs a temperature sensor.",
-      "circulation_needs_sensor_and_pump": "Circulation needs both the temperature sensor and the pump."
+      "circulation_needs_sensor_and_pump": "Circulation needs both the temperature sensor and the pump.",
+      "circulation_schedule_needs_circulation": "The circulation schedule needs the circulation sensor and pump.",
+      "circulation_schedule_is_pump": "The circulation schedule can not be the circulation pump itself."
     },
     "abort": {
       "single_instance_allowed": "Climate Circuits is already set up."
@@ -127,19 +131,21 @@
           },
           "hot_water": {
             "name": "Hot water circulation",
-            "description": "Circulation pump with hysteresis: starts below threshold − delta, stops at the threshold. Leave empty if the house has no circulation.",
+            "description": "Circulation pump with hysteresis: starts below threshold − delta, stops at the threshold. A run that does not reach it within the longest run is followed by a pause; with a tank sensor it stops no higher than the tank less the margin. Leave empty if the house has no circulation.",
             "data": {
               "circulation_sensor": "Circulation return temperature",
               "circulation_pump": "Circulation pump",
+              "circulation_schedule": "Circulation schedule",
               "tank_sensor": "Hot water tank temperature",
               "tank_setpoint": "Hot water tank set temperature",
               "tank_name": "Hot water tank name"
             },
             "data_description": {
               "circulation_sensor": "Temperature at the end of the circulation loop.",
-              "tank_sensor": "Only shown in the schema card.",
+              "tank_sensor": "Shown in the schema card; the circulation stops no higher than this less the margin (Circulation below the tank).",
               "tank_setpoint": "What the tank is heated to, e.g. the heat pump's hot water target. Only shown in the schema card.",
-              "tank_name": "Shown on the schema card; empty = Hot water tank."
+              "tank_name": "Shown on the schema card; empty = Hot water tank.",
+              "circulation_schedule": "Optional: a schedule (or on/off entity). The circulation runs only while it is on, e.g. mornings and evenings."
             }
           },
           "display": {
@@ -157,7 +163,9 @@
     "error": {
       "no_capabilities": "Select at least one mode the source can do.",
       "fallback_sensor_required": "The fallback needs a temperature sensor.",
-      "circulation_needs_sensor_and_pump": "Circulation needs both the temperature sensor and the pump."
+      "circulation_needs_sensor_and_pump": "Circulation needs both the temperature sensor and the pump.",
+      "circulation_schedule_needs_circulation": "The circulation schedule needs the circulation sensor and pump.",
+      "circulation_schedule_is_pump": "The circulation schedule can not be the circulation pump itself."
     }
   },
   "config_subentries": {
@@ -473,6 +481,8 @@
         "state": {
           "running": "Running",
           "stopped": "Stopped",
+          "paused": "Paused",
+          "outside_schedule": "Outside the schedule",
           "disabled": "Disabled",
           "unavailable": "Unavailable"
         },
@@ -497,6 +507,12 @@
           },
           "controlled": {
             "name": "Pump controlled"
+          },
+          "stop_from_tank": {
+            "name": "Stop temperature from the tank"
+          },
+          "paused_until": {
+            "name": "Paused until"
           }
         }
       },
@@ -611,6 +627,9 @@
       "linked_circulation_pump": {
         "name": "Circulation pump"
       },
+      "linked_circulation_schedule": {
+        "name": "Circulation schedule"
+      },
       "linked_tank_sensor": {
         "name": "Tank sensor"
       },
@@ -692,6 +711,15 @@
       },
       "circulation_delta": {
         "name": "Circulation delta"
+      },
+      "circulation_max_run": {
+        "name": "Circulation longest run"
+      },
+      "circulation_pause": {
+        "name": "Circulation pause"
+      },
+      "circulation_tank_margin": {
+        "name": "Circulation below the tank"
       },
       "travel": {
         "name": "Mixer travel time"

@@ -31,7 +31,7 @@ const TEXTS = {
     auto_dhw: "tepelko ohrieva TÚV", auto_defrost: "tepelko odmrazuje",
     hot_water: "Nádrž TÚV", heater: "Zdroj tepla", heater_out: "výstup", heater_in: "spiatočka", circulation: "Cirkulácia TÚV", circ_return: "spiatočka cirkulácie",
     starts_below: "zapne pod", stops_at: "vypne pri", running: "beží", stopped: "stojí",
-    disabled: "vypnutá",
+    disabled: "vypnutá", paused: "pauza", outside_schedule: "mimo rozvrhu", from_tank: "podľa zásobníka",
   },
   en: {
     title: "Heating schema", heat: "Heating", cool: "Cooling", off: "Off",
@@ -48,7 +48,7 @@ const TEXTS = {
     auto_dhw: "the heat pump heats hot water", auto_defrost: "the heat pump defrosts",
     hot_water: "Hot water tank", heater: "Heat generator", heater_out: "supply", heater_in: "return", circulation: "Circulation", circ_return: "circulation return",
     starts_below: "starts below", stops_at: "stops at", running: "running", stopped: "stopped",
-    disabled: "disabled",
+    disabled: "disabled", paused: "paused", outside_schedule: "outside schedule", from_tank: "from the tank",
   },
 };
 
@@ -270,10 +270,13 @@ class ClimateCircuitsSchemaCard extends HTMLElement {
       out += `<line x1="${G.mixer - 24}" y1="${pipeY}" x2="${G.mixer + 24}" y2="${pipeY}" class="pipe" stroke="${hot}"/>`;
     }
 
-    // Supply temperature against the target.
-    out += `<g class="click" data-entity="${esc(c.target)}">
+    // Supply temperature against the target: the measured value opens the supply sensor,
+    // the target line opens the target.
+    out += `<g class="click" data-entity="${esc(c.supply || c.mixer || c.target)}">
       <circle cx="${G.supply}" cy="${pipeY}" r="9" fill="var(--card-background-color, #fff)" stroke="${color}" stroke-width="3"/>
       <text x="${G.supply}" y="${y + 24}" text-anchor="middle" class="big" style="fill:${color}">${deg(supply)}</text>
+    </g>`;
+    out += `<g class="click" data-entity="${esc(c.target)}">
       <text x="${G.supply}" y="${pipeY + 30}" text-anchor="middle" class="small muted">${this._t("target")} ${deg(target)}</text>
     </g>`;
 
@@ -429,9 +432,11 @@ class ClimateCircuitsSchemaCard extends HTMLElement {
     const on = state === "running";
     const flow = on ? " flow" : "";
     const temperature = num(this._val(hw.temperature));
-    const threshold = num(this._val(hw.threshold));
+    // Where it starts and stops: from the state, which knows the tank limit; else the numbers.
+    const threshold = num(this._attr(hw.state, "stops_at")) ?? num(this._val(hw.threshold));
     const delta = num(this._val(hw.delta));
-    const startsBelow = threshold !== null && delta !== null ? threshold - delta : null;
+    const startsBelow = num(this._attr(hw.state, "starts_below"))
+      ?? (threshold !== null && delta !== null ? threshold - delta : null);
     const color = temperature === null || startsBelow === null ? OFF
       : temperature >= startsBelow ? "#2f9e44" : "#f08c00";
     const tank = num(this._val(hw.tank));
@@ -460,9 +465,11 @@ class ClimateCircuitsSchemaCard extends HTMLElement {
       <text x="${radMid}" y="${y + 38}" text-anchor="middle" class="big">${esc(this._short(this._t("circulation"), 18))}</text>
     </g>`;
     if (threshold !== null) {
-      out += `<g class="click" data-entity="${esc(hw.threshold)}">
+      // Below the tank the stop follows the tank: the click opens the margin below it.
+      const fromTank = this._attr(hw.state, "stop_from_tank") === true;
+      out += `<g class="click" data-entity="${esc(fromTank ? hw.tank_margin || hw.state : hw.threshold)}">
         <text x="${radMid}" y="${y + 60}" text-anchor="middle" class="small">${this._t("starts_below")} ${deg(startsBelow)}</text>
-        <text x="${radMid}" y="${y + 78}" text-anchor="middle" class="small">${this._t("stops_at")} ${deg(threshold)}</text>
+        <text x="${radMid}" y="${y + 78}" text-anchor="middle" class="small">${this._t("stops_at")} ${deg(threshold)}${fromTank ? ` · ${this._t("from_tank")}` : ""}</text>
       </g>`;
     }
     return out;

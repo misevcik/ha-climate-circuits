@@ -40,9 +40,10 @@ class HotWaterSettings:
     pump: str
     threshold: float
     delta: float
-    tank_sensor: str | None = None  # only shown: the hot water tank itself
+    tank_sensor: str | None = None  # the hot water tank: shown, and the circulation stops below it
     tank_setpoint: str | None = None
     tank_name: str | None = None
+    schedule: str | None = None  # circulation only while this is on
 
     @classmethod
     def from_options(cls, options: Mapping[str, Any]) -> HotWaterSettings | None:
@@ -58,6 +59,7 @@ class HotWaterSettings:
             hw.get("tank_sensor"),
             hw.get("tank_setpoint"),
             hw.get("tank_name"),
+            hw.get("circulation_schedule"),
         )
 
 

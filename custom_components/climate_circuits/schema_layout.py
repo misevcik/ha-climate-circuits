@@ -45,6 +45,7 @@ def schema_layout(house: House) -> dict[str, Any]:
             "temperature": find("sensor", hw.id, "circulation_temperature"),
             "threshold": find("number", hw.id, "circulation_threshold"),
             "delta": find("number", hw.id, "circulation_delta"),
+            "tank_margin": find("number", hw.id, "circulation_tank_margin"),
             "enabled": find("switch", hw.id, "circulation_enabled"),
             "tank": hw.settings.tank_sensor,
             "tank_setpoint": hw.settings.tank_setpoint,

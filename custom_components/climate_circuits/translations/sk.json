@@ -45,19 +45,21 @@
           },
           "hot_water": {
             "name": "Cirkulácia TUV",
-            "description": "Cirkulačné čerpadlo s hysteréziou: zapne pod prah − delta, vypne pri dosiahnutí prahu. Ak dom cirkuláciu nemá, nechaj prázdne.",
+            "description": "Cirkulačné čerpadlo s hysteréziou: zapne pod prah − delta, vypne pri dosiahnutí prahu. Ak ju nedosiahne za najdlhší chod, nasleduje pauza; so senzorom zásobníka vypína najviac pri teplote zásobníka mínus odstup. Ak dom cirkuláciu nemá, nechaj prázdne.",
             "data": {
               "circulation_sensor": "Teplota spiatočky cirkulácie",
               "circulation_pump": "Cirkulačné čerpadlo",
+              "circulation_schedule": "Rozvrh cirkulácie",
               "tank_sensor": "Teplota zásobníka TUV",
               "tank_setpoint": "Nastavená teplota zásobníka TUV",
               "tank_name": "Názov nádrže TUV"
             },
             "data_description": {
               "circulation_sensor": "Teplota na konci cirkulačného okruhu.",
-              "tank_sensor": "Iba na zobrazenie v karte schémy.",
+              "tank_sensor": "Zobrazí sa v karte schémy; cirkulácia vypína najviac pri tejto teplote mínus odstup (Cirkulácia pod zásobníkom).",
               "tank_setpoint": "Na koľko sa zásobník ohrieva, napr. cieľ TUV tepelného čerpadla. Iba na zobrazenie v karte schémy.",
-              "tank_name": "Zobrazí sa v karte schémy; prázdne = Nádrž TÚV."
+              "tank_name": "Zobrazí sa v karte schémy; prázdne = Nádrž TÚV.",
+              "circulation_schedule": "Voliteľné: rozvrh (alebo entita zapnuté/vypnuté). Cirkulácia beží len keď je zapnutý, napr. ráno a večer."
             }
           },
           "display": {
@@ -75,7 +77,9 @@
     "error": {
       "no_capabilities": "Vyber aspoň jeden režim, ktorý zdroj vie.",
       "fallback_sensor_required": "Záloha potrebuje senzor teploty.",
-      "circulation_needs_sensor_and_pump": "Cirkulácia potrebuje teplotný senzor aj čerpadlo."
+      "circulation_needs_sensor_and_pump": "Cirkulácia potrebuje teplotný senzor aj čerpadlo.",
+      "circulation_schedule_needs_circulation": "Rozvrh cirkulácie potrebuje senzor a čerpadlo cirkulácie.",
+      "circulation_schedule_is_pump": "Rozvrh cirkulácie nemôže byť samotné čerpadlo cirkulácie."
     },
     "abort": {
       "single_instance_allowed": "Climate Circuits je už nastavená."
@@ -127,19 +131,21 @@
           },
           "hot_water": {
             "name": "Cirkulácia TUV",
-            "description": "Cirkulačné čerpadlo s hysteréziou: zapne pod prah − delta, vypne pri dosiahnutí prahu. Ak dom cirkuláciu nemá, nechaj prázdne.",
+            "description": "Cirkulačné čerpadlo s hysteréziou: zapne pod prah − delta, vypne pri dosiahnutí prahu. Ak ju nedosiahne za najdlhší chod, nasleduje pauza; so senzorom zásobníka vypína najviac pri teplote zásobníka mínus odstup. Ak dom cirkuláciu nemá, nechaj prázdne.",
             "data": {
               "circulation_sensor": "Teplota spiatočky cirkulácie",
               "circulation_pump": "Cirkulačné čerpadlo",
+              "circulation_schedule": "Rozvrh cirkulácie",
               "tank_sensor": "Teplota zásobníka TUV",
               "tank_setpoint": "Nastavená teplota zásobníka TUV",
               "tank_name": "Názov nádrže TUV"
             },
             "data_description": {
               "circulation_sensor": "Teplota na konci cirkulačného okruhu.",
-              "tank_sensor": "Iba na zobrazenie v karte schémy.",
+              "tank_sensor": "Zobrazí sa v karte schémy; cirkulácia vypína najviac pri tejto teplote mínus odstup (Cirkulácia pod zásobníkom).",
               "tank_setpoint": "Na koľko sa zásobník ohrieva, napr. cieľ TUV tepelného čerpadla. Iba na zobrazenie v karte schémy.",
-              "tank_name": "Zobrazí sa v karte schémy; prázdne = Nádrž TÚV."
+              "tank_name": "Zobrazí sa v karte schémy; prázdne = Nádrž TÚV.",
+              "circulation_schedule": "Voliteľné: rozvrh (alebo entita zapnuté/vypnuté). Cirkulácia beží len keď je zapnutý, napr. ráno a večer."
             }
           },
           "display": {
@@ -157,7 +163,9 @@
     "error": {
       "no_capabilities": "Vyber aspoň jeden režim, ktorý zdroj vie.",
       "fallback_sensor_required": "Záloha potrebuje senzor teploty.",
-      "circulation_needs_sensor_and_pump": "Cirkulácia potrebuje teplotný senzor aj čerpadlo."
+      "circulation_needs_sensor_and_pump": "Cirkulácia potrebuje teplotný senzor aj čerpadlo.",
+      "circulation_schedule_needs_circulation": "Rozvrh cirkulácie potrebuje senzor a čerpadlo cirkulácie.",
+      "circulation_schedule_is_pump": "Rozvrh cirkulácie nemôže byť samotné čerpadlo cirkulácie."
     }
   },
   "config_subentries": {
@@ -473,6 +481,8 @@
         "state": {
           "running": "Beží",
           "stopped": "Stojí",
+          "paused": "Pauza",
+          "outside_schedule": "Mimo rozvrhu",
           "disabled": "Vypnutá",
           "unavailable": "Nedostupná"
         },
@@ -497,6 +507,12 @@
           },
           "controlled": {
             "name": "Čerpadlo ovládané"
+          },
+          "stop_from_tank": {
+            "name": "Vypnutie podľa zásobníka"
+          },
+          "paused_until": {
+            "name": "Pauza do"
           }
         }
       },
@@ -611,6 +627,9 @@
       "linked_circulation_pump": {
         "name": "Cirkulačné čerpadlo"
       },
+      "linked_circulation_schedule": {
+        "name": "Rozvrh cirkulácie"
+      },
       "linked_tank_sensor": {
         "name": "Senzor nádrže"
       },
@@ -692,6 +711,15 @@
       },
       "circulation_delta": {
         "name": "Delta cirkulácie"
+      },
+      "circulation_max_run": {
+        "name": "Najdlhší chod cirkulácie"
+      },
+      "circulation_pause": {
+        "name": "Pauza cirkulácie"
+      },
+      "circulation_tank_margin": {
+        "name": "Cirkulácia pod zásobníkom"
       },
       "travel": {
         "name": "Čas dráhy zmiešavača"

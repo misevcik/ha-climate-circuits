@@ -109,6 +109,11 @@ HOUSE_SCHEMA = vol.Schema(
             {
                 vol.Optional("circulation_sensor"): TEMPERATURE_SENSOR,
                 vol.Optional("circulation_pump"): RELAY,
+                vol.Optional("circulation_schedule"): sel.EntitySelector(
+                    sel.EntitySelectorConfig(
+                        domain=["schedule", "input_boolean", "binary_sensor", "switch"]
+                    )
+                ),
                 vol.Optional("tank_name"): sel.TextSelector(),
                 vol.Optional("tank_sensor"): TEMPERATURE_SENSOR,
                 vol.Optional("tank_setpoint"): sel.EntitySelector(
@@ -214,6 +219,11 @@ def _validate_house(data: dict[str, Any]) -> dict[str, str]:
         return {"base": "fallback_sensor_required"}
     if bool(hot_water.get("circulation_sensor")) != bool(hot_water.get("circulation_pump")):
         return {"base": "circulation_needs_sensor_and_pump"}
+    if schedule := hot_water.get("circulation_schedule"):
+        if not hot_water.get("circulation_pump"):
+            return {"base": "circulation_schedule_needs_circulation"}
+        if schedule == hot_water["circulation_pump"]:
+            return {"base": "circulation_schedule_is_pump"}
     return {}
 
 

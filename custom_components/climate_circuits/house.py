@@ -183,6 +183,7 @@ class House(Listeners):
             )
         if self.hot_water:
             self.hot_water.enabled = bool(data.get("circulation_enabled", True))
+            self.hot_water.paused_at = data.get("circulation_paused_at")
 
     def _data(self) -> dict[str, Any]:
         return {
@@ -191,6 +192,7 @@ class House(Listeners):
             "last_mode": self.last_mode.value if self.last_mode else None,
             "last_outdoor": self._last_outdoor,
             "circulation_enabled": self.hot_water.enabled if self.hot_water else True,
+            "circulation_paused_at": self.hot_water.paused_at if self.hot_water else None,
             "pause": {
                 "active": self.pause.active.value if self.pause.active else None,
                 "stopped_at": self.pause.stopped_at,

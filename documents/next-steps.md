@@ -216,5 +216,15 @@ Kód hotový lokálne (151 testov, ruff OK): čerpadlá okruhov, vlastná poloha
 - [ ] GF termostat má izbovú teplotu z `input_number.gf_room_temperature` (pevne 15 °C) – riadi ho len čas
 - [ ] Rýchlejší senzor vonkajšej teploty (`sensor.outside_temperature` sa mení raz za ~64 min)
 - [ ] Senzor trojcestného ventilu cez Modbus (používateľ zváži) → pole *Ohrev TÚV* pri zdroji
-- [ ] Typ a výkon TČ od používateľa (dimenzovanie)
+- [x] Typ TČ: AUX ACHP-H14/5R2HA-M(NE), 14 kW, R290, bez špirály; výkon podľa tabuliek AUX ([heat-pump-modbus.md](heat-pump-modbus.md))
 - [ ] Štart okruhu so studenou vodou – overiť pri najbližšom štarte
+
+## 2026-11-11 – zdroj nestačí, tepelko, cirkulácia
+- [x] Štatistika *Zdroj nestačí* (7 dní) a príčina: ráno beží tepelko naplno. Bivalentný bod je ~−3 až −5 °C, pri −15 °C chýba ~6 kW ([source-shortfall-2026-11-11.md](source-shortfall-2026-11-11.md))
+- [x] 0.1.32: cirkulácia – najdlhší chod a pauza (10/30 min), limit podľa zásobníka (−5 °C), voliteľný rozvrh
+- [x] 0.1.32: karta schémy – klik na teplotu za zmiešavačom otvára senzor prívodu, „cieľ …“ cieľ (2026-11-16)
+- [x] Code review 0.1.32 (4 kolá), opravy – 257 testov, ruff OK (2026-11-17)
+- [ ] Release `v0.1.32`, update, vytvoriť rozvrh (helper *Cirkulácia TÚV*) a vybrať ho v nastaveniach TUV
+- [ ] Špirála do akumulačky: používateľ meria kábel (4 × 1,5 mm², istič 16 A, napája tepelko) a závit nátrubky; kábel na vložku nestačí
+- [ ] Modbus tepelka: CN12 „Modbus“ (CN23 overiť), mapa registrov od AUX alebo zistiť čítaním. Nie CN13
+- [ ] Ranný nábeh: rozložiť útlm spální, Entry 23 → 22 °C – čaká na používateľa

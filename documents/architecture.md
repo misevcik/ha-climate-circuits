@@ -45,7 +45,7 @@ custom_components/climate_circuits/
 │   ├── pump.py           oneskorenie štartu a dobeh čerpadla
 │   ├── setpoint.py       nastavenie zdroja podľa okruhov
 │   ├── protect.py        pauza kúrenie/chladenie, kondenzácia, protáčanie
-│   ├── circulation.py    hysteréza cirkulácie TUV
+│   ├── circulation.py    hysteréza cirkulácie TUV, najdlhší chod a pauza, limit podľa zásobníka, rozvrh
 │   ├── zones.py          ktoré termostaty vypnúť / zapnúť pri zmene režimu
 │   └── texts.py          vety pre Aktivitu a stavy (sk / en)
 ├── house.py              dom: režim, uloženie stavu, vyhodnotenie všetkého, atribúty režimu
@@ -381,10 +381,13 @@ Zapínateľný modul v nastaveniach domu; funguje aj v dome bez okruhov. Preber�
 | `sensor.<okruh>_calling_zones` | okruh | mená termostatov, ktoré práve kúria / chladia („–“ keď nikto) |
 | `sensor.<okruh>_mixer_position` | okruh | poloha zmiešavača v % (vlastný výpočet z behu relé); atribút `movement`: idle, opening, closing, homing, unknown, unavailable; ďalej `proposed`, teplota za zmiešavačom a cieľ |
 | `sensor.<okruh>_mixer_state` | okruh | čo zmiešavač robí: stojí, otvára, zatvára, homing, poloha neznáma, relé nedostupné |
-| `sensor.hot_water_circulation_state` | TUV | rozhodnutie integrácie: beží / stojí / vypnutá / nedostupná, dôvod, kedy zapne a vypne (nie je to samotné čerpadlo) |
+| `sensor.hot_water_circulation_state` | TUV | rozhodnutie integrácie: beží / stojí / pauza / mimo rozvrhu / vypnutá / nedostupná, dôvod, kedy zapne a vypne, či vypína podľa zásobníka, zostávajúca pauza (nie je to samotné čerpadlo) |
 | `sensor.hot_water_circulation_temperature` | TUV | aktuálna teplota spiatočky cirkulácie, podľa ktorej čerpadlo spína |
 | `number.hot_water_circulation_threshold` | TUV | prah: pri ňom čerpadlo vypne |
 | `number.hot_water_circulation_delta` | TUV | delta: čerpadlo zapne pod prah − delta |
+| `number.hot_water_circulation_longest_run` | TUV | najdlhší chod (min; 0 tu alebo pri pauze = bez limitu): ak spiatočka za ten čas nedosiahne vypínaciu teplotu, nasleduje pauza (0.1.32) |
+| `number.hot_water_circulation_pause` | TUV | pauza po príliš dlhom chode (min) (0.1.32) |
+| `number.hot_water_circulation_below_the_tank` | TUV | len so senzorom zásobníka: vypína najviac pri teplote zásobníka mínus táto hodnota (0.1.32) |
 | `switch.hot_water_circulation_enabled` | TUV | povoliť / zakázať cirkuláciu (nie je to čerpadlo) |
 
 ```mermaid

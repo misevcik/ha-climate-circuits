@@ -3,6 +3,45 @@
 Architektúra: [architecture.md](architecture.md) (pôvodný Claude Docs dokument z 1. 10. je zastaraný)
 Názov: **Climate Circuits**, doména `climate_circuits`, repozitár `ha-climate-circuits`.
 
+## 2026-11-17 – code review 0.1.32 (cirkulácia TUV), opravy pred vydaním
+- Používateľ: „sprav code review, commit a release“. Tri kolá review (high), opravené:
+  - teplota zásobníka pod 5 °C (porucha senzora, 0 / −127 °C) sa ignoruje – inak by cirkulácia stála natrvalo;
+  - pauza uložená s hodinami, ktoré išli dopredu (Pi bez RTC), trvá najviac jednu celú pauzu;
+  - chod sa počíta odznova pri zapnutí/vypnutí *Ovládať zariadenia* a po skončení pauzy aj keď čerpadlo nezastalo (dry run, zaseknuté relé) – predtým pauza za pauzou;
+  - atribút `pause_left_min` (menil sa každú minútu → riadok v recorderi) nahradený `paused_until`; text „znova o 14:35“ (iný deň: „18.11. 10:00“) namiesto odpočtu minút;
+  - „podľa zásobníka“ a znížené `stops_at` len keď rozhoduje teplota; vo vypnutom stave, mimo rozvrhu a bez senzora sa ukazuje nastavený prah;
+  - formulár TUV: rozvrh bez senzora a čerpadla cirkulácie a rozvrh = samotné čerpadlo sú chyby;
+  - karta: pri „podľa zásobníka“ otvorí klik odstup pod zásobníkom (`number.hot_water_circulation_below_the_tank`);
+  - zastarané number entity: odstráni sa každý number záznamu, ktorý sa už neponúka.
+  - tretie kolo: text pauzy, keď sa cirkulácia počas pauzy zohriala („Pauza – cirkulácia 38 °C, vypne pri 35 °C, znova o …“); chod sa nepočíta, kým je limit vypnutý (0), takže po jeho zapnutí sa nezačne pauza hneď; preklad atribútu `paused_until`; dátum bez `%-d` (prenosné).
+- Prijaté kompromisy z review: rozvrh môže byť ľubovoľný vypínač (aj iné relé) – voľba používateľa, kontroluje sa len samotné čerpadlo cirkulácie; začiatok chodu sa neukladá (reload počas chodu = najviac jeden chod navyše, ako 11. 11.); existujúce inštalácie dostanú po update limit 10 / 30 min (rozhodnutie 11. 11.); Aktivita pri zmene dĺžky pauzy počas pauzy ostane so starým časom, atribút sa posunie; spoločné čistenie number aj switch entít (napr. `source_compensation` po odobratí zmiešavača) nechané na neskôr.
+- 4. kolo review bez chýb s dopadom, prijaté/odložené: odstránenie number entity, ktorá sa dočasne neponúka (napr. pri výmene senzora zásobníka), zahodí jej premenovanie/oblasť (tak sa správalo aj predtým); `stops_at` podľa zásobníka sa mení po 0,1 °C (riadky v recorderi); dátum pauzy cez polnoc vo formáte „18.11. 22:00“ aj v angličtine; text pauzy berie aktuálny najdlhší chod; refaktor počítania chodu do `core/`, odvodenie `FROM_TEMPERATURE` z `HELD_STATE`, zdvojené čistenie starých number entít v `__init__.py` – na neskôr.
+
+## 2026-11-16 – karta schémy: klik na teplotu za zmiešavačom (0.1.32)
+- Používateľ: klik na skutočnú teplotu za zmiešavačom otváral cieľovú teplotu. Teplota aj riadok „cieľ“ boli v jednej klikateľnej skupine s `c.target`.
+- Oprava: krúžok a veľké číslo (nameraný prívod) otvárajú senzor prívodu okruhu (`supply_sensor`; bez neho zmiešavač, potom cieľ). Riadok „cieľ …“ ďalej otvára `sensor.<okruh>_target_water_temperature`.
+
+## 2026-11-11 – cirkulácia TUV: pauza, limit podľa zásobníka, rozvrh (0.1.32)
+- Zistenie: cirkulácia bežala 98,5 % času. Prah bol 36 °C a TUV je od zníženia na 40 °C len 35–41 °C, spiatočka cirkulácie 31–36 °C, takže prah sa nedal dosiahnuť. Cirkulácia ochladzovala zásobník a tepelko ohrievalo TUV ~5× za deň, počas čoho nekúrilo. Rozbor: [source-shortfall-2026-11-11.md](source-shortfall-2026-11-11.md).
+- Rozhodnutie (používateľ: „sprav 1, 2 a 3, … pauza aj čas konfigurovateľný“):
+  - **najdlhší chod a pauza** ako hodnoty na zariadení Hot water, predvolené 10 a 30 min. Najdlhší chod 0 znamená bez limitu;
+  - **limit podľa zásobníka:** so senzorom zásobníka vypína najviac pri teplote zásobníka mínus odstup (predvolené 5 °C), pretože spiatočka nemôže byť teplejšia ako zásobník;
+  - **rozvrh:** voliteľná entita *Rozvrh cirkulácie* vo formulári TUV (schedule, input_boolean, binary_sensor, switch). Mimo rozvrhu stojí. Nedostupný rozvrh cirkuláciu nezastaví.
+- Stavy senzora pribudli `paused` a `outside_schedule`, atribúty `stop_from_tank` a `paused_until` (čas konca pauzy). Karta schémy berie „zapne pod / vypne pri“ zo stavu, takže zobrazuje aj limit podľa zásobníka.
+- Začiatok pauzy sa ukladá podľa hodín na stene, takže pauza prežije reload aj reštart. Začiatok chodu sa neukladá: reload počas chodu dá najviac jeden chod navyše. Krátko nedostupné relé chod nevynuluje. **Pauza je pevný časovač:** vybehne celá, aj keď medzitým príde vypnutie prepínača, mimo rozvrhu, výpadok senzora alebo dosiahnutie teploty. Zmena najdlhšieho chodu alebo pauzy platí hneď. Hodnota 0 pri ktorejkoľvek z nich limit vypne. Ak čerpadlo po pauze stále beží (dry run, spína ho niekto iný), chod sa počíta odznova od konca pauzy.
+- Zmena teploty zásobníka nespúšťa vyhodnotenie celého domu, zásobník sa číta pri pravidelnom vyhodnotení každých 30 s. Number entity hodnôt, ktoré sa už neponúkajú (napr. odstup pod zásobníkom po odobratí senzora zásobníka), sa z registra odstránia.
+- Prijatý kompromis z review: keď je zásobník po veľkom odbere chladný (napr. 32 °C, vypína pri 27 °C), cirkulácia stojí. Hnať vlažnú vodu by zásobník ochladzovalo ešte viac. Dôvod v stave hovorí „podľa zásobníka TUV“ a karta „podľa zásobníka“. V dry rune, keď čerpadlo spína niekto iný a beží stále, senzor ukazuje pauzy za sebou, čiže čo by integrácia robila. Pri skoku hodín (NTP po štarte) sa pauza môže skrátiť alebo predĺžiť, raz. Number entity starých kľúčov zdroja maže aj `_remove_old_setting`, ostáva kvôli selectu a senzoru.
+
+## 2026-11-11 – tepelko cez Modbus RS485 (rozbor)
+- Používateľ: treba sa pripojiť na Modbus RS485 tepelka (cloud AUX nedáva výstup, výkon ani odmrazovanie a nedá sa ním zistiť, prečo ráno nestačí).
+- Tepelko je **AUX ACHP-H14/5R2HA-M(NE)** (R290, 14 kW, 3 fázy). Na hlavnej doske je konektor s potlačou **„Modbus CN12“**. Svorky CN23 „A1 B1“ treba multimetrom overiť voči CN12. Ďalšia cesta je ① B/A na zadnej strane káblového ovládača. **Nikdy nie CN13 „485-BUS“** (č. 4 „Refrigerant system communication“), hoci ho tak radil Gemini. Registre a parametre z Gemini sú prevzaté z Midea, nekonzistentné a nepoužívajú sa.
+- Čaká sa na mapu registrov od AUX UK alebo predajcu. Náhradná cesta je čítanie rozsahov registrov a ich porovnanie s displejom. Podklad: [heat-pump-modbus.md](heat-pump-modbus.md).
+
+## 2026-11-11 – štatistika „zdroj nestačí“ (rozbor)
+- Za 7 dní F1 53× / 33,5 h (20 % času), GF 27× / 15,9 h (9 %). Každé ráno 5–9 h je jeden výpadok trvajúci 1,5–3 h. Cez deň sú krátke poklesy po TÚV a odmrazovaní.
+- Ráno 11. 11. bolo tepelko nastavené na 53 °C, ale dávalo priemerne 43 °C (ΔT 4 K, odmrazovanie každú hodinu, −2 °C, 98 % vlhkosť). Nádrž mala 42–43 °C, cieľ F1 bol 46,5 °C. Nastavenie zo strany integrácie bolo v poriadku, nestačí tepelko.
+- Eco v aplikácii AUX vypnuté (preset `eco` v HA je zlé mapovanie). Ráno beží tepelko naplno (~4,5 kW priemer, max 5,4 kW) – hranica výkonu. Čaká na používateľa: rozložiť ranný nábeh (skorší začiatok alebo menší útlm spální), Entry 23 °C. Podklad: [source-shortfall-2026-11-11.md](source-shortfall-2026-11-11.md).
+
 ## 2026-11-09 – karta krivky: jedna krivka podľa termostatov (0.1.31)
 - Používateľ: „Entry chce 23 °C, prečo to nevidím na ekvitermickej krivke?“ – karta kreslila krivku s izbou 22 °C a bod „teraz“ z nej (42,6 °C), cieľ okruhu bol 43,4 °C (izba 23 °C z Entry, od 0.1.27). Návrh dvoch kriviek (použitá + nastavená) používateľ odmietol ako mätúci: „prečo nemôže byť len 1 krivka?“
 - Rozhodnutie: karta kreslí jednu krivku – tú, podľa ktorej sa počíta. Pri zapnutej *Krivke podľa termostatov* je bod izby z termostatov (zamknutý, s menom zóny), bez kúriaceho termostatu izba z krivky s poznámkou; pri vypnutom prepínači ako predtým. Senzor cieľa vody má nový atribút `room_from_thermostats` – režimy, v ktorých izbu určujú termostaty (prepínač a zóny daného režimu; okruh bez zón má izbu upraviteľnú). Ťahanie úchytov počíta s izbou nakreslenej krivky (inak by pri chladení posun otočného bodu o 0,5 °C uložil korekciu +2,5).

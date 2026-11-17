@@ -14,7 +14,12 @@ from typing import Any
 
 from homeassistant.exceptions import ServiceValidationError
 
-from .const import DOMAIN
+from .const import (
+    DEFAULT_CIRCULATION_MAX_RUN,
+    DEFAULT_CIRCULATION_PAUSE,
+    DEFAULT_CIRCULATION_TANK_MARGIN,
+    DOMAIN,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,6 +64,11 @@ SOURCE = (
 HOT_WATER = (
     Tunable("circulation_threshold", 20, 60, 0.5, "°C", lambda h: h.settings.threshold),
     Tunable("circulation_delta", 0.5, 10, 0.5, "°C", lambda h: h.settings.delta),
+    Tunable("circulation_max_run", 0, 240, 1, "min", lambda h: DEFAULT_CIRCULATION_MAX_RUN),
+    Tunable("circulation_pause", 0, 1440, 1, "min", lambda h: DEFAULT_CIRCULATION_PAUSE),
+)
+HOT_WATER_TANK = (
+    Tunable("circulation_tank_margin", 0, 20, 0.5, "°C", lambda h: DEFAULT_CIRCULATION_TANK_MARGIN),
 )
 HOUSE = (
     Tunable("mode_pause", 0, 240, 5, "min", lambda h: h.settings.mode_pause / 60),
@@ -71,7 +81,7 @@ FALLBACK = (
 HOUSE_SWITCHES = (TunableSwitch("home_mixers_on_start", lambda h: h.settings.home_mixers_on_start),)
 
 _ALL = {t.key: t for t in (*MIXER, *MIXER_SWITCHES, *CIRCUIT_SWITCHES, *PUMP, *SOURCE)}
-_ALL |= {t.key: t for t in (*HOT_WATER, *HOUSE)}
+_ALL |= {t.key: t for t in (*HOT_WATER, *HOT_WATER_TANK, *HOUSE)}
 _ALL |= {t.key: t for t in (*FALLBACK, *HOUSE_SWITCHES)}
 # Pairs that must keep their order: (lower, upper).
 _ORDERED = (("min_step", "max_step"), ("setpoint_min", "setpoint_max"))
@@ -114,7 +124,8 @@ def tunables(house: Any) -> list[tuple[Any, tuple[Tunable | TunableSwitch, ...]]
         owners.append((circuit, values))
     owners += [(source, SOURCE) for source in house.sources.values() if source.controllable]
     if house.hot_water:
-        owners.append((house.hot_water, HOT_WATER))
+        tank = HOT_WATER_TANK if house.hot_water.settings.tank_sensor else ()
+        owners.append((house.hot_water, (*HOT_WATER, *tank)))
     return owners
 
 

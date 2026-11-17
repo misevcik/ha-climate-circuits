@@ -6,6 +6,7 @@ from typing import Any
 
 from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
@@ -20,6 +21,7 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     house = entry.runtime_data
+    _remove_unused(hass, house)
     for owner, values in tunables(house):
         entities = []
         for tunable in values:
@@ -49,3 +51,15 @@ class TunedNumber(NumberEntity):
 
     async def async_set_native_value(self, value: float) -> None:
         set_tuned(self._owner, self._key, value)
+
+
+def _remove_unused(hass: HomeAssistant, house: Any) -> None:
+    """Numbers of values no longer offered, e.g. the margin below a tank sensor removed.
+
+    Every number of the entry is a TunedNumber, so any one not offered now is stale.
+    """
+    wanted = {f"{owner.id}_{t.key}" for owner, values in tunables(house) for t in values}
+    registry = er.async_get(hass)
+    for entry in er.async_entries_for_config_entry(registry, house.entry.entry_id):
+        if entry.domain == "number" and entry.unique_id not in wanted:
+            registry.async_remove(entry.entity_id)

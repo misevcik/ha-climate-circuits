@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import pytest
 from homeassistant.config_entries import SOURCE_USER
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
@@ -28,6 +29,32 @@ async def test_user_flow_requires_fallback_sensor(hass: HomeAssistant) -> None:
     result = await hass.config_entries.flow.async_configure(result["flow_id"], options)
     assert result["type"] is FlowResultType.FORM
     assert result["errors"] == {"base": "fallback_sensor_required"}
+
+
+@pytest.mark.parametrize(
+    ("hot_water", "error"),
+    [
+        (
+            {"circulation_schedule": "schedule.circulation"},
+            "circulation_schedule_needs_circulation",
+        ),
+        (
+            {
+                "circulation_sensor": "sensor.circulation_return",
+                "circulation_pump": "switch.circulation_pump",
+                "circulation_schedule": "switch.circulation_pump",
+            },
+            "circulation_schedule_is_pump",
+        ),
+    ],
+)
+async def test_circulation_schedule_is_checked(hass: HomeAssistant, hot_water, error) -> None:
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
+    fallback = {"kind": "tank", "sensor": "sensor.tank"}
+    options = {**HOUSE_OPTIONS, "fallback": fallback, "hot_water": hot_water}
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], options)
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"base": error}
 
 
 async def test_add_circuit(hass: HomeAssistant, make_entry) -> None:

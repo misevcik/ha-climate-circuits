@@ -25,7 +25,7 @@ from .const import (
     SERVICE_SET_CURVE,
     STATUSES,
 )
-from .core.circulation import CirculationReason
+from .core.circulation import HELD_STATE
 from .core.mode import Mode
 from .core.texts import (
     change_message,
@@ -273,10 +273,8 @@ class CirculationSensor(HotWaterEntity, SensorEntity):
     def native_value(self) -> str | None:
         if (d := self.hot_water.decision) is None:
             return None
-        if d.reason is CirculationReason.DISABLED:
-            return "disabled"
-        if d.reason is CirculationReason.NO_SENSOR:
-            return "unavailable"
+        if state := HELD_STATE.get(d.reason):
+            return state
         return "running" if d.on else "stopped"
 
     @property
@@ -286,10 +284,17 @@ class CirculationSensor(HotWaterEntity, SensorEntity):
             return {}
         language = self.hass.config.language
         return {
-            "reason": circulation_message(d, language, dry_run=not house.control_equipment),
+            "reason": circulation_message(
+                d,
+                language,
+                dry_run=not house.control_equipment,
+                until=hot_water.paused_until_text(),
+            ),
             "temperature": round(d.temperature, 1) if d.temperature is not None else None,
             "starts_below": d.on_below,
             "stops_at": d.off_at,
+            "stop_from_tank": d.tank_limited,
+            "paused_until": hot_water.paused_until,
             "pump": hot_water.settings.pump,
             "pump_on": hot_water.pump_state(),
             "controlled": house.control_equipment,

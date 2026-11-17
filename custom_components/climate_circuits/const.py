@@ -76,9 +76,19 @@ DEFAULT_MODE_PAUSE: Final = 60  # min between heating and cooling
 DEFAULT_EXERCISE_DAYS: Final = 7
 DEFAULT_THRESHOLD: Final = 37.0
 DEFAULT_DELTA: Final = 1.0
+DEFAULT_CIRCULATION_MAX_RUN: Final = 10  # min a run may take without reaching the stop
+DEFAULT_CIRCULATION_PAUSE: Final = 30  # min the pump then rests
+DEFAULT_CIRCULATION_TANK_MARGIN: Final = 5.0  # K the circulation stops below the tank
 
 STATUSES: Final = ["dry_run", "ok"]
 CIRCUIT_STATES: Final = ["heating", "cooling", "idle", "off"]
 MIXER_STATES: Final = ["idle", "opening", "closing", "homing", "unknown", "unavailable"]
-CIRCULATION_STATES: Final = ["running", "stopped", "disabled", "unavailable"]
+CIRCULATION_STATES: Final = [
+    "running",
+    "stopped",
+    "paused",
+    "outside_schedule",
+    "disabled",
+    "unavailable",
+]
 UNKNOWN_STATES: Final = frozenset({"unavailable", "unknown"})

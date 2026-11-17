@@ -11,7 +11,7 @@ Everything is set up in the UI. It works with the relays, sensors and thermostat
 - **Circuit demand** from the circuit's thermostats, with the calling zones shown.
 - **Circuit pumps** with a start delay (so the zone valves can open) and a run-on after heating.
 - **Three-point mixing valves** – the position is calculated from the relay run times, the supply temperature is regulated in steps, the valve is homed against its end stop when the position is unknown, and the motor is protected: never both relays at once, a run-time watchdog, stray relays switched off, short relay dropouts tolerated.
-- **Hot water circulation** pump with hysteresis on the return temperature.
+- **Hot water circulation** pump with hysteresis on the return temperature, a longest run followed by a pause, a stop below the hot water tank and an optional schedule.
 - **Zone thermostats** – on a mode change the other mode's thermostats are turned off before the new ones are turned on.
 - **Protections** – a pause between heating and cooling, a condensation guard while cooling, and exercise of idle pumps and valves.
 - **Safe start** – nothing is switched until you turn on *Control equipment*; until then every decision is a dry run shown in Activity. Each circuit has its own switch as well, so circuits can go live one by one.
@@ -71,10 +71,14 @@ Hot water circulation:
 
 | Entity | What it shows |
 |---|---|
-| `sensor.hot_water_circulation_state` | running / stopped / disabled / unavailable, with the reason |
+| `sensor.hot_water_circulation_state` | running / stopped / paused / outside_schedule / disabled / unavailable, with the reason |
 | `sensor.hot_water_circulation_temperature` | return temperature of the circulation loop |
 | `switch.hot_water_circulation_enabled` | allows the circulation pump to run |
 | `number.hot_water_circulation_threshold`, `number.hot_water_circulation_delta` | the pump starts below threshold − delta and stops at the threshold |
+| `number.hot_water_circulation_longest_run`, `number.hot_water_circulation_pause` | a run that does not reach the stop within the longest run (min) rests for the pause (min); 0 in either turns this off |
+| `number.hot_water_circulation_below_the_tank` | with a tank sensor: the pump stops no higher than the tank temperature less this, as the water coming back can not be warmer than the tank |
+
+With *Circulation schedule* set in the hot water options (a `schedule` helper, or any on/off entity) the circulation runs only while it is on, e.g. mornings and evenings.
 
 ## Curve card
 
